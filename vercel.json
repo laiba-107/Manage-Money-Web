@@ -1,0 +1,5 @@
+{
+  "buildCommand": "npm run build:all",
+  "outputDirectory": "public",
+  "framework": "vanilla"
+}

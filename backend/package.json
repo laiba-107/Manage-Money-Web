@@ -6,7 +6,10 @@
   "private": true,
   "license": "MIT",
   "scripts": {
-    "build": "nest build",
+    "build": "npm run copy:frontend && nest build && npm run copy:public-to-dist",
+    "build:all": "npm run build",
+    "copy:frontend": "node copy-frontend.js",
+    "copy:public-to-dist": "node copy-public-to-dist.js",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",
