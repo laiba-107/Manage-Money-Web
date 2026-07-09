@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Category, CategoryType } from './entities/category.entity';
@@ -28,6 +28,8 @@ const DEFAULT_CATEGORIES = [
 
 @Injectable()
 export class CategoriesService implements OnModuleInit {
+  private readonly logger = new Logger(CategoriesService.name);
+
   constructor(
     @InjectRepository(Category)
     private categoryRepository: Repository<Category>,
@@ -40,8 +42,8 @@ export class CategoriesService implements OnModuleInit {
   async findAll(userId?: string): Promise<Category[]> {
     const query = this.categoryRepository
       .createQueryBuilder('c')
-      .where('c.isDefault = true')
-      .orWhere('c.userId = :userId', { userId: userId || '' })
+      .where('c.is_default = true')
+      .orWhere('c.user_id = :userId', { userId: userId || '' })
       .orderBy('c.type', 'ASC')
       .addOrderBy('c.name', 'ASC');
 
@@ -52,7 +54,7 @@ export class CategoriesService implements OnModuleInit {
     return this.categoryRepository
       .createQueryBuilder('c')
       .where('c.type IN (:...types)', { types: [type, CategoryType.BOTH] })
-      .andWhere('(c.isDefault = true OR c.userId = :userId)', {
+      .andWhere('(c.is_default = true OR c.user_id = :userId)', {
         userId: userId || '',
       })
       .orderBy('c.name', 'ASC')
@@ -69,12 +71,16 @@ export class CategoriesService implements OnModuleInit {
   }
 
   private async seedDefaultCategories(): Promise<void> {
-    const count = await this.categoryRepository.count({ where: { isDefault: true } });
-    if (count > 0) return;
+    try {
+      const count = await this.categoryRepository.count({ where: { isDefault: true } as any });
+      if (count > 0) return;
 
-    const categories = DEFAULT_CATEGORIES.map((c) =>
-      this.categoryRepository.create({ ...c, isDefault: true }),
-    );
-    await this.categoryRepository.save(categories);
+      const categories = DEFAULT_CATEGORIES.map((c) =>
+        this.categoryRepository.create({ ...c, isDefault: true }),
+      );
+      await this.categoryRepository.save(categories);
+    } catch (error) {
+      this.logger?.warn?.(`Skipping default category seed: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
 }

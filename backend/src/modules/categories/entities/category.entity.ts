@@ -32,7 +32,7 @@ export class Category {
   @Column({ type: 'enum', enum: CategoryType, default: CategoryType.EXPENSE })
   type: CategoryType;
 
-  @Column({ default: true })
+  @Column({ name: 'is_default', default: true })
   isDefault: boolean;
 
   @Column({ nullable: true })

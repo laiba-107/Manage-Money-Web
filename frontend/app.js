@@ -3,10 +3,11 @@ const REFRESH_TOKEN_KEY = 'manage_money_refresh_token';
 const API_BASE_URL = (() => {
   const custom = window.API_BASE_URL;
   if (typeof custom === 'string' && custom.trim().length) {
-    return custom.replace(/\/$/, '') + '/api/v1';
+    return custom.replace(/\/$/, '');
   }
-  return window.location.origin.replace(/\/$/, '') + '/api/v1';
+  return 'http://localhost:3000';
 })();
+const API_PREFIX = '/api/v1';
 
 const authButton = document.getElementById('authButton');
 const contentSection = document.getElementById('content');
@@ -48,7 +49,7 @@ function clearTokens() {
 }
 
 async function apiRequest(method, path, data) {
-  const url = `${API_BASE_URL}${path}`;
+  const url = `${API_BASE_URL}${API_PREFIX}${path}`;
   const headers = {
     'Content-Type': 'application/json',
     Accept: 'application/json',
@@ -90,7 +91,7 @@ async function handleLogout() {
 }
 
 function handleLogin() {
-  window.location.href = `${API_BASE_URL}/auth/google?target=web`;
+  window.location.href = `${API_BASE_URL}${API_PREFIX}/auth/google?target=web`;
 }
 
 async function loadApp() {
