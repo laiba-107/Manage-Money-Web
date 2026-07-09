@@ -1,0 +1,63 @@
+# Environment files - NEVER commit these
+backend/.env
+backend/.env.production
+backend/.env.local
+.env
+.env.*
+!.env.example
+!.env.production
+
+# Node
+node_modules/
+dist/
+build/
+*.log
+npm-debug.log*
+
+# Flutter/Dart
+frontend/.dart_tool/
+frontend/.flutter-plugins
+frontend/.flutter-plugins-dependencies
+frontend/.pub-cache/
+frontend/.pub/
+frontend/build/
+frontend/android/.gradle/
+frontend/android/app/google-services.json  # Add your own!
+frontend/ios/Pods/
+frontend/ios/.symlinks/
+frontend/linux/.dart_tool/
+frontend/macos/.dart_tool/
+frontend/*.g.dart
+frontend/*.freezed.dart
+
+# Android signing
+*.jks
+*.keystore
+key.properties
+frontend/android/key.properties
+
+# Database credentials
+*.pem
+*.key
+*.crt
+
+# IDE
+.vscode/
+.idea/
+*.iml
+*.suo
+*.user
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Docker volumes
+data/
+logs/
+uploads/
+
+# Coverage
+coverage/
+*.lcov
