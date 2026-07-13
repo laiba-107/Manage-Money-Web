@@ -56,9 +56,9 @@ Manage money Web/
 ## How It All Works
 
 ### Local Development
-1. Frontend runs separately: `python -m http.server 3001` from `frontend/` folder
-2. Backend runs on `localhost:3000`
-3. Frontend hardcoded to call `http://localhost:3000`
+1. **Recommended:** Run backend only — it serves frontend from `backend/public/` at http://localhost:3000
+2. **Optional:** Run frontend separately with `python -m http.server 3001` from `frontend/` folder
+3. When on port 3001, frontend auto-detects API at http://localhost:3000
 
 ### Vercel Production
 1. **Entire backend folder is deployed**

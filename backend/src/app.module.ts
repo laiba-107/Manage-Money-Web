@@ -36,9 +36,8 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
         GOOGLE_CLIENT_ID: Joi.string().required(),
         GOOGLE_CLIENT_SECRET: Joi.string().required(),
         GOOGLE_CALLBACK_URL: Joi.string().required(),
-        FRONTEND_URL: Joi.string().default('http://localhost:3001'),
-        ALLOWED_ORIGINS: Joi.string().default('http://localhost:3001'),
-        MOBILE_DEEP_LINK: Joi.string().default('managemoney://auth/callback'),
+        FRONTEND_URL: Joi.string().default('http://localhost:3000'),
+        ALLOWED_ORIGINS: Joi.string().default('http://localhost:3000,http://localhost:3001,http://localhost'),
       }),
     }),
 

@@ -9,6 +9,40 @@ const API_BASE_URL = (() => {
 })();
 const API_PREFIX = '/api/v1';
 
+const EXPENSE_CATEGORY_TO_DB = {
+  Food: 'Food & Dining',
+  Transport: 'Transport',
+  Bills: 'Bills & Utilities',
+  Shopping: 'Shopping',
+  Rent: 'Rent & Housing',
+  Entertainment: 'Entertainment',
+  Healthcare: 'Healthcare',
+  Education: 'Education',
+  Travel: 'Travel',
+  Other: 'Other',
+};
+
+const DB_EXPENSE_TO_UI = Object.fromEntries(
+  Object.entries(EXPENSE_CATEGORY_TO_DB).map(([ui, db]) => [db, ui]),
+);
+
+const PAYMENT_METHOD_TO_API = {
+  Cash: 'cash',
+  'Credit Card': 'credit_card',
+  'Debit Card': 'debit_card',
+  'Bank Transfer': 'bank_transfer',
+  Other: 'other',
+};
+
+const PAYMENT_METHOD_FROM_API = {
+  cash: 'Cash',
+  credit_card: 'Credit Card',
+  debit_card: 'Debit Card',
+  bank_transfer: 'Bank Transfer',
+  mobile_payment: 'Other',
+  other: 'Other',
+};
+
 /* ---------------------------------------------------------------------- */
 /* Category / source metadata                                             */
 /* ---------------------------------------------------------------------- */
@@ -70,6 +104,7 @@ let categoryChartInstance = null;
 let incomeExpenseChartInstance = null;
 
 const state = {
+  categories: [],
   incomes: [],
   expenses: [],
   budgets: [],
@@ -119,6 +154,95 @@ function monthLabel(key) {
   const [year, month] = key.split('-');
   const d = new Date(Number(year), Number(month) - 1, 1);
   return d.toLocaleDateString(undefined, { month: 'short' });
+}
+
+function formatApiDate(value) {
+  if (!value) return '';
+  if (typeof value === 'string') return value.slice(0, 10);
+  return new Date(value).toISOString().slice(0, 10);
+}
+
+function findCategoryByName(name, type) {
+  return state.categories.find(
+    (category) => category.name === name && (category.type === type || category.type === 'both'),
+  );
+}
+
+function findExpenseCategoryId(uiCategory) {
+  const dbName = EXPENSE_CATEGORY_TO_DB[uiCategory] || uiCategory;
+  return findCategoryByName(dbName, 'expense')?.id;
+}
+
+function findIncomeCategoryId(source) {
+  return findCategoryByName(source, 'income')?.id;
+}
+
+function normalizeIncome(transaction) {
+  return {
+    id: transaction.id,
+    amount: Number(transaction.amount),
+    date: formatApiDate(transaction.date),
+    notes: transaction.notes,
+    source: transaction.category?.name || transaction.title || 'Other',
+    recurring: Boolean(transaction.isRecurring),
+  };
+}
+
+function normalizeExpense(transaction) {
+  const uiCategory = DB_EXPENSE_TO_UI[transaction.category?.name]
+    || transaction.category?.name
+    || transaction.title
+    || 'Other';
+
+  return {
+    id: transaction.id,
+    amount: Number(transaction.amount),
+    date: formatApiDate(transaction.date),
+    notes: transaction.notes,
+    category: uiCategory,
+    paymentMethod: PAYMENT_METHOD_FROM_API[transaction.paymentMethod] || 'Cash',
+    receiptUrl: transaction.receiptUrl,
+    receiptImage: transaction.receiptUrl,
+  };
+}
+
+function normalizeBudget(budget) {
+  const categoryName = budget.category?.name || budget.name?.replace(/ Budget$/, '') || 'Other';
+  const uiCategory = DB_EXPENSE_TO_UI[categoryName] || categoryName;
+
+  return {
+    id: budget.id,
+    category: uiCategory,
+    name: budget.name,
+    amount: Number(budget.amount),
+    limit: Number(budget.amount),
+    spent: Number(budget.spent ?? 0),
+  };
+}
+
+function buildIncomePayload(form) {
+  return {
+    type: 'income',
+    title: form.source,
+    amount: form.amount,
+    date: form.date,
+    notes: form.notes,
+    isRecurring: form.recurring,
+    categoryId: findIncomeCategoryId(form.source),
+  };
+}
+
+function buildExpensePayload(form) {
+  return {
+    type: 'expense',
+    title: EXPENSE_CATEGORY_TO_DB[form.category] || form.category,
+    amount: form.amount,
+    date: form.date,
+    notes: form.notes,
+    paymentMethod: PAYMENT_METHOD_TO_API[form.paymentMethod] || 'other',
+    categoryId: findExpenseCategoryId(form.category),
+    receiptUrl: form.receiptImage,
+  };
 }
 
 /* ---------------------------------------------------------------------- */
@@ -181,7 +305,7 @@ async function handleLogout() {
 }
 
 function handleLogin() {
-  window.location.href = `${API_BASE_URL}${API_PREFIX}/auth/google?target=web`;
+  window.location.href = `${API_BASE_URL}${API_PREFIX}/auth/google`;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -208,15 +332,18 @@ sidebar?.addEventListener('click', (e) => {
 /* ---------------------------------------------------------------------- */
 
 async function loadAllData() {
+  const categoriesResult = await apiRequest('GET', '/categories').catch(() => ({ data: [] }));
+  state.categories = Array.isArray(categoriesResult?.data) ? categoriesResult.data : [];
+
   const [incomesResult, expensesResult, budgetsResult] = await Promise.all([
-    apiRequest('GET', '/incomes').catch(() => ({ data: [] })),
-    apiRequest('GET', '/expenses').catch(() => ({ data: [] })),
+    apiRequest('GET', '/transactions?type=income&limit=500&sortOrder=DESC').catch(() => ({ data: [] })),
+    apiRequest('GET', '/transactions?type=expense&limit=500&sortOrder=DESC').catch(() => ({ data: [] })),
     apiRequest('GET', '/budgets').catch(() => ({ data: [] })),
   ]);
 
-  state.incomes = Array.isArray(incomesResult?.data) ? incomesResult.data : [];
-  state.expenses = Array.isArray(expensesResult?.data) ? expensesResult.data : [];
-  state.budgets = Array.isArray(budgetsResult?.data) ? budgetsResult.data : [];
+  state.incomes = (Array.isArray(incomesResult?.data) ? incomesResult.data : []).map(normalizeIncome);
+  state.expenses = (Array.isArray(expensesResult?.data) ? expensesResult.data : []).map(normalizeExpense);
+  state.budgets = (Array.isArray(budgetsResult?.data) ? budgetsResult.data : []).map(normalizeBudget);
 }
 
 async function loadApp() {
@@ -474,11 +601,12 @@ incomeForm?.addEventListener('submit', async (e) => {
     recurring: document.getElementById('incomeRecurring').checked,
   };
   try {
+    const apiPayload = buildIncomePayload(payload);
     if (state.editingIncomeId) {
-      await apiRequest('PATCH', `/incomes/${state.editingIncomeId}`, payload);
+      await apiRequest('PUT', `/transactions/${state.editingIncomeId}`, apiPayload);
       showMessage('Income updated.', 'success');
     } else {
-      await apiRequest('POST', '/incomes', payload);
+      await apiRequest('POST', '/transactions', apiPayload);
       showMessage('Income added.', 'success');
     }
     incomeModal.classList.add('hidden');
@@ -494,7 +622,7 @@ incomeForm?.addEventListener('submit', async (e) => {
 async function deleteIncome(id) {
   if (!window.confirm('Delete this income entry?')) return;
   try {
-    await apiRequest('DELETE', `/incomes/${id}`);
+    await apiRequest('DELETE', `/transactions/${id}`);
     showMessage('Income deleted.', 'success');
     await loadAllData();
     renderIncomeList();
@@ -569,11 +697,12 @@ expenseForm?.addEventListener('submit', async (e) => {
     receiptImage: state.pendingReceiptDataUrl || undefined,
   };
   try {
+    const apiPayload = buildExpensePayload(payload);
     if (state.editingExpenseId) {
-      await apiRequest('PATCH', `/expenses/${state.editingExpenseId}`, payload);
+      await apiRequest('PUT', `/transactions/${state.editingExpenseId}`, apiPayload);
       showMessage('Expense updated.', 'success');
     } else {
-      await apiRequest('POST', '/expenses', payload);
+      await apiRequest('POST', '/transactions', apiPayload);
       showMessage('Expense added.', 'success');
     }
     expenseModal.classList.add('hidden');
@@ -590,7 +719,7 @@ expenseForm?.addEventListener('submit', async (e) => {
 async function deleteExpense(id) {
   if (!window.confirm('Delete this expense entry?')) return;
   try {
-    await apiRequest('DELETE', `/expenses/${id}`);
+    await apiRequest('DELETE', `/transactions/${id}`);
     showMessage('Expense deleted.', 'success');
     await loadAllData();
     renderExpenseList();
@@ -656,7 +785,15 @@ addBudgetBtn?.addEventListener('click', async () => {
     return;
   }
   try {
-    await apiRequest('POST', '/budgets', { category, amount });
+    const dbCategory = EXPENSE_CATEGORY_TO_DB[category] || category;
+    await apiRequest('POST', '/budgets', {
+      name: `${dbCategory} Budget`,
+      amount,
+      period: 'monthly',
+      categoryId: findExpenseCategoryId(category),
+      month: new Date().getMonth() + 1,
+      year: new Date().getFullYear(),
+    });
     showMessage('Budget added.', 'success');
     await loadAllData();
     renderBudgets();
@@ -675,7 +812,7 @@ budgetsListEl?.addEventListener('click', async (e) => {
     const amount = Number(amountStr);
     if (!amountStr || Number.isNaN(amount) || amount <= 0) return;
     try {
-      await apiRequest('PATCH', `/budgets/${budget.id}`, { amount });
+      await apiRequest('PUT', `/budgets/${budget.id}`, { amount });
       showMessage('Budget updated.', 'success');
       await loadAllData();
       renderBudgets();

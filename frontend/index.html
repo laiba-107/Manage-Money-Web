@@ -6,6 +6,18 @@
   <title>Manage Money - Personal Finance Dashboard</title>
   <link rel="stylesheet" href="styles.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    (function configureApiBaseUrl() {
+      const { hostname, port, origin } = window.location;
+
+      if (hostname === 'localhost' && port === '3001') {
+        window.API_BASE_URL = 'http://localhost:3000';
+        return;
+      }
+
+      window.API_BASE_URL = origin;
+    })();
+  </script>
 </head>
 <body>
   <div class="app-shell">

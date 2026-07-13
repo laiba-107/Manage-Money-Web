@@ -10,7 +10,7 @@ import {
   Min,
   Max,
 } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
 import { BudgetPeriod } from '../entities/budget.entity';
 import { Type } from 'class-transformer';
 
@@ -72,4 +72,4 @@ export class CreateBudgetDto {
   isActive?: boolean;
 }
 
-export class UpdateBudgetDto extends CreateBudgetDto {}
+export class UpdateBudgetDto extends PartialType(CreateBudgetDto) {}

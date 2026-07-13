@@ -8,7 +8,6 @@ import {
   Body,
   HttpCode,
   HttpStatus,
-  Version,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
@@ -47,34 +46,13 @@ export class AuthController {
     const tokens = await this.authService.generateTokens(req.user);
     const frontendUrl = this.configService.get<string>(
       'FRONTEND_URL',
-      'http://localhost:3001',
+      'http://localhost:3000',
     ).replace(/\/$/, '');
-    const mobileDeepLink = this.configService.get<string>(
-      'MOBILE_DEEP_LINK',
-      'managemoney://auth/callback',
-    );
-    const target = req.query.target === 'mobile' ? 'mobile' : 'web';
-
-    if (target === 'mobile') {
-      const redirectUrl = `${mobileDeepLink}?accessToken=${encodeURIComponent(
-        tokens.accessToken,
-      )}&refreshToken=${encodeURIComponent(tokens.refreshToken)}`;
-      return res.redirect(redirectUrl);
-    }
 
     const redirectUrl = `${frontendUrl}/auth_callback.html?accessToken=${encodeURIComponent(
       tokens.accessToken,
     )}&refreshToken=${encodeURIComponent(tokens.refreshToken)}`;
     return res.redirect(redirectUrl);
-  }
-
-  @Public()
-  @Get('google/mobile')
-  @UseGuards(AuthGuard('google'))
-  @ApiOperation({ summary: 'Mobile Google OAuth (returns tokens as JSON)' })
-  async googleMobileCallback(@Req() req: any) {
-    const tokens = await this.authService.generateTokens(req.user);
-    return { data: tokens, message: 'Authentication successful' };
   }
 
   @Post('refresh')

@@ -3,55 +3,259 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Manage Money</title>
+  <title>Manage Money - Personal Finance Dashboard</title>
   <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    (function configureApiBaseUrl() {
+      const { hostname, port, origin } = window.location;
+
+      if (hostname === 'localhost' && port === '3001') {
+        window.API_BASE_URL = 'http://localhost:3000';
+        return;
+      }
+
+      window.API_BASE_URL = origin;
+    })();
+  </script>
 </head>
 <body>
   <div class="app-shell">
+    <!-- Header -->
     <header class="topbar">
       <div class="brand">
         <span class="brand-mark">💰</span>
         <div>
           <strong>Manage Money</strong>
-          <small>Personal finance web dashboard</small>
+          <small>Personal Finance Manager</small>
         </div>
       </div>
-      <button id="authButton" class="button button-primary">Sign in</button>
+      <div class="header-right">
+        <div class="user-info hidden" id="userInfo">
+          <span id="headerUserName">User</span>
+        </div>
+        <button id="authButton" class="button button-primary">Sign in</button>
+      </div>
     </header>
 
-    <main>
-      <section class="hero">
-        <div>
-          <h1>Secure money management for web</h1>
-          <p>Track transactions, budgets and categories with the same API used by the backend.</p>
+    <!-- Navigation (shown after login) -->
+    <nav class="sidebar hidden" id="sidebar">
+      <button class="nav-item active" data-page="dashboard">📊 Dashboard</button>
+      <button class="nav-item" data-page="income">📈 Income</button>
+      <button class="nav-item" data-page="expenses">📉 Expenses</button>
+      <button class="nav-item" data-page="budgets">🎯 Budgets</button>
+      <button class="nav-item" data-page="transactions">📝 All Transactions</button>
+    </nav>
+
+    <!-- Main Content -->
+    <main id="mainContent">
+      <!-- Dashboard Page -->
+      <section id="page-dashboard" class="page active">
+        <div class="page-header">
+          <h1>Dashboard</h1>
+          <p>Welcome back! Here's your financial overview.</p>
         </div>
-        <div class="hero-card">
-          <p><strong>NOTE:</strong> This site is built as a static web frontend for the existing NestJS backend.</p>
+
+        <!-- Financial Summary Cards -->
+        <div class="cards-grid">
+          <div class="card card-primary">
+            <div class="card-label">Total Balance</div>
+            <div class="card-value" id="totalBalance">$0.00</div>
+            <div class="card-change positive">↑ +12.5% this month</div>
+          </div>
+          <div class="card card-success">
+            <div class="card-label">Monthly Income</div>
+            <div class="card-value" id="monthlyIncome">$0.00</div>
+            <div class="card-change">From all sources</div>
+          </div>
+          <div class="card card-danger">
+            <div class="card-label">Monthly Expenses</div>
+            <div class="card-value" id="monthlyExpenses">$0.00</div>
+            <div class="card-change">Spending this month</div>
+          </div>
+          <div class="card card-info">
+            <div class="card-label">Savings</div>
+            <div class="card-value" id="monthlySavings">$0.00</div>
+            <div class="card-change">Income - Expenses</div>
+          </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="charts-section">
+          <div class="chart-container">
+            <h3>Spending by Category</h3>
+            <canvas id="categoryChart"></canvas>
+          </div>
+          <div class="chart-container">
+            <h3>Income vs Expenses</h3>
+            <canvas id="incomeExpenseChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Recent Transactions -->
+        <div class="card full-width">
+          <h3>Recent Transactions</h3>
+          <div id="recentTransactions" class="transactions-list">
+            <p class="placeholder">Loading transactions...</p>
+          </div>
         </div>
       </section>
 
-      <div id="message" class="toast hidden"></div>
+      <!-- Income Page -->
+      <section id="page-income" class="page">
+        <div class="page-header">
+          <h1>Income Management</h1>
+          <button class="button button-success" id="addIncomeBtn">+ Add Income</button>
+        </div>
 
-      <section id="content" class="grid hidden">
-        <article class="card profile-card">
-          <h2>Profile</h2>
-          <div class="stat-row"><span>Name</span><span id="userName">—</span></div>
-          <div class="stat-row"><span>Email</span><span id="userEmail">—</span></div>
-        </article>
+        <!-- Add Income Modal Form -->
+        <div class="modal hidden" id="incomeModal">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h2>Add Income</h2>
+              <button class="modal-close" id="closeIncomeModal">✕</button>
+            </div>
+            <form id="incomeForm" class="form">
+              <div class="form-group">
+                <label for="incomeAmount">Amount</label>
+                <input type="number" id="incomeAmount" placeholder="0.00" step="0.01" required />
+              </div>
+              <div class="form-group">
+                <label for="incomeSource">Source</label>
+                <select id="incomeSource" required>
+                  <option value="">Select source...</option>
+                  <option value="Salary">Salary</option>
+                  <option value="Freelance">Freelance</option>
+                  <option value="Business">Business</option>
+                  <option value="Investments">Investments</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="incomeDate">Date</label>
+                <input type="date" id="incomeDate" required />
+              </div>
+              <div class="form-group">
+                <label for="incomeNotes">Notes</label>
+                <textarea id="incomeNotes" placeholder="Add notes..."></textarea>
+              </div>
+              <div class="form-group">
+                <label>
+                  <input type="checkbox" id="incomeRecurring" />
+                  Set as recurring income
+                </label>
+              </div>
+              <button type="submit" class="button button-primary">Add Income</button>
+            </form>
+          </div>
+        </div>
 
-        <article class="card stats-card">
-          <h2>Summary</h2>
-          <div class="stat-row"><span>Budgets</span><span id="budgetCount">0</span></div>
-          <div class="stat-row"><span>Categories</span><span id="categoryCount">0</span></div>
-          <div class="stat-row"><span>Transactions</span><span id="transactionCount">0</span></div>
-        </article>
+        <!-- Income List -->
+        <div class="card full-width">
+          <h3>Income Records</h3>
+          <div id="incomeList" class="transactions-list">
+            <p class="placeholder">No income records yet.</p>
+          </div>
+        </div>
+      </section>
 
-        <article class="card list-card">
-          <h2>Latest categories</h2>
-          <ul id="categoryList" class="item-list"></ul>
-        </article>
+      <!-- Expenses Page -->
+      <section id="page-expenses" class="page">
+        <div class="page-header">
+          <h1>Expense Tracking</h1>
+          <button class="button button-danger" id="addExpenseBtn">+ Add Expense</button>
+        </div>
+
+        <!-- Add Expense Modal Form -->
+        <div class="modal hidden" id="expenseModal">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h2>Add Expense</h2>
+              <button class="modal-close" id="closeExpenseModal">✕</button>
+            </div>
+            <form id="expenseForm" class="form">
+              <div class="form-group">
+                <label for="expenseAmount">Amount</label>
+                <input type="number" id="expenseAmount" placeholder="0.00" step="0.01" required />
+              </div>
+              <div class="form-group">
+                <label for="expenseCategory">Category</label>
+                <select id="expenseCategory" required>
+                  <option value="">Select category...</option>
+                  <option value="Food">🍔 Food & Dining</option>
+                  <option value="Transport">🚗 Transport</option>
+                  <option value="Bills">📄 Bills & Utilities</option>
+                  <option value="Shopping">🛍️ Shopping</option>
+                  <option value="Rent">🏠 Rent</option>
+                  <option value="Entertainment">🎬 Entertainment</option>
+                  <option value="Healthcare">🏥 Healthcare</option>
+                  <option value="Education">🎓 Education</option>
+                  <option value="Travel">✈️ Travel</option>
+                  <option value="Other">📌 Other</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="expenseDate">Date</label>
+                <input type="date" id="expenseDate" required />
+              </div>
+              <div class="form-group">
+                <label for="paymentMethod">Payment Method</label>
+                <select id="paymentMethod">
+                  <option value="Cash">💵 Cash</option>
+                  <option value="Credit Card">💳 Credit Card</option>
+                  <option value="Debit Card">🏦 Debit Card</option>
+                  <option value="Bank Transfer">🔄 Bank Transfer</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="expenseNotes">Notes</label>
+                <textarea id="expenseNotes" placeholder="Add notes..."></textarea>
+              </div>
+              <div class="form-group">
+                <label for="receiptUpload">Receipt Image (Optional)</label>
+                <input type="file" id="receiptUpload" accept="image/*" />
+              </div>
+              <button type="submit" class="button button-primary">Add Expense</button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Expense List -->
+        <div class="card full-width">
+          <h3>Expense Records</h3>
+          <div id="expenseList" class="transactions-list">
+            <p class="placeholder">No expenses yet.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Budgets Page -->
+      <section id="page-budgets" class="page">
+        <div class="page-header">
+          <h1>Budget Management</h1>
+          <button class="button button-success" id="addBudgetBtn">+ Add Budget</button>
+        </div>
+        <div id="budgetsList" class="budgets-grid">
+          <p class="placeholder">Loading budgets...</p>
+        </div>
+      </section>
+
+      <!-- Transactions Page -->
+      <section id="page-transactions" class="page">
+        <div class="page-header">
+          <h1>All Transactions</h1>
+        </div>
+        <div class="card full-width">
+          <div id="allTransactionsList" class="transactions-list">
+            <p class="placeholder">Loading transactions...</p>
+          </div>
+        </div>
       </section>
     </main>
+
+    <!-- Message Toast -->
+    <div id="message" class="toast hidden"></div>
   </div>
 
   <script src="app.js"></script>

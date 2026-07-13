@@ -17,7 +17,7 @@ async function bootstrap() {
   const port = configService.get<number>('PORT', 3000);
   const nodeEnv = configService.get<string>('NODE_ENV', 'development');
   const allowedOrigins = configService
-    .get<string>('ALLOWED_ORIGINS', 'http://localhost:3001')
+    .get<string>('ALLOWED_ORIGINS', 'http://localhost:3000,http://localhost:3001,http://localhost')
     .split(',');
 
   // Security

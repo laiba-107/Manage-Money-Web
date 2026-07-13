@@ -10,7 +10,7 @@ import {
   IsPositive,
   MaxLength,
 } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
 import {
   TransactionType,
   PaymentMethod,
@@ -81,4 +81,4 @@ export class CreateTransactionDto {
   tags?: string[];
 }
 
-export class UpdateTransactionDto extends CreateTransactionDto {}
+export class UpdateTransactionDto extends PartialType(CreateTransactionDto) {}
