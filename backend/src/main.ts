@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
+import { ExpressAdapter } from '@nestjs/platform-express';
 import * as compression from 'compression';
 import helmet from 'helmet';
 import * as express from 'express';
@@ -11,8 +12,14 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { ResponseTransformInterceptor } from './common/interceptors/response-transform.interceptor';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 
+const server = express();
+
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  const app = await NestFactory.create(
+    AppModule,
+    new ExpressAdapter(server),
+    { bufferLogs: true },
+  );
   const configService = app.get(ConfigService);
   const port = configService.get<number>('PORT', 3000);
   const nodeEnv = configService.get<string>('NODE_ENV', 'development');
@@ -78,11 +85,17 @@ async function bootstrap() {
     });
   }
 
-  await app.listen(port);
-  console.log(
-    `\n🚀 Manage Money API running on: http://localhost:${port}/api/v1`,
-  );
-  console.log(`📖 API Docs: http://localhost:${port}/api/docs\n`);
+  if (process.env.VERCEL) {
+    await app.init();
+  } else {
+    await app.listen(port);
+    console.log(
+      `\n🚀 Manage Money API running on: http://localhost:${port}/api/v1`,
+    );
+    console.log(`📖 API Docs: http://localhost:${port}/api/docs\n`);
+  }
 }
 
 bootstrap();
+
+export default server;
