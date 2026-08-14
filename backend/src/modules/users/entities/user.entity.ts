@@ -21,31 +21,34 @@ export class User {
   @Column({ unique: true })
   email: string;
 
-  @Column()
+  @Column({ name: 'password', nullable: true, select: false })
+  password?: string;
+
+  @Column({ name: 'display_name' })
   displayName: string;
 
-  @Column({ nullable: true })
+  @Column({ name: 'first_name', nullable: true })
   firstName: string;
 
-  @Column({ nullable: true })
+  @Column({ name: 'last_name', nullable: true })
   lastName: string;
 
-  @Column({ nullable: true })
+  @Column({ name: 'photo_url', nullable: true })
   photoUrl: string;
 
-  @Column({ unique: true })
-  googleId: string;
+  @Column({ name: 'google_id', nullable: true, unique: true })
+  googleId?: string;
 
-  @Column({ nullable: true })
+  @Column({ name: 'refresh_token', nullable: true })
   refreshToken: string;
 
-  @Column({ default: true })
+  @Column({ name: 'is_active', default: true })
   isActive: boolean;
 
-  @Column({ default: false })
+  @Column({ name: 'is_email_verified', default: false })
   isEmailVerified: boolean;
 
-  @Column({ nullable: true })
+  @Column({ name: 'last_login_at', type: 'timestamptz', nullable: true })
   lastLoginAt: Date;
 
   @Column({ nullable: true })
@@ -57,13 +60,13 @@ export class User {
   @Column({ default: 'light' })
   theme: string;
 
-  @Column({ nullable: true })
+  @Column({ name: 'biometric_enabled', nullable: true })
   biometricEnabled: boolean;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 
   @OneToMany(() => Transaction, (t) => t.user)

@@ -23,7 +23,7 @@ export class Notification {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column()
+  @Column({ name: 'user_id' })
   userId: string;
 
   @Column()
@@ -38,13 +38,13 @@ export class Notification {
   @Column({ type: 'jsonb', nullable: true })
   data: any;
 
-  @Column({ default: false })
+  @Column({ name: 'is_read', default: false })
   isRead: boolean;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
   @ManyToOne(() => User, (u) => u.notifications, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'userId' })
+  @JoinColumn({ name: 'user_id' })
   user: User;
 }

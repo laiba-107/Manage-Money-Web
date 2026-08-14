@@ -42,8 +42,8 @@ export class CategoriesService implements OnModuleInit {
   async findAll(userId?: string): Promise<Category[]> {
     const query = this.categoryRepository
       .createQueryBuilder('c')
-      .where('c.is_default = true')
-      .orWhere('c.user_id = :userId', { userId: userId || '' })
+      .where('c.isDefault = true')
+      .orWhere('c.userId = :userId', { userId: userId || '' })
       .orderBy('c.type', 'ASC')
       .addOrderBy('c.name', 'ASC');
 
@@ -54,7 +54,7 @@ export class CategoriesService implements OnModuleInit {
     return this.categoryRepository
       .createQueryBuilder('c')
       .where('c.type IN (:...types)', { types: [type, CategoryType.BOTH] })
-      .andWhere('(c.is_default = true OR c.user_id = :userId)', {
+      .andWhere('(c.isDefault = true OR c.userId = :userId)', {
         userId: userId || '',
       })
       .orderBy('c.name', 'ASC')

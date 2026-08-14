@@ -17,7 +17,7 @@ import { AuthService } from './auth.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Public } from '../../common/decorators/public.decorator';
-import { RefreshTokenDto } from './dto/auth.dto';
+import { RefreshTokenDto, RegisterDto, LoginDto } from './dto/auth.dto';
 import { User } from '../users/entities/user.entity';
 import { ThrottlerGuard } from '@nestjs/throttler';
 
@@ -53,6 +53,33 @@ export class AuthController {
       tokens.accessToken,
     )}&refreshToken=${encodeURIComponent(tokens.refreshToken)}`;
     return res.redirect(redirectUrl);
+  }
+
+  @Public()
+  @Post('demo')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Instant Demo Sign-In without OAuth' })
+  async demoLogin() {
+    const tokens = await this.authService.loginAsDemo();
+    return { data: tokens, message: 'Signed in as Demo user' };
+  }
+
+  @Public()
+  @Post('register')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Register a new account with email and password' })
+  async register(@Body() dto: RegisterDto) {
+    const tokens = await this.authService.register(dto);
+    return { data: tokens, message: 'Registration successful' };
+  }
+
+  @Public()
+  @Post('login')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Sign in with email and password' })
+  async login(@Body() dto: LoginDto) {
+    const tokens = await this.authService.loginWithPassword(dto);
+    return { data: tokens, message: 'Signed in successfully' };
   }
 
   @Post('refresh')

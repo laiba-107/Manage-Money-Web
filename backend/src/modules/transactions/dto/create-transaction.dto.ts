@@ -54,6 +54,11 @@ export class CreateTransactionDto {
   @IsUUID()
   categoryId?: string;
 
+  @ApiPropertyOptional({ example: 'data:image/png;base64,...' })
+  @IsOptional()
+  @IsString()
+  receiptUrl?: string;
+
   @ApiPropertyOptional({ default: false })
   @IsOptional()
   @IsBoolean()

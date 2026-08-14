@@ -35,13 +35,13 @@ export class Category {
   @Column({ name: 'is_default', default: true })
   isDefault: boolean;
 
-  @Column({ nullable: true })
+  @Column({ name: 'user_id', nullable: true })
   userId: string;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 
   @OneToMany(() => Transaction, (t) => t.category)

@@ -13,6 +13,13 @@ import { CategoriesModule } from './modules/categories/categories.module';
 import { SettingsModule } from './modules/settings/settings.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 
+import { User } from './modules/users/entities/user.entity';
+import { Category } from './modules/categories/entities/category.entity';
+import { Transaction } from './modules/transactions/entities/transaction.entity';
+import { Budget } from './modules/budgets/entities/budget.entity';
+import { Notification } from './modules/notifications/entities/notification.entity';
+import { Setting } from './modules/settings/entities/setting.entity';
+
 @Module({
   imports: [
     // Environment config with validation
@@ -33,9 +40,9 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
         JWT_REFRESH_SECRET: Joi.string().min(32).required(),
         JWT_EXPIRES_IN: Joi.string().default('7d'),
         JWT_REFRESH_EXPIRES_IN: Joi.string().default('30d'),
-        GOOGLE_CLIENT_ID: Joi.string().required(),
-        GOOGLE_CLIENT_SECRET: Joi.string().required(),
-        GOOGLE_CALLBACK_URL: Joi.string().required(),
+        GOOGLE_CLIENT_ID: Joi.string().default('optional_google_client_id'),
+        GOOGLE_CLIENT_SECRET: Joi.string().default('optional_google_client_secret'),
+        GOOGLE_CALLBACK_URL: Joi.string().default('http://localhost:3000/api/v1/auth/google/callback'),
         FRONTEND_URL: Joi.string().default('http://localhost:3000'),
         ALLOWED_ORIGINS: Joi.string().default('http://localhost:3000,http://localhost:3001,http://localhost'),
       }),
@@ -51,8 +58,8 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
         username: configService.get('DB_USERNAME'),
         password: configService.get('DB_PASSWORD'),
         database: configService.get('DB_NAME'),
-        entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: false,
+        entities: [User, Category, Transaction, Budget, Notification, Setting],
+        synchronize: configService.get('DB_SYNCHRONIZE') === 'true',
         ssl:
           configService.get('DB_SSL') === 'true'
             ? { rejectUnauthorized: false }

@@ -5,6 +5,8 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import * as bcrypt from 'bcryptjs';
+import { RegisterDto, LoginDto } from './dto/auth.dto';
 import { UsersService } from '../users/users.service';
 import { User } from '../users/entities/user.entity';
 
@@ -57,6 +59,42 @@ export class AuthService {
     await this.usersService.updateLastLogin(user.id);
     this.logger.log(`User authenticated: ${user.email}`);
     return user;
+  }
+
+  async loginAsDemo(): Promise<AuthTokens> {
+    const user = await this.usersService.findOrCreateDemoUser();
+    await this.usersService.updateLastLogin(user.id);
+    this.logger.log(`Demo user logged in: ${user.email}`);
+    return this.generateTokens(user);
+  }
+
+  async register(dto: RegisterDto): Promise<AuthTokens> {
+    const hashedPassword = await bcrypt.hash(dto.password, 10);
+    const user = await this.usersService.createWithPassword(
+      dto.email,
+      hashedPassword,
+      dto.displayName,
+    );
+    await this.usersService.updateLastLogin(user.id);
+    this.logger.log(`User registered: ${user.email}`);
+    return this.generateTokens(user);
+  }
+
+  async loginWithPassword(dto: LoginDto): Promise<AuthTokens> {
+    const user = await this.usersService.findByEmailWithPassword(dto.email);
+    if (!user || !user.password) {
+      throw new UnauthorizedException('Invalid email or password');
+    }
+    const isPasswordValid = await bcrypt.compare(dto.password, user.password);
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Invalid email or password');
+    }
+    if (!user.isActive) {
+      throw new UnauthorizedException('Account is deactivated');
+    }
+    await this.usersService.updateLastLogin(user.id);
+    this.logger.log(`User logged in with password: ${user.email}`);
+    return this.generateTokens(user);
   }
 
   async generateTokens(user: User): Promise<AuthTokens> {

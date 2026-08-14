@@ -24,6 +24,29 @@ export class UsersService {
     return this.userRepository.findOne({ where: { email } });
   }
 
+  async findByEmailWithPassword(email: string): Promise<User | null> {
+    return this.userRepository.findOne({
+      where: { email },
+      select: ['id', 'email', 'password', 'displayName', 'firstName', 'lastName', 'photoUrl', 'isActive', 'currency', 'theme'],
+    });
+  }
+
+  async createWithPassword(email: string, hashedPassword: string, displayName: string): Promise<User> {
+    const existing = await this.findByEmail(email);
+    if (existing) {
+      throw new ConflictException('An account with this email already exists.');
+    }
+    const user = this.userRepository.create({
+      email,
+      password: hashedPassword,
+      displayName,
+      isEmailVerified: true,
+      currency: 'USD',
+      theme: 'light',
+    });
+    return this.userRepository.save(user);
+  }
+
   async findByGoogleId(googleId: string): Promise<User | null> {
     return this.userRepository.findOne({ where: { googleId } });
   }
@@ -39,6 +62,25 @@ export class UsersService {
       isEmailVerified: data.isEmailVerified ?? true,
     });
     return this.userRepository.save(user);
+  }
+
+  async findOrCreateDemoUser(): Promise<User> {
+    const demoEmail = 'demo@managemoney.com';
+    let user = await this.findByEmail(demoEmail);
+    if (!user) {
+      user = this.userRepository.create({
+        email: demoEmail,
+        displayName: 'Demo User',
+        firstName: 'Demo',
+        lastName: 'User',
+        googleId: 'demo-google-id-12345',
+        isEmailVerified: true,
+        currency: 'USD',
+        theme: 'light',
+      });
+      user = await this.userRepository.save(user);
+    }
+    return user;
   }
 
   async linkGoogleAccount(userId: string, data: GoogleUserData): Promise<User> {

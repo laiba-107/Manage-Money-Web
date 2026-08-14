@@ -34,7 +34,9 @@
         <div class="user-info hidden" id="userInfo">
           <span id="headerUserName">User</span>
         </div>
-        <button id="authButton" class="button button-primary">Sign in</button>
+        <button id="emailAuthButton" class="button button-primary">🔑 Sign In / Register</button>
+        <button id="demoAuthButton" class="button button-accent">⚡ Quick Demo</button>
+        <button id="authButton" class="button button-outline hidden">Sign out</button>
       </div>
     </header>
 
@@ -236,6 +238,40 @@
           <h1>Budget Management</h1>
           <button class="button button-success" id="addBudgetBtn">+ Add Budget</button>
         </div>
+
+        <!-- Add/Edit Budget Modal Form -->
+        <div class="modal hidden" id="budgetModal">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h2>Add Budget</h2>
+              <button class="modal-close" id="closeBudgetModal">✕</button>
+            </div>
+            <form id="budgetForm" class="form">
+              <div class="form-group">
+                <label for="budgetCategory">Category</label>
+                <select id="budgetCategory" required>
+                  <option value="">Select category...</option>
+                  <option value="Food">🍔 Food & Dining</option>
+                  <option value="Transport">🚗 Transport</option>
+                  <option value="Bills">📄 Bills & Utilities</option>
+                  <option value="Shopping">🛍️ Shopping</option>
+                  <option value="Rent">🏠 Rent</option>
+                  <option value="Entertainment">🎬 Entertainment</option>
+                  <option value="Healthcare">🏥 Healthcare</option>
+                  <option value="Education">🎓 Education</option>
+                  <option value="Travel">✈️ Travel</option>
+                  <option value="Other">📌 Other</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="budgetAmount">Monthly Limit</label>
+                <input type="number" id="budgetAmount" placeholder="500.00" step="0.01" required />
+              </div>
+              <button type="submit" class="button button-primary">Save Budget</button>
+            </form>
+          </div>
+        </div>
+
         <div id="budgetsList" class="budgets-grid">
           <p class="placeholder">Loading budgets...</p>
         </div>
@@ -253,6 +289,52 @@
         </div>
       </section>
     </main>
+
+    <!-- Email / Password Auth Modal -->
+    <div class="modal hidden" id="authModal">
+      <div class="modal-content" style="max-width: 420px;">
+        <div class="modal-header">
+          <h2 id="authModalTitle">Sign In</h2>
+          <button class="modal-close" id="closeAuthModal">✕</button>
+        </div>
+        
+        <!-- Auth Tabs -->
+        <div class="auth-tabs" style="display: flex; gap: 8px; margin-bottom: 18px;">
+          <button id="tabLoginBtn" class="button button-small button-primary" style="flex: 1;">Sign In</button>
+          <button id="tabRegisterBtn" class="button button-small button-ghost" style="flex: 1;">Create Account</button>
+        </div>
+
+        <!-- Login Form -->
+        <form id="loginForm" class="form">
+          <div class="form-group">
+            <label for="loginEmail">Email Address</label>
+            <input type="email" id="loginEmail" placeholder="yourname@example.com" required />
+          </div>
+          <div class="form-group">
+            <label for="loginPassword">Password</label>
+            <input type="password" id="loginPassword" placeholder="••••••••" required />
+          </div>
+          <button type="submit" class="button button-primary" style="width: 100%;">Sign In</button>
+        </form>
+
+        <!-- Register Form -->
+        <form id="registerForm" class="form hidden">
+          <div class="form-group">
+            <label for="registerName">Full Name</label>
+            <input type="text" id="registerName" placeholder="John Doe" required />
+          </div>
+          <div class="form-group">
+            <label for="registerEmail">Email Address</label>
+            <input type="email" id="registerEmail" placeholder="yourname@example.com" required />
+          </div>
+          <div class="form-group">
+            <label for="registerPassword">Password (Min 6 characters)</label>
+            <input type="password" id="registerPassword" placeholder="••••••••" minlength="6" required />
+          </div>
+          <button type="submit" class="button button-success" style="width: 100%;">Create Account</button>
+        </form>
+      </div>
+    </div>
 
     <!-- Message Toast -->
     <div id="message" class="toast hidden"></div>

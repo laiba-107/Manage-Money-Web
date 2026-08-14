@@ -73,6 +73,16 @@ const INCOME_SOURCES = {
 /* ---------------------------------------------------------------------- */
 
 const authButton = document.getElementById('authButton');
+const demoAuthButton = document.getElementById('demoAuthButton');
+const emailAuthButton = document.getElementById('emailAuthButton');
+const authModal = document.getElementById('authModal');
+const closeAuthModal = document.getElementById('closeAuthModal');
+const tabLoginBtn = document.getElementById('tabLoginBtn');
+const tabRegisterBtn = document.getElementById('tabRegisterBtn');
+const loginForm = document.getElementById('loginForm');
+const registerForm = document.getElementById('registerForm');
+const authModalTitle = document.getElementById('authModalTitle');
+
 const userInfo = document.getElementById('userInfo');
 const headerUserName = document.getElementById('headerUserName');
 const sidebar = document.getElementById('sidebar');
@@ -100,6 +110,10 @@ const addExpenseBtn = document.getElementById('addExpenseBtn');
 const closeExpenseModal = document.getElementById('closeExpenseModal');
 const receiptUploadInput = document.getElementById('receiptUpload');
 
+const budgetModal = document.getElementById('budgetModal');
+const budgetForm = document.getElementById('budgetForm');
+const closeBudgetModal = document.getElementById('closeBudgetModal');
+
 let categoryChartInstance = null;
 let incomeExpenseChartInstance = null;
 
@@ -110,6 +124,7 @@ const state = {
   budgets: [],
   editingIncomeId: null,
   editingExpenseId: null,
+  editingBudgetId: null,
   pendingReceiptDataUrl: null,
 };
 
@@ -308,6 +323,83 @@ function handleLogin() {
   window.location.href = `${API_BASE_URL}${API_PREFIX}/auth/google`;
 }
 
+async function handleDemoLogin() {
+  try {
+    const res = await apiRequest('POST', '/auth/demo');
+    if (res?.data?.accessToken) {
+      saveTokens(res.data.accessToken, res.data.refreshToken);
+      showMessage('Signed in as Demo user.', 'success');
+      await loadApp();
+    }
+  } catch (error) {
+    showMessage(error instanceof Error ? error.message : 'Demo login failed.', 'error');
+  }
+}
+
+function openAuthModal(defaultTab = 'login') {
+  switchAuthTab(defaultTab);
+  authModal?.classList.remove('hidden');
+}
+
+function switchAuthTab(tab) {
+  if (tab === 'register') {
+    if (authModalTitle) authModalTitle.textContent = 'Create Account';
+    if (tabRegisterBtn) tabRegisterBtn.className = 'button button-small button-primary';
+    if (tabLoginBtn) tabLoginBtn.className = 'button button-small button-ghost';
+    loginForm?.classList.add('hidden');
+    registerForm?.classList.remove('hidden');
+  } else {
+    if (authModalTitle) authModalTitle.textContent = 'Sign In';
+    if (tabLoginBtn) tabLoginBtn.className = 'button button-small button-primary';
+    if (tabRegisterBtn) tabRegisterBtn.className = 'button button-small button-ghost';
+    registerForm?.classList.add('hidden');
+    loginForm?.classList.remove('hidden');
+  }
+}
+
+emailAuthButton?.addEventListener('click', () => openAuthModal('login'));
+closeAuthModal?.addEventListener('click', () => authModal?.classList.add('hidden'));
+authModal?.addEventListener('click', (e) => {
+  if (e.target === authModal) authModal?.classList.add('hidden');
+});
+tabLoginBtn?.addEventListener('click', () => switchAuthTab('login'));
+tabRegisterBtn?.addEventListener('click', () => switchAuthTab('register'));
+
+loginForm?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const email = document.getElementById('loginEmail').value;
+  const password = document.getElementById('loginPassword').value;
+  try {
+    const res = await apiRequest('POST', '/auth/login', { email, password });
+    if (res?.data?.accessToken) {
+      saveTokens(res.data.accessToken, res.data.refreshToken);
+      showMessage('Signed in successfully.', 'success');
+      authModal?.classList.add('hidden');
+      await loadApp();
+    }
+  } catch (error) {
+    showMessage(error instanceof Error ? error.message : 'Sign in failed.', 'error');
+  }
+});
+
+registerForm?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const displayName = document.getElementById('registerName').value;
+  const email = document.getElementById('registerEmail').value;
+  const password = document.getElementById('registerPassword').value;
+  try {
+    const res = await apiRequest('POST', '/auth/register', { displayName, email, password });
+    if (res?.data?.accessToken) {
+      saveTokens(res.data.accessToken, res.data.refreshToken);
+      showMessage('Account created successfully.', 'success');
+      authModal?.classList.add('hidden');
+      await loadApp();
+    }
+  } catch (error) {
+    showMessage(error instanceof Error ? error.message : 'Registration failed.', 'error');
+  }
+});
+
 /* ---------------------------------------------------------------------- */
 /* Page / nav switching                                                   */
 /* ---------------------------------------------------------------------- */
@@ -347,17 +439,24 @@ async function loadAllData() {
 }
 
 async function loadApp() {
+  demoAuthButton?.addEventListener('click', handleDemoLogin);
   const token = getAccessToken();
   if (!token) {
-    authButton.textContent = 'Sign in';
-    authButton.onclick = handleLogin;
+    emailAuthButton?.classList.remove('hidden');
+    demoAuthButton?.classList.remove('hidden');
+    authButton?.classList.add('hidden');
     sidebar?.classList.add('hidden');
     userInfo?.classList.add('hidden');
     return;
   }
 
-  authButton.textContent = 'Sign out';
-  authButton.onclick = handleLogout;
+  emailAuthButton?.classList.add('hidden');
+  demoAuthButton?.classList.add('hidden');
+  if (authButton) {
+    authButton.textContent = 'Sign out';
+    authButton.onclick = handleLogout;
+    authButton.classList.remove('hidden');
+  }
   sidebar?.classList.remove('hidden');
 
   try {
@@ -377,8 +476,9 @@ async function loadApp() {
     showMessage(message, 'error');
     if (message.toLowerCase().includes('unauthorized')) {
       clearTokens();
-      authButton.textContent = 'Sign in';
-      authButton.onclick = handleLogin;
+      emailAuthButton?.classList.remove('hidden');
+      demoAuthButton?.classList.remove('hidden');
+      authButton?.classList.add('hidden');
       sidebar?.classList.add('hidden');
       userInfo?.classList.add('hidden');
     }
@@ -774,31 +874,54 @@ function renderBudgets() {
   }).join('');
 }
 
+function openBudgetModal(budget = null) {
+  budgetForm?.reset();
+  state.editingBudgetId = budget?.id || null;
+  const header = document.querySelector('#budgetModal .modal-header h2');
+  if (header) header.textContent = budget ? 'Edit Budget' : 'Add Budget';
+  const catInput = document.getElementById('budgetCategory');
+  if (catInput) catInput.value = budget?.category || '';
+  const amtInput = document.getElementById('budgetAmount');
+  if (amtInput) amtInput.value = budget?.limit ?? budget?.amount ?? '';
+  budgetModal?.classList.remove('hidden');
+}
+
 const addBudgetBtn = document.getElementById('addBudgetBtn');
-addBudgetBtn?.addEventListener('click', async () => {
-  const category = window.prompt('Category (Food, Transport, Bills, Shopping, Rent, Entertainment, Healthcare, Education, Travel, Other):', 'Food');
-  if (!category) return;
-  const amountStr = window.prompt(`Monthly budget limit for ${category}:`, '200');
-  const amount = Number(amountStr);
-  if (!amountStr || Number.isNaN(amount) || amount <= 0) {
-    showMessage('Enter a valid budget amount.', 'error');
+addBudgetBtn?.addEventListener('click', () => openBudgetModal());
+closeBudgetModal?.addEventListener('click', () => budgetModal?.classList.add('hidden'));
+budgetModal?.addEventListener('click', (e) => {
+  if (e.target === budgetModal) budgetModal?.classList.add('hidden');
+});
+
+budgetForm?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const category = document.getElementById('budgetCategory').value;
+  const amount = Number(document.getElementById('budgetAmount').value);
+  if (!category || !amount || amount <= 0) {
+    showMessage('Please select a category and valid amount.', 'error');
     return;
   }
   try {
     const dbCategory = EXPENSE_CATEGORY_TO_DB[category] || category;
-    await apiRequest('POST', '/budgets', {
-      name: `${dbCategory} Budget`,
-      amount,
-      period: 'monthly',
-      categoryId: findExpenseCategoryId(category),
-      month: new Date().getMonth() + 1,
-      year: new Date().getFullYear(),
-    });
-    showMessage('Budget added.', 'success');
+    if (state.editingBudgetId) {
+      await apiRequest('PUT', `/budgets/${state.editingBudgetId}`, { amount });
+      showMessage('Budget updated.', 'success');
+    } else {
+      await apiRequest('POST', '/budgets', {
+        name: `${dbCategory} Budget`,
+        amount,
+        period: 'monthly',
+        categoryId: findExpenseCategoryId(category),
+        month: new Date().getMonth() + 1,
+        year: new Date().getFullYear(),
+      });
+      showMessage('Budget added.', 'success');
+    }
+    budgetModal?.classList.add('hidden');
     await loadAllData();
     renderBudgets();
   } catch (error) {
-    showMessage(error instanceof Error ? error.message : 'Unable to add budget.', 'error');
+    showMessage(error instanceof Error ? error.message : 'Unable to save budget.', 'error');
   }
 });
 
@@ -807,18 +930,7 @@ budgetsListEl?.addEventListener('click', async (e) => {
   const deleteBtn = e.target.closest('[data-delete-budget]');
   if (editBtn) {
     const budget = state.budgets.find((b) => String(b.id) === String(editBtn.dataset.editBudget));
-    if (!budget) return;
-    const amountStr = window.prompt(`New monthly limit for ${budget.category || budget.name}:`, String(budget.amount ?? budget.limit ?? ''));
-    const amount = Number(amountStr);
-    if (!amountStr || Number.isNaN(amount) || amount <= 0) return;
-    try {
-      await apiRequest('PUT', `/budgets/${budget.id}`, { amount });
-      showMessage('Budget updated.', 'success');
-      await loadAllData();
-      renderBudgets();
-    } catch (error) {
-      showMessage(error instanceof Error ? error.message : 'Unable to update budget.', 'error');
-    }
+    if (budget) openBudgetModal(budget);
   }
   if (deleteBtn) {
     if (!window.confirm('Delete this budget?')) return;

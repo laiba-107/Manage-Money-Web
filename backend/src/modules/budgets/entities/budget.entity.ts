@@ -40,38 +40,38 @@ export class Budget {
   @Column({ nullable: true })
   year: number;
 
-  @Column({ type: 'date', nullable: true })
+  @Column({ name: 'start_date', type: 'date', nullable: true })
   startDate: Date;
 
-  @Column({ type: 'date', nullable: true })
+  @Column({ name: 'end_date', type: 'date', nullable: true })
   endDate: Date;
 
-  @Column({ default: true })
+  @Column({ name: 'is_active', default: true })
   isActive: boolean;
 
-  @Column({ default: 80 })
+  @Column({ name: 'alert_threshold', default: 80 })
   alertThreshold: number;
 
-  @Column({ default: false })
+  @Column({ name: 'alert_sent', default: false })
   alertSent: boolean;
 
-  @Column()
+  @Column({ name: 'user_id' })
   userId: string;
 
-  @Column({ nullable: true })
+  @Column({ name: 'category_id', nullable: true })
   categoryId: string;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 
   @ManyToOne(() => User, (u) => u.budgets, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'userId' })
+  @JoinColumn({ name: 'user_id' })
   user: User;
 
   @ManyToOne(() => Category, (c) => c.budgets, { nullable: true, eager: true })
-  @JoinColumn({ name: 'categoryId' })
+  @JoinColumn({ name: 'category_id' })
   category: Category;
 }

@@ -57,6 +57,7 @@ export class Transaction {
   date: Date;
 
   @Column({
+    name: 'payment_method',
     type: 'enum',
     enum: PaymentMethod,
     default: PaymentMethod.CASH,
@@ -64,51 +65,52 @@ export class Transaction {
   })
   paymentMethod: PaymentMethod;
 
-  @Column({ nullable: true })
+  @Column({ name: 'receipt_url', nullable: true })
   receiptUrl: string;
 
-  @Column({ default: false })
+  @Column({ name: 'is_recurring', default: false })
   isRecurring: boolean;
 
   @Column({
+    name: 'recurrence_interval',
     type: 'enum',
     enum: RecurrenceInterval,
     nullable: true,
   })
   recurrenceInterval: RecurrenceInterval;
 
-  @Column({ type: 'date', nullable: true })
+  @Column({ name: 'recurrence_end_date', type: 'date', nullable: true })
   recurrenceEndDate: Date;
 
-  @Column({ nullable: true })
+  @Column({ name: 'recurrence_parent_id', nullable: true })
   recurrenceParentId: string;
 
   @Column({ default: 'USD' })
   currency: string;
 
-  @Column({ type: 'decimal', precision: 10, scale: 4, default: 1 })
+  @Column({ name: 'exchange_rate', type: 'decimal', precision: 10, scale: 4, default: 1 })
   exchangeRate: number;
 
   @Column({ type: 'simple-array', nullable: true })
   tags: string[];
 
-  @Column()
+  @Column({ name: 'user_id' })
   userId: string;
 
-  @Column({ nullable: true })
+  @Column({ name: 'category_id', nullable: true })
   categoryId: string;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 
   @ManyToOne(() => User, (u) => u.transactions, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'userId' })
+  @JoinColumn({ name: 'user_id' })
   user: User;
 
   @ManyToOne(() => Category, (c) => c.transactions, { nullable: true, eager: true })
-  @JoinColumn({ name: 'categoryId' })
+  @JoinColumn({ name: 'category_id' })
   category: Category;
 }
