@@ -2,27 +2,14 @@
   "version": 2,
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
-  "builds": [
+  "rewrites": [
     {
-      "src": "src/serverless.ts",
-      "use": "@vercel/node",
-      "config": {
-        "maxDuration": 60,
-        "includeFiles": [
-          "public/**",
-          "dist/public/**"
-        ]
-      }
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "src/serverless.ts"
+      "source": "/api/(.*)",
+      "destination": "/api"
     },
     {
-      "src": "/(.*)",
-      "dest": "src/serverless.ts"
+      "source": "/(.*)",
+      "destination": "/api"
     }
   ]
 }

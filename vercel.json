@@ -2,28 +2,14 @@
   "version": 2,
   "buildCommand": "cd backend && npm run build",
   "outputDirectory": "backend/dist",
-  "builds": [
+  "rewrites": [
     {
-      "src": "backend/src/serverless.ts",
-      "use": "@vercel/node",
-      "config": {
-        "maxDuration": 60,
-        "includeFiles": [
-          "frontend/**",
-          "backend/public/**",
-          "backend/dist/public/**"
-        ]
-      }
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "backend/src/serverless.ts"
+      "source": "/api/(.*)",
+      "destination": "/backend/api"
     },
     {
-      "src": "/(.*)",
-      "dest": "backend/src/serverless.ts"
+      "source": "/(.*)",
+      "destination": "/backend/api"
     }
   ]
 }
