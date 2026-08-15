@@ -31,7 +31,7 @@ if (!fs.existsSync(destDir)) {
 }
 
 // Files to copy
-const filesToCopy = ['index.html', 'app.js', 'styles.css', 'auth_callback.html'];
+const filesToCopy = ['index.html', 'app.js', 'styles.css', 'auth_callback.html', 'bg.png'];
 
 filesToCopy.forEach((file) => {
   const sourcePath = path.join(sourceDir, file);

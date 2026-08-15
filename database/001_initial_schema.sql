@@ -13,11 +13,12 @@ CREATE EXTENSION IF NOT EXISTS "pg_trgm"; -- for full-text search
 CREATE TABLE IF NOT EXISTS users (
     id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     email           VARCHAR(255) UNIQUE NOT NULL,
+    password        VARCHAR(255),
     display_name    VARCHAR(255) NOT NULL,
     first_name      VARCHAR(100),
     last_name       VARCHAR(100),
     photo_url       TEXT,
-    google_id       VARCHAR(255) UNIQUE NOT NULL,
+    google_id       VARCHAR(255) UNIQUE,
     refresh_token   TEXT,
     is_active       BOOLEAN NOT NULL DEFAULT TRUE,
     is_email_verified BOOLEAN NOT NULL DEFAULT FALSE,

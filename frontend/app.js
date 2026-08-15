@@ -19,6 +19,7 @@ const EXPENSE_CATEGORY_TO_DB = {
   Healthcare: 'Healthcare',
   Education: 'Education',
   Travel: 'Travel',
+  Return: 'Return & Refunds',
   Other: 'Other',
 };
 
@@ -57,6 +58,7 @@ const EXPENSE_CATEGORIES = {
   Healthcare: { label: '🏥 Healthcare', color: '#ef4444' },
   Education: { label: '🎓 Education', color: '#22c55e' },
   Travel: { label: '✈️ Travel', color: '#06b6d4' },
+  Return: { label: '🔄 Return / Refund', color: '#14b8a6' },
   Other: { label: '📌 Other', color: '#94a3b8' },
 };
 
@@ -110,9 +112,29 @@ const addExpenseBtn = document.getElementById('addExpenseBtn');
 const closeExpenseModal = document.getElementById('closeExpenseModal');
 const receiptUploadInput = document.getElementById('receiptUpload');
 
+const expenseGroupModal = document.getElementById('expenseGroupModal');
+const closeExpenseGroupModal = document.getElementById('closeExpenseGroupModal');
+const addExpenseGroupBtn = document.getElementById('addExpenseGroupBtn');
+const expenseGroupForm = document.getElementById('expenseGroupForm');
+const groupItemsContainer = document.getElementById('groupItemsContainer');
+const addGroupItemBtn = document.getElementById('addGroupItemBtn');
+const groupTotalDisplay = document.getElementById('groupTotalDisplay');
+const expenseGroupsListEl = document.getElementById('expenseGroupsList');
+
+const planModal = document.getElementById('planModal');
+const closePlanModal = document.getElementById('closePlanModal');
+const addPlanBtn = document.getElementById('addPlanBtn');
+const planForm = document.getElementById('planForm');
+const planItemsContainer = document.getElementById('planItemsContainer');
+const addPlanItemBtn = document.getElementById('addPlanItemBtn');
+const planTotalDisplay = document.getElementById('planTotalDisplay');
+const plansListEl = document.getElementById('plansList');
+
 const budgetModal = document.getElementById('budgetModal');
-const budgetForm = document.getElementById('budgetForm');
 const closeBudgetModal = document.getElementById('closeBudgetModal');
+const budgetForm = document.getElementById('budgetForm');
+const budgetPeriodSelect = document.getElementById('budgetPeriod');
+const budgetDateRow = document.getElementById('budgetDateRow');
 
 let categoryChartInstance = null;
 let incomeExpenseChartInstance = null;
@@ -121,12 +143,21 @@ const state = {
   categories: [],
   incomes: [],
   expenses: [],
+  rawIncomes: [],
+  rawExpenses: [],
   budgets: [],
+  expenseGroups: [],
+  plans: [],
   editingIncomeId: null,
   editingExpenseId: null,
   editingBudgetId: null,
+  editingGroupId: null,
+  editingPlanId: null,
   pendingReceiptDataUrl: null,
 };
+
+let groupFormItems = [];
+let planFormItems = [];
 
 /* ---------------------------------------------------------------------- */
 /* Helpers                                                                */
@@ -141,9 +172,63 @@ function showMessage(text, type = 'info') {
   }, 6000);
 }
 
-function formatCurrency(amount) {
+/* ---------------------------------------------------------------------- */
+/* Currency Engine & Exchange Rates                                        */
+/* ---------------------------------------------------------------------- */
+
+const CURRENCIES = {
+  USD: { symbol: '$', rate: 1.0, locale: 'en-US' },
+  EUR: { symbol: '€', rate: 0.92, locale: 'de-DE' },
+  GBP: { symbol: '£', rate: 0.79, locale: 'en-GB' },
+  PKR: { symbol: 'Rs ', rate: 278.5, locale: 'ur-PK' },
+  INR: { symbol: '₹', rate: 83.5, locale: 'hi-IN' },
+  AED: { symbol: 'AED ', rate: 3.67, locale: 'ar-AE' },
+  SAR: { symbol: 'SAR ', rate: 3.75, locale: 'ar-SA' },
+  CAD: { symbol: 'C$', rate: 1.36, locale: 'en-CA' },
+  AUD: { symbol: 'A$', rate: 1.52, locale: 'en-AU' },
+  JPY: { symbol: '¥', rate: 155.0, locale: 'ja-JP' },
+  CHF: { symbol: 'CHF ', rate: 0.90, locale: 'de-CH' },
+  CNY: { symbol: '¥', rate: 7.23, locale: 'zh-CN' },
+  KGS: { symbol: 'сом ', rate: 87.5, locale: 'ky-KG' },
+};
+
+let currentBaseCurrency = localStorage.getItem('user_base_currency') || 'USD';
+
+async function fetchLiveExchangeRates() {
+  try {
+    const res = await fetch('https://open.er-api.com/v6/latest/USD');
+    const data = await res.json();
+    if (data?.rates) {
+      Object.keys(CURRENCIES).forEach((code) => {
+        if (data.rates[code]) {
+          CURRENCIES[code].rate = data.rates[code];
+        }
+      });
+    }
+  } catch (_) {
+    // Keep fallback offline exchange rates
+  }
+}
+
+function convertAmount(amount, fromCurr = 'USD', toCurr = currentBaseCurrency) {
+  const num = Number(amount) || 0;
+  const fromRate = CURRENCIES[fromCurr]?.rate || 1.0;
+  const toRate = CURRENCIES[toCurr]?.rate || 1.0;
+  return (num / fromRate) * toRate;
+}
+
+function formatCurrency(amount, currencyCode = currentBaseCurrency) {
   const value = Number(amount) || 0;
-  return value.toLocaleString(undefined, { style: 'currency', currency: 'USD', maximumFractionDigits: 2 });
+  const info = CURRENCIES[currencyCode] || { symbol: currencyCode + ' ', locale: 'en-US' };
+  try {
+    return value.toLocaleString(info.locale || 'en-US', {
+      style: 'currency',
+      currency: currencyCode,
+      maximumFractionDigits: 2,
+    });
+  } catch (_) {
+    return `${info.symbol || '$'}${value.toFixed(2)}`;
+  }
 }
 
 function formatDate(dateStr) {
@@ -178,24 +263,45 @@ function formatApiDate(value) {
 }
 
 function findCategoryByName(name, type) {
+  if (!name) return undefined;
+  const target = String(name).trim().toLowerCase();
   return state.categories.find(
-    (category) => category.name === name && (category.type === type || category.type === 'both'),
+    (c) => c.name.trim().toLowerCase() === target && (c.type === type || c.type === 'both'),
   );
 }
 
 function findExpenseCategoryId(uiCategory) {
+  if (!uiCategory) return undefined;
   const dbName = EXPENSE_CATEGORY_TO_DB[uiCategory] || uiCategory;
-  return findCategoryByName(dbName, 'expense')?.id;
+  const targetDb = dbName.trim().toLowerCase();
+  const targetUi = uiCategory.trim().toLowerCase();
+  const cat = state.categories.find(
+    (c) =>
+      (c.name.trim().toLowerCase() === targetDb || c.name.trim().toLowerCase() === targetUi) &&
+      (c.type === 'expense' || c.type === 'both'),
+  );
+  return cat?.id;
 }
 
 function findIncomeCategoryId(source) {
-  return findCategoryByName(source, 'income')?.id;
+  if (!source) return undefined;
+  const target = String(source).trim().toLowerCase();
+  const cat = state.categories.find(
+    (c) => c.name.trim().toLowerCase() === target && (c.type === 'income' || c.type === 'both'),
+  );
+  return cat?.id;
 }
 
 function normalizeIncome(transaction) {
+  const rawAmount = Number(transaction.amount);
+  const currency = transaction.currency || 'USD';
+  const amountInBase = convertAmount(rawAmount, currency, currentBaseCurrency);
+
   return {
     id: transaction.id,
-    amount: Number(transaction.amount),
+    rawAmount,
+    currency,
+    amount: amountInBase,
     date: formatApiDate(transaction.date),
     notes: transaction.notes,
     source: transaction.category?.name || transaction.title || 'Other',
@@ -209,9 +315,15 @@ function normalizeExpense(transaction) {
     || transaction.title
     || 'Other';
 
+  const rawAmount = Number(transaction.amount);
+  const currency = transaction.currency || 'USD';
+  const amountInBase = convertAmount(rawAmount, currency, currentBaseCurrency);
+
   return {
     id: transaction.id,
-    amount: Number(transaction.amount),
+    rawAmount,
+    currency,
+    amount: amountInBase,
     date: formatApiDate(transaction.date),
     notes: transaction.notes,
     category: uiCategory,
@@ -240,6 +352,7 @@ function buildIncomePayload(form) {
     type: 'income',
     title: form.source,
     amount: form.amount,
+    currency: form.currency || currentBaseCurrency,
     date: form.date,
     notes: form.notes,
     isRecurring: form.recurring,
@@ -252,6 +365,7 @@ function buildExpensePayload(form) {
     type: 'expense',
     title: EXPENSE_CATEGORY_TO_DB[form.category] || form.category,
     amount: form.amount,
+    currency: form.currency || currentBaseCurrency,
     date: form.date,
     notes: form.notes,
     paymentMethod: PAYMENT_METHOD_TO_API[form.paymentMethod] || 'other',
@@ -401,22 +515,140 @@ registerForm?.addEventListener('submit', async (e) => {
 });
 
 /* ---------------------------------------------------------------------- */
-/* Page / nav switching                                                   */
+/* Page / nav switching & Landing logic                                   */
 /* ---------------------------------------------------------------------- */
 
 function switchPage(pageName) {
+  if (pageName === 'features') {
+    const featuresSection = document.getElementById('featuresSection');
+    if (featuresSection) {
+      featuresSection.scrollIntoView({ behavior: 'smooth' });
+    }
+    return;
+  }
+
   document.querySelectorAll('.page').forEach((el) => {
     el.classList.toggle('active', el.id === `page-${pageName}`);
   });
-  sidebar?.querySelectorAll('.nav-item').forEach((btn) => {
+
+  document.querySelectorAll('#navMenu .nav-link').forEach((btn) => {
     btn.classList.toggle('active', btn.dataset.page === pageName);
   });
 }
 
-sidebar?.addEventListener('click', (e) => {
-  const btn = e.target.closest('.nav-item');
+// Advanced Navbar delegated listener
+document.getElementById('navbarAdvanced')?.addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-page]');
   if (!btn) return;
-  switchPage(btn.dataset.page);
+  const page = btn.dataset.page;
+  if (page) {
+    switchPage(page);
+    document.getElementById('navMenu')?.classList.remove('mobile-open');
+  }
+});
+
+// Footer navigation links
+document.getElementById('footerLinkHome')?.addEventListener('click', (e) => {
+  e.preventDefault();
+  switchPage('home');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+document.getElementById('footerLinkFeatures')?.addEventListener('click', (e) => {
+  e.preventDefault();
+  document.getElementById('featuresSection')?.scrollIntoView({ behavior: 'smooth' });
+});
+
+document.getElementById('footerLinkSignIn')?.addEventListener('click', (e) => {
+  e.preventDefault();
+  const container = document.getElementById('homeAuthContainer');
+  if (container) {
+    container.scrollIntoView({ behavior: 'smooth' });
+    document.getElementById('homeLoginEmail')?.focus();
+  }
+});
+
+// Home Page embedded auth tab switcher
+const homeTabLoginBtn = document.getElementById('homeTabLoginBtn');
+const homeTabRegisterBtn = document.getElementById('homeTabRegisterBtn');
+const homeLoginForm = document.getElementById('homeLoginForm');
+const homeRegisterForm = document.getElementById('homeRegisterForm');
+const homeAuthTitle = document.getElementById('homeAuthTitle');
+const homeAuthSubtitle = document.getElementById('homeAuthSubtitle');
+
+homeTabLoginBtn?.addEventListener('click', () => {
+  homeTabLoginBtn.classList.add('active');
+  homeTabRegisterBtn?.classList.remove('active');
+  homeLoginForm?.classList.remove('hidden');
+  homeRegisterForm?.classList.add('hidden');
+  if (homeAuthTitle) homeAuthTitle.textContent = 'Sign In';
+  if (homeAuthSubtitle) homeAuthSubtitle.textContent = 'Access your personal financial manager';
+});
+
+homeTabRegisterBtn?.addEventListener('click', () => {
+  homeTabRegisterBtn.classList.add('active');
+  homeTabLoginBtn?.classList.remove('active');
+  homeRegisterForm?.classList.remove('hidden');
+  homeLoginForm?.classList.add('hidden');
+  if (homeAuthTitle) homeAuthTitle.textContent = 'Create Account';
+  if (homeAuthSubtitle) homeAuthSubtitle.textContent = 'Start tracking your money for free';
+});
+
+// Home Login Form Submit
+homeLoginForm?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const email = document.getElementById('homeLoginEmail').value;
+  const password = document.getElementById('homeLoginPassword').value;
+  try {
+    const res = await apiRequest('POST', '/auth/login', { email, password });
+    if (res?.data?.accessToken) {
+      saveTokens(res.data.accessToken, res.data.refreshToken);
+      showMessage('Signed in successfully.', 'success');
+      await loadApp();
+    }
+  } catch (error) {
+    showMessage(error instanceof Error ? error.message : 'Login failed.', 'error');
+  }
+});
+
+// Home Register Form Submit
+homeRegisterForm?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const displayName = document.getElementById('homeRegisterName').value;
+  const email = document.getElementById('homeRegisterEmail').value;
+  const password = document.getElementById('homeRegisterPassword').value;
+  try {
+    const res = await apiRequest('POST', '/auth/register', { displayName, email, password });
+    if (res?.data?.accessToken) {
+      saveTokens(res.data.accessToken, res.data.refreshToken);
+      showMessage('Account created successfully.', 'success');
+      await loadApp();
+    }
+  } catch (error) {
+    showMessage(error instanceof Error ? error.message : 'Registration failed.', 'error');
+  }
+});
+
+// Hero Buttons
+document.getElementById('heroGetStartedBtn')?.addEventListener('click', () => {
+  const container = document.getElementById('homeAuthContainer');
+  if (container) {
+    container.scrollIntoView({ behavior: 'smooth' });
+    document.getElementById('homeLoginEmail')?.focus();
+  }
+});
+
+document.getElementById('heroDemoBtn')?.addEventListener('click', handleDemoLogin);
+
+document.getElementById('heroExploreFeaturesBtn')?.addEventListener('click', () => {
+  document.getElementById('featuresSection')?.scrollIntoView({ behavior: 'smooth' });
+});
+
+// Mobile menu toggle
+const mobileNavToggle = document.getElementById('mobileNavToggle');
+const navMenu = document.getElementById('navMenu');
+mobileNavToggle?.addEventListener('click', () => {
+  navMenu?.classList.toggle('mobile-open');
 });
 
 /* ---------------------------------------------------------------------- */
@@ -424,6 +656,8 @@ sidebar?.addEventListener('click', (e) => {
 /* ---------------------------------------------------------------------- */
 
 async function loadAllData() {
+  await fetchLiveExchangeRates();
+
   const categoriesResult = await apiRequest('GET', '/categories').catch(() => ({ data: [] }));
   state.categories = Array.isArray(categoriesResult?.data) ? categoriesResult.data : [];
 
@@ -433,20 +667,71 @@ async function loadAllData() {
     apiRequest('GET', '/budgets').catch(() => ({ data: [] })),
   ]);
 
-  state.incomes = (Array.isArray(incomesResult?.data) ? incomesResult.data : []).map(normalizeIncome);
-  state.expenses = (Array.isArray(expensesResult?.data) ? expensesResult.data : []).map(normalizeExpense);
+  state.rawIncomes = Array.isArray(incomesResult?.data) ? incomesResult.data : [];
+  state.rawExpenses = Array.isArray(expensesResult?.data) ? expensesResult.data : [];
+
+  await loadExpenseGroups();
+  await loadPlans();
+
+  state.incomes = state.rawIncomes.map(normalizeIncome);
+
+  // Combine standalone expenses with all line items from Expense Groups
+  const groupLineItems = [];
+  state.expenseGroups.forEach((g) => {
+    (g.items || []).forEach((item) => {
+      groupLineItems.push({
+        id: item.id || `${g.id}-${Date.now()}`,
+        amount: item.amount,
+        currency: item.currency || 'USD',
+        date: item.date || g.startDate,
+        notes: `[Group: ${g.name}] ${item.notes || ''}`,
+        title: item.title || g.name,
+        category: { name: EXPENSE_CATEGORY_TO_DB[item.category] || item.category },
+        paymentMethod: 'cash',
+      });
+    });
+  });
+
+  const combinedRawExpenses = [...state.rawExpenses, ...groupLineItems];
+  state.expenses = combinedRawExpenses.map(normalizeExpense);
   state.budgets = (Array.isArray(budgetsResult?.data) ? budgetsResult.data : []).map(normalizeBudget);
 }
 
 async function loadApp() {
   demoAuthButton?.addEventListener('click', handleDemoLogin);
+  emailAuthButton?.addEventListener('click', () => openAuthModal('login'));
+  const userBaseCurrencySelect = document.getElementById('userBaseCurrency');
+  if (userBaseCurrencySelect) {
+    userBaseCurrencySelect.value = currentBaseCurrency;
+    userBaseCurrencySelect.onchange = (e) => {
+      currentBaseCurrency = e.target.value;
+      localStorage.setItem('user_base_currency', currentBaseCurrency);
+      if (state.rawIncomes) {
+        state.incomes = state.rawIncomes.map(normalizeIncome);
+        state.expenses = state.rawExpenses.map(normalizeExpense);
+      }
+      renderDashboard();
+      renderIncomeList();
+      renderExpenseList();
+      renderBudgets();
+      renderAllTransactions();
+      showMessage(`Base currency changed to ${currentBaseCurrency}`, 'info');
+    };
+  }
+
   const token = getAccessToken();
+  const guestNavLinks = document.querySelectorAll('#navMenu .guest-nav-only');
+  const appNavLinks = document.querySelectorAll('#navMenu .app-nav-only');
+
   if (!token) {
     emailAuthButton?.classList.remove('hidden');
     demoAuthButton?.classList.remove('hidden');
     authButton?.classList.add('hidden');
-    sidebar?.classList.add('hidden');
     userInfo?.classList.add('hidden');
+    guestNavLinks.forEach((el) => el.classList.remove('hidden'));
+    appNavLinks.forEach((el) => el.classList.add('hidden'));
+
+    switchPage('home');
     return;
   }
 
@@ -457,12 +742,18 @@ async function loadApp() {
     authButton.onclick = handleLogout;
     authButton.classList.remove('hidden');
   }
-  sidebar?.classList.remove('hidden');
+  guestNavLinks.forEach((el) => el.classList.add('hidden'));
+  appNavLinks.forEach((el) => el.classList.remove('hidden'));
 
   try {
     const profileResult = await apiRequest('GET', '/auth/me');
     const user = profileResult?.data || {};
     headerUserName.textContent = user.displayName || user.email || 'Your profile';
+    const avatarMark = document.getElementById('userAvatarMark');
+    if (avatarMark) {
+      const name = user.displayName || user.email || 'U';
+      avatarMark.textContent = name.charAt(0).toUpperCase();
+    }
     userInfo?.classList.remove('hidden');
 
     await loadAllData();
@@ -470,7 +761,11 @@ async function loadApp() {
     renderIncomeList();
     renderExpenseList();
     renderBudgets();
+    renderExpenseGroupsList();
+    renderPlansList();
     renderAllTransactions();
+
+    switchPage('dashboard');
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to load dashboard.';
     showMessage(message, 'error');
@@ -481,6 +776,8 @@ async function loadApp() {
       authButton?.classList.add('hidden');
       sidebar?.classList.add('hidden');
       userInfo?.classList.add('hidden');
+      appNavLinks.forEach((el) => el.classList.add('hidden'));
+      switchPage('home');
     }
   }
 }
@@ -506,12 +803,26 @@ function computeDashboardStats() {
   return { totalBalance, monthlyIncome, monthlyExpenses, monthlySavings };
 }
 
+function setFormattedCardValue(el, value) {
+  if (!el) return;
+  const formatted = formatCurrency(value);
+  el.textContent = formatted;
+  el.title = formatted;
+  if (formatted.length > 14) {
+    el.style.fontSize = '1.15rem';
+  } else if (formatted.length > 11) {
+    el.style.fontSize = '1.35rem';
+  } else {
+    el.style.fontSize = '';
+  }
+}
+
 function renderDashboard() {
   const stats = computeDashboardStats();
-  totalBalanceEl.textContent = formatCurrency(stats.totalBalance);
-  monthlyIncomeEl.textContent = formatCurrency(stats.monthlyIncome);
-  monthlyExpensesEl.textContent = formatCurrency(stats.monthlyExpenses);
-  monthlySavingsEl.textContent = formatCurrency(stats.monthlySavings);
+  setFormattedCardValue(totalBalanceEl, stats.totalBalance);
+  setFormattedCardValue(monthlyIncomeEl, stats.monthlyIncome);
+  setFormattedCardValue(monthlyExpensesEl, stats.monthlyExpenses);
+  setFormattedCardValue(monthlySavingsEl, stats.monthlySavings);
 
   renderRecentTransactions();
   renderCategoryChart();
@@ -524,6 +835,9 @@ function transactionRowHtml(t, isIncome, { editable = false } = {}) {
     ? `<img class="receipt-thumb" src="${t.receiptImage || t.receiptUrl}" alt="Receipt" />`
     : '';
   const recurringBadge = isIncome && t.recurring ? '<span class="badge">Recurring</span>' : '';
+  const foreignBadge = t.currency && t.currency !== currentBaseCurrency
+    ? `<small style="display:block;font-size:0.75rem;opacity:0.75;text-align:right;">${t.rawAmount} ${t.currency}</small>`
+    : '';
   const actions = editable ? `
     <div class="tx-actions">
       <button class="button button-small button-ghost" data-edit="${t.id}" data-kind="${isIncome ? 'income' : 'expense'}">Edit</button>
@@ -535,9 +849,12 @@ function transactionRowHtml(t, isIncome, { editable = false } = {}) {
         <span>${label} ${recurringBadge}</span>
         <small>${formatDate(t.date)}${t.notes ? ` · ${t.notes}` : ''}</small>
       </div>
-      <div style="display:flex;align-items:center;">
-        <span class="tx-amount ${isIncome ? 'positive' : 'negative'}">${isIncome ? '+' : '-'}${formatCurrency(t.amount)}</span>
-        ${receipt}
+      <div style="display:flex;flex-direction:column;align-items:flex-end;justify-content:center;">
+        <div style="display:flex;align-items:center;">
+          <span class="tx-amount ${isIncome ? 'positive' : 'negative'}">${isIncome ? '+' : '-'}${formatCurrency(t.amount)}</span>
+          ${receipt}
+        </div>
+        ${foreignBadge}
       </div>
       ${actions}
     </div>`;
@@ -577,7 +894,13 @@ function renderAllTransactions() {
 function renderCategoryChart() {
   const now = new Date();
   const byCategory = {};
-  state.expenses.filter((e) => isSameMonth(e.date, now)).forEach((e) => {
+
+  let targetExpenses = state.expenses.filter((e) => isSameMonth(e.date, now));
+  if (!targetExpenses.length && state.expenses.length) {
+    targetExpenses = state.expenses;
+  }
+
+  targetExpenses.forEach((e) => {
     const key = e.category || 'Other';
     byCategory[key] = (byCategory[key] || 0) + (Number(e.amount) || 0);
   });
@@ -585,12 +908,32 @@ function renderCategoryChart() {
   const labels = Object.keys(byCategory);
   const canvas = document.getElementById('categoryChart');
   if (!canvas || typeof Chart === 'undefined') return;
-  if (categoryChartInstance) categoryChartInstance.destroy();
+
+  const container = canvas.parentElement;
+
+  if (categoryChartInstance) {
+    categoryChartInstance.destroy();
+    categoryChartInstance = null;
+  }
+
+  const oldEmpty = container?.querySelector('.chart-empty-state');
+  if (oldEmpty) oldEmpty.remove();
+
   if (!labels.length) {
-    const ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    canvas.style.display = 'none';
+    const emptyDiv = document.createElement('div');
+    emptyDiv.className = 'chart-empty-state';
+    emptyDiv.style.cssText = 'display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;min-height:200px;text-align:center;padding:24px 16px;background:rgba(248,250,252,0.6);border-radius:14px;border:1px dashed #cbd5e1;margin-top:8px;';
+    emptyDiv.innerHTML = `
+      <div style="width:48px;height:48px;border-radius:14px;background:#eef2ff;display:grid;place-items:center;font-size:24px;margin-bottom:10px;">📊</div>
+      <strong style="color:#1e293b;font-size:0.95rem;">No spending recorded yet</strong>
+      <small style="color:#64748b;margin-top:4px;max-width:260px;font-size:0.82rem;">Add your first expense to generate an interactive spending category breakdown!</small>
+    `;
+    container?.appendChild(emptyDiv);
     return;
   }
+
+  canvas.style.display = 'block';
 
   categoryChartInstance = new Chart(canvas, {
     type: 'doughnut',
@@ -599,12 +942,19 @@ function renderCategoryChart() {
       datasets: [{
         data: labels.map((k) => byCategory[k]),
         backgroundColor: labels.map((k) => EXPENSE_CATEGORIES[k]?.color || '#94a3b8'),
-        borderWidth: 0,
+        borderWidth: 2,
+        borderColor: '#ffffff',
       }],
     },
     options: {
       responsive: true,
-      plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, padding: 14 } } },
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { boxWidth: 12, padding: 14, font: { family: 'Plus Jakarta Sans', weight: '600' } },
+        },
+      },
     },
   });
 }
@@ -628,23 +978,56 @@ function renderIncomeExpenseChart() {
     expenseByMonth[key] = (expenseByMonth[key] || 0) + (Number(e.amount) || 0);
   });
 
+  const hasData = months.some((m) => (incomeByMonth[m] || 0) > 0 || (expenseByMonth[m] || 0) > 0);
+
   const canvas = document.getElementById('incomeExpenseChart');
   if (!canvas || typeof Chart === 'undefined') return;
-  if (incomeExpenseChartInstance) incomeExpenseChartInstance.destroy();
+
+  const container = canvas.parentElement;
+
+  if (incomeExpenseChartInstance) {
+    incomeExpenseChartInstance.destroy();
+    incomeExpenseChartInstance = null;
+  }
+
+  const oldEmpty = container?.querySelector('.chart-empty-state');
+  if (oldEmpty) oldEmpty.remove();
+
+  if (!hasData) {
+    canvas.style.display = 'none';
+    const emptyDiv = document.createElement('div');
+    emptyDiv.className = 'chart-empty-state';
+    emptyDiv.style.cssText = 'display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;min-height:200px;text-align:center;padding:24px 16px;background:rgba(248,250,252,0.6);border-radius:14px;border:1px dashed #cbd5e1;margin-top:8px;';
+    emptyDiv.innerHTML = `
+      <div style="width:48px;height:48px;border-radius:14px;background:#eef2ff;display:grid;place-items:center;font-size:24px;margin-bottom:10px;">📈</div>
+      <strong style="color:#1e293b;font-size:0.95rem;">No income or expense trends yet</strong>
+      <small style="color:#64748b;margin-top:4px;max-width:260px;font-size:0.82rem;">Log income or expenses to track monthly financial trends over time!</small>
+    `;
+    container?.appendChild(emptyDiv);
+    return;
+  }
+
+  canvas.style.display = 'block';
 
   incomeExpenseChartInstance = new Chart(canvas, {
     type: 'bar',
     data: {
       labels: months.map(monthLabel),
       datasets: [
-        { label: 'Income', data: months.map((m) => incomeByMonth[m] || 0), backgroundColor: '#4338ca', borderRadius: 6 },
-        { label: 'Expenses', data: months.map((m) => expenseByMonth[m] || 0), backgroundColor: '#f97316', borderRadius: 6 },
+        { label: 'Income', data: months.map((m) => incomeByMonth[m] || 0), backgroundColor: '#4f46e5', borderRadius: 6 },
+        { label: 'Expenses', data: months.map((m) => expenseByMonth[m] || 0), backgroundColor: '#f43f5e', borderRadius: 6 },
       ],
     },
     options: {
       responsive: true,
+      maintainAspectRatio: false,
       scales: { y: { beginAtZero: true } },
-      plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, padding: 14 } } },
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { boxWidth: 12, padding: 14, font: { family: 'Plus Jakarta Sans', weight: '600' } },
+        },
+      },
     },
   });
 }
@@ -667,7 +1050,8 @@ function openIncomeModal(income = null) {
   state.editingIncomeId = income?.id || null;
   document.querySelector('#incomeModal .modal-header h2').textContent = income ? 'Edit Income' : 'Add Income';
   document.querySelector('#incomeForm button[type="submit"]').textContent = income ? 'Save Income' : 'Add Income';
-  document.getElementById('incomeAmount').value = income?.amount ?? '';
+  document.getElementById('incomeAmount').value = income?.rawAmount ?? income?.amount ?? '';
+  document.getElementById('incomeCurrency').value = income?.currency || currentBaseCurrency;
   document.getElementById('incomeSource').value = income?.source || '';
   document.getElementById('incomeDate').value = income?.date ? income.date.slice(0, 10) : new Date().toISOString().slice(0, 10);
   document.getElementById('incomeNotes').value = income?.notes || '';
@@ -695,6 +1079,7 @@ incomeForm?.addEventListener('submit', async (e) => {
   e.preventDefault();
   const payload = {
     amount: Number(document.getElementById('incomeAmount').value),
+    currency: document.getElementById('incomeCurrency').value,
     source: document.getElementById('incomeSource').value,
     date: document.getElementById('incomeDate').value,
     notes: document.getElementById('incomeNotes').value || undefined,
@@ -752,7 +1137,8 @@ function openExpenseModal(expense = null) {
   state.pendingReceiptDataUrl = expense?.receiptImage || null;
   document.querySelector('#expenseModal .modal-header h2').textContent = expense ? 'Edit Expense' : 'Add Expense';
   document.querySelector('#expenseForm button[type="submit"]').textContent = expense ? 'Save Expense' : 'Add Expense';
-  document.getElementById('expenseAmount').value = expense?.amount ?? '';
+  document.getElementById('expenseAmount').value = expense?.rawAmount ?? expense?.amount ?? '';
+  document.getElementById('expenseCurrency').value = expense?.currency || currentBaseCurrency;
   document.getElementById('expenseCategory').value = expense?.category || '';
   document.getElementById('expenseDate').value = expense?.date ? expense.date.slice(0, 10) : new Date().toISOString().slice(0, 10);
   document.getElementById('paymentMethod').value = expense?.paymentMethod || 'Cash';
@@ -790,6 +1176,7 @@ expenseForm?.addEventListener('submit', async (e) => {
   e.preventDefault();
   const payload = {
     amount: Number(document.getElementById('expenseAmount').value),
+    currency: document.getElementById('expenseCurrency').value,
     category: document.getElementById('expenseCategory').value,
     date: document.getElementById('expenseDate').value,
     paymentMethod: document.getElementById('paymentMethod').value,
@@ -836,19 +1223,43 @@ async function deleteExpense(id) {
 /* since no budget form exists yet in the markup)                         */
 /* ---------------------------------------------------------------------- */
 
+/* ---------------------------------------------------------------------- */
+/* Flexible Budgets                                                       */
+/* ---------------------------------------------------------------------- */
+
 function computeBudgetProgress() {
   const now = new Date();
   return state.budgets.map((budget) => {
     const limit = Number(budget.amount ?? budget.limit ?? 0);
     const category = budget.category || budget.name || 'Other';
-    const explicitSpent = budget.spent != null ? Number(budget.spent) : null;
-    const spent = explicitSpent != null
-      ? explicitSpent
-      : state.expenses
-        .filter((e) => (e.category || 'Other') === category && isSameMonth(e.date, now))
-        .reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+    const period = budget.period || 'monthly';
+    const startDate = budget.startDate;
+    const endDate = budget.endDate;
+
+    const matchingExpenses = state.expenses.filter((e) => {
+      if (category && category !== 'Other' && (e.category || 'Other') !== category) {
+        return false;
+      }
+      const eDate = new Date(e.date);
+      if (period === 'daily') {
+        const ref = startDate ? new Date(startDate) : now;
+        return eDate.toDateString() === ref.toDateString();
+      }
+      if (period === 'weekly') {
+        const ref = startDate ? new Date(startDate) : now;
+        const diffDays = Math.abs((eDate - ref) / (1000 * 3600 * 24));
+        return diffDays <= 7;
+      }
+      if (period === 'trip' || period === 'custom') {
+        if (!startDate || !endDate) return true;
+        return eDate >= new Date(startDate) && eDate <= new Date(endDate);
+      }
+      return isSameMonth(e.date, now);
+    });
+
+    const spent = matchingExpenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
     const pct = limit > 0 ? Math.min((spent / limit) * 100, 100) : 0;
-    return { ...budget, category, limit, spent, pct };
+    return { ...budget, category, limit, spent, pct, period };
   });
 }
 
@@ -861,9 +1272,13 @@ function renderBudgets() {
   budgetsListEl.innerHTML = budgets.map((b) => {
     const meta = EXPENSE_CATEGORIES[b.category] || { label: b.category };
     const fillClass = b.pct >= 100 ? 'danger' : b.pct >= 80 ? 'warning' : '';
+    const periodLabel = b.period ? `(${b.period.toUpperCase()})` : '';
     return `
       <div class="budget-card">
-        <div class="budget-card-top"><span>${meta.label}</span><span>${Math.round(b.pct)}%</span></div>
+        <div class="budget-card-top">
+          <span>${meta.label} <small style="font-size:0.75rem;opacity:0.75;">${periodLabel}</small></span>
+          <span>${Math.round(b.pct)}%</span>
+        </div>
         <div class="progress-track"><div class="progress-fill ${fillClass}" style="width:${b.pct}%"></div></div>
         <div class="budget-card-amounts"><span>${formatCurrency(b.spent)} spent</span><span>of ${formatCurrency(b.limit)}</span></div>
         <div class="tx-actions">
@@ -879,12 +1294,35 @@ function openBudgetModal(budget = null) {
   state.editingBudgetId = budget?.id || null;
   const header = document.querySelector('#budgetModal .modal-header h2');
   if (header) header.textContent = budget ? 'Edit Budget' : 'Add Budget';
+
+  const titleInput = document.getElementById('budgetName');
+  if (titleInput) titleInput.value = budget?.name || '';
   const catInput = document.getElementById('budgetCategory');
   if (catInput) catInput.value = budget?.category || '';
   const amtInput = document.getElementById('budgetAmount');
   if (amtInput) amtInput.value = budget?.limit ?? budget?.amount ?? '';
+  const periodInput = document.getElementById('budgetPeriod');
+  if (periodInput) periodInput.value = budget?.period || 'monthly';
+
+  if (budget?.period === 'trip' || budget?.period === 'custom') {
+    budgetDateRow?.classList.remove('hidden');
+    document.getElementById('budgetStartDate').value = budget.startDate || '';
+    document.getElementById('budgetEndDate').value = budget.endDate || '';
+  } else {
+    budgetDateRow?.classList.add('hidden');
+  }
+
   budgetModal?.classList.remove('hidden');
 }
+
+budgetPeriodSelect?.addEventListener('change', (e) => {
+  const p = e.target.value;
+  if (p === 'trip' || p === 'custom') {
+    budgetDateRow?.classList.remove('hidden');
+  } else {
+    budgetDateRow?.classList.add('hidden');
+  }
+});
 
 const addBudgetBtn = document.getElementById('addBudgetBtn');
 addBudgetBtn?.addEventListener('click', () => openBudgetModal());
@@ -895,26 +1333,33 @@ budgetModal?.addEventListener('click', (e) => {
 
 budgetForm?.addEventListener('submit', async (e) => {
   e.preventDefault();
+  const name = document.getElementById('budgetName').value;
   const category = document.getElementById('budgetCategory').value;
+  const period = document.getElementById('budgetPeriod').value;
   const amount = Number(document.getElementById('budgetAmount').value);
+  const startDate = document.getElementById('budgetStartDate').value;
+  const endDate = document.getElementById('budgetEndDate').value;
+
   if (!category || !amount || amount <= 0) {
     showMessage('Please select a category and valid amount.', 'error');
     return;
   }
   try {
     const dbCategory = EXPENSE_CATEGORY_TO_DB[category] || category;
+    const payload = {
+      name: name || `${dbCategory} ${period.toUpperCase()} Budget`,
+      amount,
+      period,
+      startDate: startDate || undefined,
+      endDate: endDate || undefined,
+      categoryId: findExpenseCategoryId(category),
+    };
+
     if (state.editingBudgetId) {
-      await apiRequest('PUT', `/budgets/${state.editingBudgetId}`, { amount });
+      await apiRequest('PUT', `/budgets/${state.editingBudgetId}`, payload);
       showMessage('Budget updated.', 'success');
     } else {
-      await apiRequest('POST', '/budgets', {
-        name: `${dbCategory} Budget`,
-        amount,
-        period: 'monthly',
-        categoryId: findExpenseCategoryId(category),
-        month: new Date().getMonth() + 1,
-        year: new Date().getFullYear(),
-      });
+      await apiRequest('POST', '/budgets', payload);
       showMessage('Budget added.', 'success');
     }
     budgetModal?.classList.add('hidden');
@@ -942,6 +1387,516 @@ budgetsListEl?.addEventListener('click', async (e) => {
     } catch (error) {
       showMessage(error instanceof Error ? error.message : 'Unable to delete budget.', 'error');
     }
+  }
+});
+
+/* ---------------------------------------------------------------------- */
+/* Expense Groups & Trips                                                 */
+/* ---------------------------------------------------------------------- */
+
+async function loadExpenseGroups() {
+  try {
+    const res = await apiRequest('GET', '/settings/expense_groups');
+    if (res?.data?.value) {
+      state.expenseGroups = JSON.parse(res.data.value);
+      return;
+    }
+  } catch (_) {}
+  const local = localStorage.getItem('user_expense_groups');
+  state.expenseGroups = local ? JSON.parse(local) : [];
+}
+
+async function saveExpenseGroups() {
+  localStorage.setItem('user_expense_groups', JSON.stringify(state.expenseGroups));
+  try {
+    await apiRequest('POST', '/settings', {
+      key: 'expense_groups',
+      value: JSON.stringify(state.expenseGroups),
+    });
+  } catch (_) {}
+}
+
+function computeGroupTotal(group) {
+  return (group.items || []).reduce((sum, item) => {
+    const converted = convertAmount(item.amount, item.currency || 'USD', currentBaseCurrency);
+    return sum + converted;
+  }, 0);
+}
+
+function renderGroupItemRows() {
+  if (!groupItemsContainer) return;
+  if (!groupFormItems.length) {
+    groupItemsContainer.innerHTML = '<p class="placeholder" style="margin:6px 0;font-size:0.85rem;">No line items in group yet. Click "+ Add Line Item" above.</p>';
+    if (groupTotalDisplay) groupTotalDisplay.textContent = formatCurrency(0);
+    return;
+  }
+
+  let total = 0;
+  groupItemsContainer.innerHTML = groupFormItems.map((item, idx) => {
+    const itemConverted = convertAmount(item.amount || 0, item.currency || currentBaseCurrency, currentBaseCurrency);
+    total += itemConverted;
+
+    return `
+      <div class="form-row" style="display:flex;gap:8px;align-items:center;margin-bottom:8px;background:#fff;padding:8px;border-radius:8px;border:1px solid var(--border);">
+        <select data-item-idx="${idx}" data-field="category" style="width:130px;padding:6px;font-size:0.82rem;">
+          <option value="Food" ${item.category === 'Food' ? 'selected' : ''}>🍔 Food</option>
+          <option value="Transport" ${item.category === 'Transport' ? 'selected' : ''}>🚗 Transport</option>
+          <option value="Bills" ${item.category === 'Bills' ? 'selected' : ''}>📄 Bills</option>
+          <option value="Shopping" ${item.category === 'Shopping' ? 'selected' : ''}>🛍️ Shopping</option>
+          <option value="Rent" ${item.category === 'Rent' ? 'selected' : ''}>🏠 Rent</option>
+          <option value="Entertainment" ${item.category === 'Entertainment' ? 'selected' : ''}>🎬 Entertainment</option>
+          <option value="Healthcare" ${item.category === 'Healthcare' ? 'selected' : ''}>🏥 Healthcare</option>
+          <option value="Education" ${item.category === 'Education' ? 'selected' : ''}>🎓 Education</option>
+          <option value="Travel" ${item.category === 'Travel' ? 'selected' : ''}>✈️ Travel</option>
+          <option value="Return" ${item.category === 'Return' ? 'selected' : ''}>🔄 Return</option>
+          <option value="Other" ${!item.category || item.category === 'Other' ? 'selected' : ''}>📌 Other</option>
+        </select>
+        <input type="text" data-item-idx="${idx}" data-field="title" placeholder="Item description" value="${item.title || ''}" style="flex:2;padding:6px;font-size:0.82rem;" required />
+        <input type="number" data-item-idx="${idx}" data-field="amount" placeholder="0.00" step="0.01" value="${item.amount ?? ''}" style="width:90px;padding:6px;font-size:0.82rem;" required />
+        <select data-item-idx="${idx}" data-field="currency" style="width:85px;padding:6px;font-size:0.82rem;">
+          <option value="USD" ${item.currency === 'USD' ? 'selected' : ''}>USD</option>
+          <option value="EUR" ${item.currency === 'EUR' ? 'selected' : ''}>EUR</option>
+          <option value="GBP" ${item.currency === 'GBP' ? 'selected' : ''}>GBP</option>
+          <option value="PKR" ${item.currency === 'PKR' ? 'selected' : ''}>PKR</option>
+          <option value="INR" ${item.currency === 'INR' ? 'selected' : ''}>INR</option>
+          <option value="AED" ${item.currency === 'AED' ? 'selected' : ''}>AED</option>
+          <option value="SAR" ${item.currency === 'SAR' ? 'selected' : ''}>SAR</option>
+          <option value="CAD" ${item.currency === 'CAD' ? 'selected' : ''}>CAD</option>
+          <option value="AUD" ${item.currency === 'AUD' ? 'selected' : ''}>AUD</option>
+          <option value="JPY" ${item.currency === 'JPY' ? 'selected' : ''}>JPY</option>
+          <option value="KGS" ${item.currency === 'KGS' ? 'selected' : ''}>KGS</option>
+        </select>
+        <button type="button" class="button button-small button-danger" data-remove-group-item="${idx}" style="padding:4px 8px;">✕</button>
+      </div>`;
+  }).join('');
+
+  if (groupTotalDisplay) groupTotalDisplay.textContent = formatCurrency(total);
+}
+
+groupItemsContainer?.addEventListener('change', (e) => {
+  const target = e.target;
+  const idx = target.dataset.itemIdx;
+  const field = target.dataset.field;
+  if (idx != null && field != null && groupFormItems[idx]) {
+    groupFormItems[idx][field] = field === 'amount' ? Number(target.value) : target.value;
+    renderGroupItemRows();
+  }
+});
+
+groupItemsContainer?.addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-remove-group-item]');
+  if (btn) {
+    const idx = Number(btn.dataset.removeGroupItem);
+    groupFormItems.splice(idx, 1);
+    renderGroupItemRows();
+  }
+});
+
+addGroupItemBtn?.addEventListener('click', () => {
+  groupFormItems.push({
+    category: 'Food',
+    title: '',
+    amount: '',
+    currency: currentBaseCurrency,
+    date: document.getElementById('groupStartDate')?.value || new Date().toISOString().slice(0, 10),
+  });
+  renderGroupItemRows();
+});
+
+function openExpenseGroupModal(group = null) {
+  expenseGroupForm?.reset();
+  state.editingGroupId = group?.id || null;
+  const titleEl = document.getElementById('groupModalTitle');
+  if (titleEl) titleEl.textContent = group ? 'Edit Expense Group' : 'Create Expense Group';
+  const nameEl = document.getElementById('groupName');
+  if (nameEl) nameEl.value = group?.name || '';
+  const typeEl = document.getElementById('groupType');
+  if (typeEl) typeEl.value = group?.type || 'trip';
+  const today = new Date().toISOString().slice(0, 10);
+  const startEl = document.getElementById('groupStartDate');
+  if (startEl) startEl.value = group?.startDate || today;
+  const endEl = document.getElementById('groupEndDate');
+  if (endEl) endEl.value = group?.endDate || today;
+  const notesEl = document.getElementById('groupNotes');
+  if (notesEl) notesEl.value = group?.notes || '';
+
+  groupFormItems = group?.items ? JSON.parse(JSON.stringify(group.items)) : [];
+  renderGroupItemRows();
+  expenseGroupModal?.classList.remove('hidden');
+}
+
+addExpenseGroupBtn?.addEventListener('click', () => openExpenseGroupModal());
+closeExpenseGroupModal?.addEventListener('click', () => expenseGroupModal?.classList.add('hidden'));
+expenseGroupModal?.addEventListener('click', (e) => {
+  if (e.target === expenseGroupModal) expenseGroupModal?.classList.add('hidden');
+});
+
+expenseGroupForm?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const name = document.getElementById('groupName').value;
+  const type = document.getElementById('groupType').value;
+  const startDate = document.getElementById('groupStartDate').value;
+  const endDate = document.getElementById('groupEndDate').value;
+  const notes = document.getElementById('groupNotes').value;
+
+  const groupData = {
+    id: state.editingGroupId || `group_${Date.now()}`,
+    name,
+    type,
+    startDate,
+    endDate,
+    notes,
+    items: groupFormItems,
+  };
+
+  if (state.editingGroupId) {
+    const idx = state.expenseGroups.findIndex((g) => String(g.id) === String(state.editingGroupId));
+    if (idx !== -1) state.expenseGroups[idx] = groupData;
+  } else {
+    state.expenseGroups.push(groupData);
+  }
+
+  await saveExpenseGroups();
+  expenseGroupModal?.classList.add('hidden');
+  showMessage(state.editingGroupId ? 'Expense Group updated.' : 'Expense Group created.', 'success');
+  await loadAllData();
+  renderExpenseGroupsList();
+  renderDashboard();
+});
+
+function renderExpenseGroupsList() {
+  if (!expenseGroupsListEl) return;
+  if (!state.expenseGroups.length) {
+    expenseGroupsListEl.innerHTML = '<p class="placeholder">No expense groups yet. Click "+ Create Expense Group" to bundle expenses for trips or events!</p>';
+    return;
+  }
+
+  expenseGroupsListEl.innerHTML = state.expenseGroups.map((g) => {
+    const total = computeGroupTotal(g);
+    const typeBadges = { trip: '✈️ Trip', day: '📅 Single Day', week: '🗓️ Week', custom: '📆 Custom' };
+    const badgeText = typeBadges[g.type] || '📦 Group';
+
+    const itemsHtml = (g.items || []).map((item) => `
+      <tr style="border-bottom:1px solid #f1f5f9;">
+        <td style="padding:6px;font-size:0.82rem;">${EXPENSE_CATEGORIES[item.category]?.label || item.category}</td>
+        <td style="padding:6px;font-size:0.82rem;font-weight:600;">${item.title || 'Item'}</td>
+        <td style="padding:6px;font-size:0.82rem;text-align:right;font-weight:600;">
+          ${formatCurrency(convertAmount(item.amount, item.currency || 'USD', currentBaseCurrency))}
+          ${item.currency && item.currency !== currentBaseCurrency ? `<small style="opacity:0.7;display:block;">${item.amount} ${item.currency}</small>` : ''}
+        </td>
+      </tr>`).join('');
+
+    return `
+      <div class="card" style="margin-bottom:16px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+          <div>
+            <h3 style="margin:0 0 4px 0;">${g.name} <span class="badge" style="background:#e0f2fe;color:#0369a1;margin-left:6px;">${badgeText}</span></h3>
+            <small style="color:var(--muted);">${formatDate(g.startDate)} ${g.startDate !== g.endDate ? `— ${formatDate(g.endDate)}` : ''}</small>
+          </div>
+          <div style="text-align:right;">
+            <span style="font-size:1.25rem;font-weight:700;color:var(--danger);">${formatCurrency(total)}</span>
+            <small style="display:block;color:var(--muted);">${(g.items || []).length} line items</small>
+          </div>
+        </div>
+
+        ${g.notes ? `<p style="font-size:0.85rem;color:var(--muted);margin:8px 0;">${g.notes}</p>` : ''}
+
+        <details style="margin-top:10px;background:#f8fafc;padding:8px 12px;border-radius:8px;border:1px solid var(--border);">
+          <summary style="font-size:0.85rem;font-weight:600;cursor:pointer;">View Line-Item Breakdown (${(g.items || []).length})</summary>
+          <table style="width:100%;margin-top:8px;border-collapse:collapse;">
+            <thead>
+              <tr style="border-bottom:1px solid #cbd5e1;text-align:left;font-size:0.75rem;color:var(--muted);">
+                <th>Category</th><th>Item</th><th style="text-align:right;">Amount</th>
+              </tr>
+            </thead>
+            <tbody>${itemsHtml || '<tr><td colspan="3" style="padding:6px;font-size:0.8rem;">No items</td></tr>'}</tbody>
+          </table>
+        </details>
+
+        <div class="tx-actions" style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end;">
+          <button class="button button-small button-outline" data-add-item-group="${g.id}">+ Add Item</button>
+          <button class="button button-small button-ghost" data-edit-group="${g.id}">Edit</button>
+          <button class="button button-small button-danger" data-delete-group="${g.id}">Delete</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+expenseGroupsListEl?.addEventListener('click', async (e) => {
+  const addBtn = e.target.closest('[data-add-item-group]');
+  const editBtn = e.target.closest('[data-edit-group]');
+  const deleteBtn = e.target.closest('[data-delete-group]');
+
+  if (addBtn) {
+    const group = state.expenseGroups.find((g) => String(g.id) === String(addBtn.dataset.addItemGroup));
+    if (group) {
+      openExpenseGroupModal(group);
+      groupFormItems.push({ category: 'Food', title: '', amount: '', currency: currentBaseCurrency, date: group.startDate });
+      renderGroupItemRows();
+    }
+  }
+  if (editBtn) {
+    const group = state.expenseGroups.find((g) => String(g.id) === String(editBtn.dataset.editGroup));
+    if (group) openExpenseGroupModal(group);
+  }
+  if (deleteBtn) {
+    if (!window.confirm('Delete this expense group?')) return;
+    state.expenseGroups = state.expenseGroups.filter((g) => String(g.id) !== String(deleteBtn.dataset.deleteGroup));
+    await saveExpenseGroups();
+    showMessage('Expense group deleted.', 'success');
+    await loadAllData();
+    renderExpenseGroupsList();
+    renderDashboard();
+  }
+});
+
+/* ---------------------------------------------------------------------- */
+/* Expenses View Tabs (Individual vs Group)                              */
+/* ---------------------------------------------------------------------- */
+
+const tabIndividualExpensesBtn = document.getElementById('tabIndividualExpensesBtn');
+const tabGroupExpensesBtn = document.getElementById('tabGroupExpensesBtn');
+const individualExpensesView = document.getElementById('individualExpensesView');
+const groupExpensesView = document.getElementById('groupExpensesView');
+
+function switchExpenseTab(tab) {
+  if (tab === 'group') {
+    tabGroupExpensesBtn?.classList.add('active');
+    tabIndividualExpensesBtn?.classList.remove('active');
+    individualExpensesView?.classList.add('hidden');
+    groupExpensesView?.classList.remove('hidden');
+  } else {
+    tabIndividualExpensesBtn?.classList.add('active');
+    tabGroupExpensesBtn?.classList.remove('active');
+    groupExpensesView?.classList.add('hidden');
+    individualExpensesView?.classList.remove('hidden');
+  }
+}
+
+tabIndividualExpensesBtn?.addEventListener('click', () => switchExpenseTab('individual'));
+tabGroupExpensesBtn?.addEventListener('click', () => switchExpenseTab('group'));
+
+/* ---------------------------------------------------------------------- */
+/* Future Plans                                                           */
+/* ---------------------------------------------------------------------- */
+
+async function loadPlans() {
+  try {
+    const res = await apiRequest('GET', '/settings/future_plans');
+    if (res?.data?.value) {
+      state.plans = JSON.parse(res.data.value);
+      return;
+    }
+  } catch (_) {}
+  const local = localStorage.getItem('user_future_plans');
+  state.plans = local ? JSON.parse(local) : [];
+}
+
+async function savePlans() {
+  localStorage.setItem('user_future_plans', JSON.stringify(state.plans));
+  try {
+    await apiRequest('POST', '/settings', {
+      key: 'future_plans',
+      value: JSON.stringify(state.plans),
+    });
+  } catch (_) {}
+}
+
+function computePlanTotal(plan) {
+  return (plan.items || []).reduce((sum, item) => {
+    const converted = convertAmount(item.amount, item.currency || 'USD', currentBaseCurrency);
+    return sum + converted;
+  }, 0);
+}
+
+function renderPlanItemRows() {
+  if (!planItemsContainer) return;
+  if (!planFormItems.length) {
+    planItemsContainer.innerHTML = '<p class="placeholder" style="margin:6px 0;font-size:0.85rem;">No estimated items added yet. Click "+ Add Estimated Item" above.</p>';
+    if (planTotalDisplay) planTotalDisplay.textContent = formatCurrency(0);
+    return;
+  }
+
+  let total = 0;
+  planItemsContainer.innerHTML = planFormItems.map((item, idx) => {
+    const itemConverted = convertAmount(item.amount || 0, item.currency || currentBaseCurrency, currentBaseCurrency);
+    total += itemConverted;
+
+    return `
+      <div class="form-row" style="display:flex;gap:8px;align-items:center;margin-bottom:8px;background:#fff;padding:8px;border-radius:8px;border:1px solid var(--border);">
+        <select data-plan-idx="${idx}" data-field="category" style="width:130px;padding:6px;font-size:0.82rem;">
+          <option value="Education" ${item.category === 'Education' ? 'selected' : ''}>🎓 Education</option>
+          <option value="Travel" ${item.category === 'Travel' ? 'selected' : ''}>✈️ Travel</option>
+          <option value="Shopping" ${item.category === 'Shopping' ? 'selected' : ''}>🛍️ Shopping</option>
+          <option value="Rent" ${item.category === 'Rent' ? 'selected' : ''}>🏠 Rent / Housing</option>
+          <option value="Bills" ${item.category === 'Bills' ? 'selected' : ''}>📄 Bills & Setup</option>
+          <option value="Other" ${!item.category || item.category === 'Other' ? 'selected' : ''}>📌 Other</option>
+        </select>
+        <input type="text" data-plan-idx="${idx}" data-field="title" placeholder="Estimated cost description" value="${item.title || ''}" style="flex:2;padding:6px;font-size:0.82rem;" required />
+        <input type="number" data-plan-idx="${idx}" data-field="amount" placeholder="0.00" step="0.01" value="${item.amount ?? ''}" style="width:95px;padding:6px;font-size:0.82rem;" required />
+        <select data-plan-idx="${idx}" data-field="currency" style="width:85px;padding:6px;font-size:0.82rem;">
+          <option value="USD" ${item.currency === 'USD' ? 'selected' : ''}>USD</option>
+          <option value="EUR" ${item.currency === 'EUR' ? 'selected' : ''}>EUR</option>
+          <option value="GBP" ${item.currency === 'GBP' ? 'selected' : ''}>GBP</option>
+          <option value="PKR" ${item.currency === 'PKR' ? 'selected' : ''}>PKR</option>
+          <option value="INR" ${item.currency === 'INR' ? 'selected' : ''}>INR</option>
+          <option value="AED" ${item.currency === 'AED' ? 'selected' : ''}>AED</option>
+          <option value="SAR" ${item.currency === 'SAR' ? 'selected' : ''}>SAR</option>
+          <option value="KGS" ${item.currency === 'KGS' ? 'selected' : ''}>KGS</option>
+        </select>
+        <button type="button" class="button button-small button-danger" data-remove-plan-item="${idx}" style="padding:4px 8px;">✕</button>
+      </div>`;
+  }).join('');
+
+  if (planTotalDisplay) planTotalDisplay.textContent = formatCurrency(total);
+}
+
+planItemsContainer?.addEventListener('change', (e) => {
+  const target = e.target;
+  const idx = target.dataset.planIdx;
+  const field = target.dataset.field;
+  if (idx != null && field != null && planFormItems[idx]) {
+    planFormItems[idx][field] = field === 'amount' ? Number(target.value) : target.value;
+    renderPlanItemRows();
+  }
+});
+
+planItemsContainer?.addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-remove-plan-item]');
+  if (btn) {
+    const idx = Number(btn.dataset.removePlanItem);
+    planFormItems.splice(idx, 1);
+    renderPlanItemRows();
+  }
+});
+
+addPlanItemBtn?.addEventListener('click', () => {
+  planFormItems.push({
+    category: 'Education',
+    title: '',
+    amount: '',
+    currency: currentBaseCurrency,
+  });
+  renderPlanItemRows();
+});
+
+function openPlanModal(plan = null) {
+  planForm?.reset();
+  state.editingPlanId = plan?.id || null;
+  const titleEl = document.getElementById('planModalTitle');
+  if (titleEl) titleEl.textContent = plan ? 'Edit Future Plan' : 'Create Future Plan';
+  const nameEl = document.getElementById('planName');
+  if (nameEl) nameEl.value = plan?.name || '';
+  const dateEl = document.getElementById('planTargetDate');
+  if (dateEl) dateEl.value = plan?.targetDate || new Date().toISOString().slice(0, 10);
+  const notesEl = document.getElementById('planNotes');
+  if (notesEl) notesEl.value = plan?.notes || '';
+
+  planFormItems = plan?.items ? JSON.parse(JSON.stringify(plan.items)) : [];
+  renderPlanItemRows();
+  planModal?.classList.remove('hidden');
+}
+
+addPlanBtn?.addEventListener('click', () => openPlanModal());
+closePlanModal?.addEventListener('click', () => planModal?.classList.add('hidden'));
+planModal?.addEventListener('click', (e) => {
+  if (e.target === planModal) planModal?.classList.add('hidden');
+});
+
+planForm?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const name = document.getElementById('planName').value;
+  const targetDate = document.getElementById('planTargetDate').value;
+  const notes = document.getElementById('planNotes').value;
+
+  const planData = {
+    id: state.editingPlanId || `plan_${Date.now()}`,
+    name,
+    targetDate,
+    notes,
+    items: planFormItems,
+  };
+
+  if (state.editingPlanId) {
+    const idx = state.plans.findIndex((p) => String(p.id) === String(state.editingPlanId));
+    if (idx !== -1) state.plans[idx] = planData;
+  } else {
+    state.plans.push(planData);
+  }
+
+  await savePlans();
+  planModal?.classList.add('hidden');
+  showMessage(state.editingPlanId ? 'Future Plan updated.' : 'Future Plan created.', 'success');
+  renderPlansList();
+});
+
+function renderPlansList() {
+  if (!plansListEl) return;
+  if (!state.plans.length) {
+    plansListEl.innerHTML = '<p class="placeholder">No future plans created yet. Click "+ Create Future Plan" to estimate upcoming costs!</p>';
+    return;
+  }
+
+  plansListEl.innerHTML = state.plans.map((p) => {
+    const total = computePlanTotal(p);
+    const itemsHtml = (p.items || []).map((item) => `
+      <tr style="border-bottom:1px solid #f1f5f9;">
+        <td style="padding:6px;font-size:0.82rem;">${EXPENSE_CATEGORIES[item.category]?.label || item.category}</td>
+        <td style="padding:6px;font-size:0.82rem;font-weight:600;">${item.title || 'Item'}</td>
+        <td style="padding:6px;font-size:0.82rem;text-align:right;font-weight:600;color:var(--success);">
+          ${formatCurrency(convertAmount(item.amount, item.currency || 'USD', currentBaseCurrency))}
+        </td>
+      </tr>`).join('');
+
+    return `
+      <div class="card" style="margin-bottom:16px;border-left:4px solid var(--success);">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+          <div>
+            <h3 style="margin:0 0 4px 0;">🚀 ${p.name}</h3>
+            <small style="color:var(--muted);">Target Date: ${formatDate(p.targetDate)}</small>
+          </div>
+          <div style="text-align:right;">
+            <span style="font-size:1.25rem;font-weight:700;color:var(--success);">${formatCurrency(total)}</span>
+            <small style="display:block;color:var(--muted);">Estimated Plan Cost</small>
+          </div>
+        </div>
+
+        ${p.notes ? `<p style="font-size:0.85rem;color:var(--muted);margin:8px 0;">${p.notes}</p>` : ''}
+
+        <details style="margin-top:10px;background:#f8fafc;padding:8px 12px;border-radius:8px;border:1px solid var(--border);" open>
+          <summary style="font-size:0.85rem;font-weight:600;cursor:pointer;">Estimated Line-Item Costs (${(p.items || []).length})</summary>
+          <table style="width:100%;margin-top:8px;border-collapse:collapse;">
+            <thead>
+              <tr style="border-bottom:1px solid #cbd5e1;text-align:left;font-size:0.75rem;color:var(--muted);">
+                <th>Category</th><th>Item Description</th><th style="text-align:right;">Estimated Cost</th>
+              </tr>
+            </thead>
+            <tbody>${itemsHtml || '<tr><td colspan="3" style="padding:6px;font-size:0.8rem;">No items added</td></tr>'}</tbody>
+          </table>
+        </details>
+
+        <div class="tx-actions" style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end;">
+          <button class="button button-small button-ghost" data-edit-plan="${p.id}">Edit Plan</button>
+          <button class="button button-small button-danger" data-delete-plan="${p.id}">Delete</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+plansListEl?.addEventListener('click', async (e) => {
+  const editBtn = e.target.closest('[data-edit-plan]');
+  const deleteBtn = e.target.closest('[data-delete-plan]');
+
+  if (editBtn) {
+    const plan = state.plans.find((p) => String(p.id) === String(editBtn.dataset.editPlan));
+    if (plan) openPlanModal(plan);
+  }
+  if (deleteBtn) {
+    if (!window.confirm('Delete this future plan?')) return;
+    state.plans = state.plans.filter((p) => String(p.id) !== String(deleteBtn.dataset.deletePlan));
+    await savePlans();
+    showMessage('Future Plan deleted.', 'success');
+    renderPlansList();
   }
 });
 

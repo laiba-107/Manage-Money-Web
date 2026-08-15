@@ -6,6 +6,7 @@ import { ExpressAdapter } from '@nestjs/platform-express';
 import * as compression from 'compression';
 import helmet from 'helmet';
 import * as express from 'express';
+import * as fs from 'fs';
 import { join } from 'path';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
@@ -31,15 +32,37 @@ async function bootstrap() {
   app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
   app.use(compression());
   app.enableCors({
-    origin: allowedOrigins,
+    origin: (origin, callback) => {
+      // Allow Vercel preview URLs and configured origins
+      if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
+        callback(null, true);
+      } else {
+        callback(null, true); // Allow requests in production
+      }
+    },
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
     credentials: true,
   });
 
   // Serve static files from public directory (frontend)
-  const publicPath = join(__dirname, '..', 'public');
+  const publicPathInDist = join(__dirname, 'public');
+  const publicPathParent = join(__dirname, '..', 'public');
+  const publicPath = fs.existsSync(publicPathInDist) ? publicPathInDist : publicPathParent;
   app.use(express.static(publicPath, { index: 'index.html' }));
+
+  // Fallback non-API requests to index.html for SPA routing
+  server.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api')) {
+      return next();
+    }
+    const indexPath = join(publicPath, 'index.html');
+    if (fs.existsSync(indexPath)) {
+      res.sendFile(indexPath);
+    } else {
+      next();
+    }
+  });
 
   // API versioning
   app.enableVersioning({ type: VersioningType.URI });

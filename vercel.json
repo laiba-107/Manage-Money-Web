@@ -1,0 +1,29 @@
+{
+  "version": 2,
+  "buildCommand": "cd backend && npm run build",
+  "outputDirectory": "backend/dist",
+  "builds": [
+    {
+      "src": "backend/src/main.ts",
+      "use": "@vercel/node",
+      "config": {
+        "maxDuration": 60,
+        "includeFiles": [
+          "frontend/**",
+          "backend/public/**",
+          "backend/dist/public/**"
+        ]
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "backend/src/main.ts"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "backend/src/main.ts"
+    }
+  ]
+}

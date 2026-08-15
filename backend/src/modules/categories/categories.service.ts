@@ -23,6 +23,7 @@ const DEFAULT_CATEGORIES = [
   { name: 'Savings', icon: 'savings', color: '#4CAF50', type: CategoryType.EXPENSE },
   { name: 'Insurance', icon: 'security', color: '#FF9800', type: CategoryType.EXPENSE },
   { name: 'Personal Care', icon: 'spa', color: '#E91E63', type: CategoryType.EXPENSE },
+  { name: 'Return & Refunds', icon: 'settings_backup_restore', color: '#14b8a6', type: CategoryType.EXPENSE },
   { name: 'Other', icon: 'category', color: '#9E9E9E', type: CategoryType.BOTH },
 ];
 

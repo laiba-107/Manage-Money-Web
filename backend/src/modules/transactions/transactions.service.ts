@@ -106,8 +106,32 @@ export class TransactionsService {
     dto: UpdateTransactionDto,
   ): Promise<Transaction> {
     const transaction = await this.findOne(userId, id);
-    Object.assign(transaction, { ...dto, date: new Date(dto.date) });
-    return this.transactionRepository.save(transaction);
+
+    // Remove existing category relation object so categoryId changes take effect cleanly in TypeORM
+    delete (transaction as any).category;
+
+    let targetCategoryId = dto.categoryId;
+
+    if (!targetCategoryId && dto.title) {
+      const cat = await this.transactionRepository.manager.findOne('categories', {
+        where: [
+          { name: dto.title },
+          { name: dto.title, type: dto.type || transaction.type },
+        ],
+      });
+      if (cat) {
+        targetCategoryId = (cat as any).id;
+      }
+    }
+
+    Object.assign(transaction, {
+      ...dto,
+      categoryId: targetCategoryId || transaction.categoryId,
+      date: dto.date ? new Date(dto.date) : transaction.date,
+    });
+
+    await this.transactionRepository.save(transaction);
+    return this.findOne(userId, id);
   }
 
   async remove(userId: string, id: string): Promise<void> {
