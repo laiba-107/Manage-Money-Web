@@ -51,17 +51,15 @@ async function bootstrap() {
   const publicPath = fs.existsSync(publicPathInDist) ? publicPathInDist : publicPathParent;
   app.use(express.static(publicPath, { index: 'index.html' }));
 
-  // Fallback non-API requests to index.html for SPA routing
-  server.get('*', (req, res, next) => {
-    if (req.path.startsWith('/api')) {
-      return next();
+  // Fallback non-API GET requests to index.html for SPA routing
+  app.use((req, res, next) => {
+    if (req.method === 'GET' && !req.path.startsWith('/api')) {
+      const indexPath = join(publicPath, 'index.html');
+      if (fs.existsSync(indexPath)) {
+        return res.sendFile(indexPath);
+      }
     }
-    const indexPath = join(publicPath, 'index.html');
-    if (fs.existsSync(indexPath)) {
-      res.sendFile(indexPath);
-    } else {
-      next();
-    }
+    next();
   });
 
   // API versioning
