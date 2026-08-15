@@ -440,25 +440,7 @@ function handleLogin() {
   window.location.href = `${API_BASE_URL}${API_PREFIX}/auth/google`;
 }
 
-async function handleDemoLogin() {
-  try {
-    const res = await apiRequest('POST', '/auth/demo');
-    if (res?.data?.accessToken) {
-      saveTokens(res.data.accessToken, res.data.refreshToken);
-      showMessage('Signed in as Demo User.', 'success');
-      await loadApp();
-      return;
-    }
-  } catch (error) {
-    console.warn('Backend DB demo login unavailable, initializing local Demo mode:', error);
-  }
 
-  // Fallback local Demo Mode session
-  saveTokens('demo_local_token', 'demo_local_refresh');
-  localStorage.setItem('demo_user_name', 'Demo User');
-  showMessage('Signed in as Demo User.', 'success');
-  await loadApp();
-}
 
 function openAuthModal(defaultTab = 'login') {
   switchAuthTab(defaultTab);
@@ -708,7 +690,6 @@ async function loadAllData() {
 }
 
 async function loadApp() {
-  demoAuthButton?.addEventListener('click', handleDemoLogin);
   emailAuthButton?.addEventListener('click', () => openAuthModal('login'));
   const userBaseCurrencySelect = document.getElementById('userBaseCurrency');
   if (userBaseCurrencySelect) {
@@ -735,7 +716,6 @@ async function loadApp() {
 
   if (!token) {
     emailAuthButton?.classList.remove('hidden');
-    demoAuthButton?.classList.remove('hidden');
     authButton?.classList.add('hidden');
     userInfo?.classList.add('hidden');
     guestNavLinks.forEach((el) => el.classList.remove('hidden'));
@@ -746,7 +726,6 @@ async function loadApp() {
   }
 
   emailAuthButton?.classList.add('hidden');
-  demoAuthButton?.classList.add('hidden');
   if (authButton) {
     authButton.textContent = 'Sign out';
     authButton.onclick = handleLogout;
@@ -756,15 +735,10 @@ async function loadApp() {
   appNavLinks.forEach((el) => el.classList.remove('hidden'));
 
   try {
-    let user = {};
-    if (token === 'demo_local_token') {
-      user = { displayName: 'Demo User', email: 'demo@managemoney.internal' };
-    } else {
-      const profileResult = await apiRequest('GET', '/auth/me').catch(() => null);
-      user = profileResult?.data || { displayName: 'User Profile' };
-    }
+    const profileResult = await apiRequest('GET', '/auth/me').catch(() => null);
+    const user = profileResult?.data || { displayName: 'User Profile' };
 
-    headerUserName.textContent = user.displayName || user.email || 'Demo User';
+    headerUserName.textContent = user.displayName || user.email || 'User Profile';
     const avatarMark = document.getElementById('userAvatarMark');
     if (avatarMark) {
       const name = user.displayName || user.email || 'D';
