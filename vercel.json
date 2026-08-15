@@ -4,12 +4,8 @@
   "outputDirectory": "backend/dist",
   "rewrites": [
     {
-      "source": "/api/(.*)",
-      "destination": "/backend/api"
-    },
-    {
       "source": "/(.*)",
-      "destination": "/backend/api"
+      "destination": "/api/index"
     }
   ]
 }
