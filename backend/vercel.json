@@ -4,7 +4,7 @@
   "outputDirectory": "dist",
   "builds": [
     {
-      "src": "dist/serverless.js",
+      "src": "src/serverless.ts",
       "use": "@vercel/node",
       "config": {
         "maxDuration": 60,
@@ -18,11 +18,11 @@
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "dist/serverless.js"
+      "dest": "src/serverless.ts"
     },
     {
       "src": "/(.*)",
-      "dest": "dist/serverless.js"
+      "dest": "src/serverless.ts"
     }
   ]
 }
