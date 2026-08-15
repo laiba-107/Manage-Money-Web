@@ -5,6 +5,9 @@ const API_BASE_URL = (() => {
   if (typeof custom === 'string' && custom.trim().length) {
     return custom.replace(/\/$/, '');
   }
+  if (typeof window !== 'undefined' && window.location && window.location.origin) {
+    return window.location.origin;
+  }
   return 'http://localhost:3000';
 })();
 const API_PREFIX = '/api/v1';
