@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Authenticating...</title>
+  <style>
+    body { font-family: Arial, sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; background: #f3f6ff; }
+    .loader { text-align: center; padding: 24px; border-radius: 16px; background: #fff; box-shadow: 0 16px 40px rgba(20, 35, 70, .08); }
+    .loader p { margin: 0; color: #334155; }
+  </style>
+</head>
+<body>
+  <div class="loader">
+    <h1>Signing you in...</h1>
+    <p>Please wait while we complete authentication.</p>
+  </div>
+
+  <script>
+    function parseQuery() {
+      return Object.fromEntries(new URLSearchParams(window.location.search));
+    }
+
+    function storeToken(key, value) {
+      if (!value) return;
+      localStorage.setItem(key, value);
+    }
+
+    const params = parseQuery();
+    const accessToken = params.accessToken || params.token;
+    const refreshToken = params.refreshToken || params.refresh;
+
+    if (accessToken) storeToken('manage_money_access_token', accessToken);
+    if (refreshToken) storeToken('manage_money_refresh_token', refreshToken);
+
+    if (accessToken) {
+      window.location.replace('index.html');
+    } else {
+      document.body.innerHTML = '<div class="loader"><h1>Authentication failed</h1><p>No token received. Try signing in again.</p></div>';
+    }
+  </script>
+</body>
+</html>

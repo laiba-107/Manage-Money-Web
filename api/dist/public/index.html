@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Manage Money - Personal Finance Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    (function configureApiBaseUrl() {
+      const { hostname, port, origin } = window.location;
+
+      if (hostname === 'localhost' && port === '3001') {
+        window.API_BASE_URL = 'http://localhost:3000';
+        return;
+      }
+
+      window.API_BASE_URL = origin;
+    })();
+  </script>
+</head>
+<body>
+  <!-- Ambient Dynamic Glow Orbs -->
+  <div class="bg-glow-orb bg-glow-orb-1"></div>
+  <div class="bg-glow-orb bg-glow-orb-2"></div>
+  <div class="bg-glow-orb bg-glow-orb-3"></div>
+
+  <div class="app-shell is-home-view" id="appShell">
+    <!-- Advanced Navigation Bar -->
+    <header class="navbar-advanced" id="navbarAdvanced">
+      <div class="nav-brand-container">
+        <a href="#" class="brand" id="navLogo" data-page="home">
+          <div class="brand-mark">💰</div>
+          <div class="brand-text">
+            <strong>Manage Money</strong>
+            <small>Finance Manager</small>
+          </div>
+        </a>
+      </div>
+
+      <!-- Compact Navigation Menu -->
+      <nav class="nav-menu" id="navMenu">
+        <button class="nav-link guest-nav-only active" data-page="home"><span class="nav-icon">🏠</span> Home</button>
+        <button class="nav-link guest-nav-only" data-page="features" id="navLinkFeatures"><span class="nav-icon">✨</span> Features</button>
+        <button class="nav-link app-nav-only hidden" data-page="dashboard"><span class="nav-icon">📊</span> Dashboard</button>
+        <button class="nav-link app-nav-only hidden" data-page="income"><span class="nav-icon">📈</span> Income</button>
+        <button class="nav-link app-nav-only hidden" data-page="expenses"><span class="nav-icon">📉</span> Expenses</button>
+        <button class="nav-link app-nav-only hidden" data-page="budgets"><span class="nav-icon">🎯</span> Budgets</button>
+        <button class="nav-link app-nav-only hidden" data-page="plans"><span class="nav-icon">🚀</span> Plans</button>
+        <button class="nav-link app-nav-only hidden" data-page="transactions"><span class="nav-icon">📝</span> All Transactions</button>
+      </nav>
+
+      <!-- Right Header Actions -->
+      <div class="nav-actions">
+        <div class="currency-picker-container" title="Base Currency">
+          <span title="Base Currency" style="font-size:0.95rem;">🌐</span>
+          <select id="userBaseCurrency" class="currency-select">
+            <option value="USD">USD</option>
+            <option value="EUR">EUR</option>
+            <option value="GBP">GBP</option>
+            <option value="PKR">PKR</option>
+            <option value="INR">INR</option>
+            <option value="AED">AED</option>
+            <option value="SAR">SAR</option>
+            <option value="CAD">CAD</option>
+            <option value="AUD">AUD</option>
+            <option value="JPY">JPY</option>
+            <option value="CHF">CHF</option>
+            <option value="CNY">CNY</option>
+          </select>
+        </div>
+
+        <button id="emailAuthButton" class="button button-primary button-small">🔑 Sign In</button>
+
+        <div class="user-profile-badge hidden" id="userInfo">
+          <div class="user-avatar" id="userAvatarMark">U</div>
+          <div class="user-details">
+            <span id="headerUserName" class="user-name">User</span>
+            <small class="user-status">● Connected</small>
+          </div>
+          <button id="authButton" class="button button-small button-ghost">Sign out</button>
+        </div>
+
+        <button class="mobile-toggle" id="mobileNavToggle" aria-label="Toggle Navigation">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main id="mainContent">
+      <!-- Home / Landing Page -->
+      <section id="page-home" class="page active">
+        <div class="home-landing">
+          <!-- Hero Section -->
+          <div class="hero-grid">
+            <div class="hero-content">
+              <div class="hero-badge">✨ Personal Finance Pro</div>
+              <h1 class="hero-title">
+                Master Your Money with <span class="gradient-text">Total Control</span>
+              </h1>
+              <p class="hero-subtitle">
+                Track single & group expenses, manage recurring income, set smart budgets, and forecast future financial goals in a multi-currency workspace.
+              </p>
+              <div class="hero-cta-group">
+                <button class="button button-primary" id="heroGetStartedBtn">🚀 Get Started</button>
+              </div>
+            </div>
+
+            <!-- Home Embedded Sign In / Register Card -->
+            <div class="home-auth-card" id="homeAuthContainer">
+              <div class="home-auth-header">
+                <h3 id="homeAuthTitle">Sign In</h3>
+                <p id="homeAuthSubtitle">Access your financial manager</p>
+              </div>
+
+              <div class="home-auth-tabs">
+                <button id="homeTabLoginBtn" class="home-auth-tab active" type="button">Sign In</button>
+                <button id="homeTabRegisterBtn" class="home-auth-tab" type="button">Create Account</button>
+              </div>
+
+              <!-- Home Login Form -->
+              <form id="homeLoginForm" class="form">
+                <div class="form-group">
+                  <label for="homeLoginEmail">Email Address</label>
+                  <input type="email" id="homeLoginEmail" placeholder="name@example.com" required />
+                </div>
+                <div class="form-group">
+                  <label for="homeLoginPassword">Password</label>
+                  <input type="password" id="homeLoginPassword" placeholder="••••••••" required />
+                </div>
+                <button type="submit" class="button button-primary" style="width:100%;margin-top:6px;">Sign In</button>
+              </form>
+
+              <!-- Home Register Form -->
+              <form id="homeRegisterForm" class="form hidden">
+                <div class="form-group">
+                  <label for="homeRegisterName">Full Name</label>
+                  <input type="text" id="homeRegisterName" placeholder="John Doe" required />
+                </div>
+                <div class="form-group">
+                  <label for="homeRegisterEmail">Email Address</label>
+                  <input type="email" id="homeRegisterEmail" placeholder="name@example.com" required />
+                </div>
+                <div class="form-group">
+                  <label for="homeRegisterPassword">Password (Min 6 chars)</label>
+                  <input type="password" id="homeRegisterPassword" placeholder="••••••••" minlength="6" required />
+                </div>
+                <button type="submit" class="button button-success" style="width:100%;margin-top:6px;">Create Account</button>
+              </form>
+            </div>
+          </div>
+
+          <!-- Minimalist Features Showcase -->
+          <div class="features-section" id="featuresSection">
+            <div class="section-header">
+              <span class="section-tag">Key Features</span>
+              <h2>Built for Modern Money Management</h2>
+            </div>
+
+            <div class="features-grid">
+              <div class="feature-card">
+                <div class="feature-icon-wrapper">📈</div>
+                <h3>Income & Expense Tracking</h3>
+                <p>Log daily income and expenses with categories, payment methods, and receipt uploads.</p>
+              </div>
+
+              <div class="feature-card">
+                <div class="feature-icon-wrapper cyan">✈️</div>
+                <h3>Group & Trip Expenses</h3>
+                <p>Bundle multiple expenses for vacations, trips, family outings, or weekly event groups.</p>
+              </div>
+
+              <div class="feature-card">
+                <div class="feature-icon-wrapper emerald">💷</div>
+                <h3>Multi-Currency Exchange</h3>
+                <p>Live exchange rate conversion across USD, EUR, GBP, PKR, INR, AED, and 10+ currencies.</p>
+              </div>
+
+              <div class="feature-card">
+                <div class="feature-icon-wrapper purple">🎯</div>
+                <h3>Smart Budgets</h3>
+                <p>Set spending limits per day, week, month, or trip with visual warning alerts.</p>
+              </div>
+
+              <div class="feature-card">
+                <div class="feature-icon-wrapper amber">🚀</div>
+                <h3>Future Goal Estimation</h3>
+                <p>Calculate upcoming target expenses without affecting current active balance.</p>
+              </div>
+
+              <div class="feature-card">
+                <div class="feature-icon-wrapper rose">📊</div>
+                <h3>Visual Analytics</h3>
+                <p>Clear category breakdowns and income vs expense ratio graphs.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Home Footer -->
+          <footer class="home-footer">
+            <div class="footer-brand">
+              <div class="brand-mark" style="width:34px;height:34px;font-size:16px;">💰</div>
+              <strong>Manage Money</strong>
+              <small style="color:#64748b;margin-left:8px;">© 2026 Personal Finance Manager</small>
+            </div>
+          </footer>
+        </div>
+      </section>
+
+      <!-- Dashboard Page -->
+      <section id="page-dashboard" class="page">
+        <div class="page-header">
+          <h1>Dashboard</h1>
+          <p>Welcome back! Here's your financial overview.</p>
+        </div>
+
+        <!-- Financial Summary Cards -->
+        <div class="cards-grid">
+          <div class="card card-primary">
+            <div class="card-label">Total Balance</div>
+            <div class="card-value" id="totalBalance">$0.00</div>
+            <div class="card-change positive">↑ +12.5% this month</div>
+          </div>
+          <div class="card card-success">
+            <div class="card-label">Monthly Income</div>
+            <div class="card-value" id="monthlyIncome">$0.00</div>
+            <div class="card-change">From all sources</div>
+          </div>
+          <div class="card card-danger">
+            <div class="card-label">Monthly Expenses</div>
+            <div class="card-value" id="monthlyExpenses">$0.00</div>
+            <div class="card-change">Spending this month</div>
+          </div>
+          <div class="card card-info">
+            <div class="card-label">Savings</div>
+            <div class="card-value" id="monthlySavings">$0.00</div>
+            <div class="card-change">Income - Expenses</div>
+          </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="charts-section">
+          <div class="chart-container">
+            <h3>Spending by Category</h3>
+            <canvas id="categoryChart"></canvas>
+          </div>
+          <div class="chart-container">
+            <h3>Income vs Expenses</h3>
+            <canvas id="incomeExpenseChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Recent Transactions -->
+        <div class="card full-width">
+          <h3>Recent Transactions</h3>
+          <div id="recentTransactions" class="transactions-list">
+            <p class="placeholder">Loading transactions...</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Income Page -->
+      <section id="page-income" class="page">
+        <div class="page-header">
+          <h1>Income Management</h1>
+          <button class="button button-success" id="addIncomeBtn">+ Add Income</button>
+        </div>
+
+        <!-- Add Income Modal Form -->
+        <div class="modal hidden" id="incomeModal">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h2>Add Income</h2>
+              <button class="modal-close" id="closeIncomeModal">✕</button>
+            </div>
+            <form id="incomeForm" class="form">
+              <div class="form-row" style="display:flex;gap:12px;">
+                <div class="form-group" style="flex:2;">
+                  <label for="incomeAmount">Amount</label>
+                  <input type="number" id="incomeAmount" placeholder="0.00" step="0.01" required />
+                </div>
+                <div class="form-group" style="flex:1;">
+                  <label for="incomeCurrency">Currency</label>
+                  <select id="incomeCurrency" class="currency-select">
+                    <option value="USD">USD ($)</option>
+                    <option value="EUR">EUR (€)</option>
+                    <option value="GBP">GBP (£)</option>
+                    <option value="PKR">PKR (Rs)</option>
+                    <option value="INR">INR (₹)</option>
+                    <option value="AED">AED</option>
+                    <option value="SAR">SAR</option>
+                    <option value="CAD">CAD (C$)</option>
+                    <option value="AUD">AUD (A$)</option>
+                    <option value="JPY">JPY (¥)</option>
+                    <option value="CHF">CHF</option>
+                    <option value="CNY">CNY (¥)</option>
+                    <option value="KGS">KGS (сом)</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="incomeSource">Source</label>
+                <select id="incomeSource" required>
+                  <option value="">Select source...</option>
+                  <option value="Salary">Salary</option>
+                  <option value="Freelance">Freelance</option>
+                  <option value="Business">Business</option>
+                  <option value="Investments">Investments</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="incomeDate">Date</label>
+                <input type="date" id="incomeDate" required />
+              </div>
+              <div class="form-group">
+                <label for="incomeNotes">Notes</label>
+                <textarea id="incomeNotes" placeholder="Add notes..."></textarea>
+              </div>
+              <div class="form-group">
+                <label>
+                  <input type="checkbox" id="incomeRecurring" />
+                  Set as recurring income
+                </label>
+              </div>
+              <button type="submit" class="button button-primary">Add Income</button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Income List -->
+        <div class="card full-width">
+          <h3>Income Records</h3>
+          <div id="incomeList" class="transactions-list">
+            <p class="placeholder">No income records yet.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Expenses Page -->
+      <section id="page-expenses" class="page">
+        <div class="page-header">
+          <div>
+            <h1>Expense Tracking</h1>
+            <p style="color:var(--muted);font-size:0.9rem;">Track single expenses or create expense groups for trips, weeks, or custom events.</p>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="button button-danger" id="addExpenseBtn">+ Add Expense</button>
+            <button class="button button-primary" id="addExpenseGroupBtn">+ Create Expense Group / Trip</button>
+          </div>
+        </div>
+
+        <!-- Compact Segmented Control Switcher -->
+        <div class="segment-control-container">
+          <div class="segment-control">
+            <button id="tabIndividualExpensesBtn" class="segment-btn active">Single Expenses</button>
+            <button id="tabGroupExpensesBtn" class="segment-btn">Group Expenses & Trips</button>
+          </div>
+        </div>
+
+        <!-- Add Expense Modal Form -->
+        <div class="modal hidden" id="expenseModal">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h2>Add Expense</h2>
+              <button class="modal-close" id="closeExpenseModal">✕</button>
+            </div>
+            <form id="expenseForm" class="form">
+              <div class="form-row" style="display:flex;gap:12px;">
+                <div class="form-group" style="flex:2;">
+                  <label for="expenseAmount">Amount</label>
+                  <input type="number" id="expenseAmount" placeholder="0.00" step="0.01" required />
+                </div>
+                <div class="form-group" style="flex:1;">
+                  <label for="expenseCurrency">Currency</label>
+                  <select id="expenseCurrency" class="currency-select">
+                    <option value="USD">USD ($)</option>
+                    <option value="EUR">EUR (€)</option>
+                    <option value="GBP">GBP (£)</option>
+                    <option value="PKR">PKR (Rs)</option>
+                    <option value="INR">INR (₹)</option>
+                    <option value="AED">AED</option>
+                    <option value="SAR">SAR</option>
+                    <option value="CAD">CAD (C$)</option>
+                    <option value="AUD">AUD (A$)</option>
+                    <option value="JPY">JPY (¥)</option>
+                    <option value="CHF">CHF</option>
+                    <option value="CNY">CNY (¥)</option>
+                    <option value="KGS">KGS (сом)</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="expenseCategory">Category</label>
+                <select id="expenseCategory" required>
+                  <option value="">Select category...</option>
+                  <option value="Food">🍔 Food & Dining</option>
+                  <option value="Transport">🚗 Transport</option>
+                  <option value="Bills">📄 Bills & Utilities</option>
+                  <option value="Shopping">🛍️ Shopping</option>
+                  <option value="Rent">🏠 Rent</option>
+                  <option value="Entertainment">🎬 Entertainment</option>
+                  <option value="Healthcare">🏥 Healthcare</option>
+                  <option value="Education">🎓 Education</option>
+                  <option value="Travel">✈️ Travel</option>
+                  <option value="Return">🔄 Return / Refund</option>
+                  <option value="Other">📌 Other</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="expenseDate">Date</label>
+                <input type="date" id="expenseDate" required />
+              </div>
+              <div class="form-group">
+                <label for="paymentMethod">Payment Method</label>
+                <select id="paymentMethod">
+                  <option value="Cash">💵 Cash</option>
+                  <option value="Credit Card">💳 Credit Card</option>
+                  <option value="Debit Card">🏦 Debit Card</option>
+                  <option value="Bank Transfer">🔄 Bank Transfer</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="expenseNotes">Notes</label>
+                <textarea id="expenseNotes" placeholder="Add notes..."></textarea>
+              </div>
+              <div class="form-group">
+                <label for="receiptUpload">Receipt Image (Optional)</label>
+                <input type="file" id="receiptUpload" accept="image/*" />
+              </div>
+              <button type="submit" class="button button-primary">Add Expense</button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Add/Edit Expense Group Modal -->
+        <div class="modal hidden" id="expenseGroupModal">
+          <div class="modal-content" style="max-width: 680px;">
+            <div class="modal-header">
+              <h2 id="groupModalTitle">Create Expense Group</h2>
+              <button class="modal-close" id="closeExpenseGroupModal">✕</button>
+            </div>
+            <form id="expenseGroupForm" class="form">
+              <div class="form-group">
+                <label for="groupName">Group Title / Name</label>
+                <input type="text" id="groupName" placeholder="e.g. Paris Trip 2026, Weekly Grocery Run, Monday Outing" required />
+              </div>
+              <div class="form-row" style="display:flex;gap:12px;">
+                <div class="form-group" style="flex:1;">
+                  <label for="groupType">Group Type</label>
+                  <select id="groupType">
+                    <option value="trip">✈️ Trip / Event</option>
+                    <option value="day">📅 Single Day</option>
+                    <option value="week">🗓️ Week</option>
+                    <option value="custom">📆 Custom Date Range</option>
+                  </select>
+                </div>
+                <div class="form-group" style="flex:1;">
+                  <label for="groupStartDate">Start Date</label>
+                  <input type="date" id="groupStartDate" required />
+                </div>
+                <div class="form-group" style="flex:1;">
+                  <label for="groupEndDate">End Date</label>
+                  <input type="date" id="groupEndDate" required />
+                </div>
+              </div>
+
+              <!-- Interactive Line Items List -->
+              <div class="card" style="background:#f8fafc;padding:14px;border:1px dashed var(--border);margin-bottom:14px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                  <h4 style="margin:0;">Line-Item Expenses in Group</h4>
+                  <button type="button" class="button button-small button-outline" id="addGroupItemBtn">+ Add Line Item</button>
+                </div>
+                <div id="groupItemsContainer"></div>
+                <div style="text-align:right;margin-top:10px;font-weight:700;font-size:1.05rem;">
+                  Calculated Total: <span id="groupTotalDisplay">$0.00</span>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="groupNotes">Notes / Details</label>
+                <textarea id="groupNotes" placeholder="Trip itinerary, budget notes..."></textarea>
+              </div>
+
+              <button type="submit" class="button button-primary" style="width:100%;">Save Expense Group</button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Individual Expenses View Tab -->
+        <div id="individualExpensesView">
+          <div class="card full-width">
+            <h3>Individual Expense Records</h3>
+            <div id="expenseList" class="transactions-list">
+              <p class="placeholder">No expenses yet.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Group Expenses View Tab -->
+        <div id="groupExpensesView" class="hidden">
+          <div id="expenseGroupsList" class="budgets-grid">
+            <p class="placeholder">No expense groups yet. Click "+ Create Expense Group / Trip" to bundle expenses for trips or events!</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Budgets Page -->
+      <section id="page-budgets" class="page">
+        <div class="page-header">
+          <div>
+            <h1>Budget Management</h1>
+            <p style="color:var(--muted);font-size:0.9rem;">Set spending limits for a Day, Week, Month, or Trip/Event.</p>
+          </div>
+          <button class="button button-success" id="addBudgetBtn">+ Add Budget</button>
+        </div>
+
+        <!-- Add/Edit Budget Modal Form -->
+        <div class="modal hidden" id="budgetModal">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h2>Add Budget</h2>
+              <button class="modal-close" id="closeBudgetModal">✕</button>
+            </div>
+            <form id="budgetForm" class="form">
+              <div class="form-group">
+                <label for="budgetName">Budget Title (Optional)</label>
+                <input type="text" id="budgetName" placeholder="e.g. Weekly Groceries, Paris Trip Budget" />
+              </div>
+              <div class="form-group">
+                <label for="budgetCategory">Category</label>
+                <select id="budgetCategory" required>
+                  <option value="">Select category...</option>
+                  <option value="Food">🍔 Food & Dining</option>
+                  <option value="Transport">🚗 Transport</option>
+                  <option value="Bills">📄 Bills & Utilities</option>
+                  <option value="Shopping">🛍️ Shopping</option>
+                  <option value="Rent">🏠 Rent</option>
+                  <option value="Entertainment">🎬 Entertainment</option>
+                  <option value="Healthcare">🏥 Healthcare</option>
+                  <option value="Education">🎓 Education</option>
+                  <option value="Travel">✈️ Travel</option>
+                  <option value="Return">🔄 Return / Refund</option>
+                  <option value="Other">📌 Other</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="budgetPeriod">Timeframe / Period</label>
+                <select id="budgetPeriod" required>
+                  <option value="monthly">Monthly</option>
+                  <option value="weekly">Weekly</option>
+                  <option value="daily">Single Day</option>
+                  <option value="trip">Trip / Event</option>
+                  <option value="custom">Custom Date Range</option>
+                </select>
+              </div>
+              <div id="budgetDateRow" class="form-row hidden" style="display:flex;gap:12px;">
+                <div class="form-group" style="flex:1;">
+                  <label for="budgetStartDate">Start Date</label>
+                  <input type="date" id="budgetStartDate" />
+                </div>
+                <div class="form-group" style="flex:1;">
+                  <label for="budgetEndDate">End Date</label>
+                  <input type="date" id="budgetEndDate" />
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="budgetAmount">Budget Limit Amount</label>
+                <input type="number" id="budgetAmount" placeholder="500.00" step="0.01" required />
+              </div>
+              <button type="submit" class="button button-primary">Save Budget</button>
+            </form>
+          </div>
+        </div>
+
+        <div id="budgetsList" class="budgets-grid">
+          <p class="placeholder">Loading budgets...</p>
+        </div>
+      </section>
+
+      <!-- Future Plans Page -->
+      <section id="page-plans" class="page">
+        <div class="page-header">
+          <div>
+            <h1>🚀 Future Plans</h1>
+            <p style="color:var(--muted);font-size:0.9rem;">Plan future expenses (education, trips, renovations) and calculate estimated costs. <strong>Note:</strong> Future plans are kept separate and will not affect your active balance or current expenses.</p>
+          </div>
+          <button class="button button-success" id="addPlanBtn">+ Create Future Plan</button>
+        </div>
+
+        <!-- Add/Edit Future Plan Modal -->
+        <div class="modal hidden" id="planModal">
+          <div class="modal-content" style="max-width: 680px;">
+            <div class="modal-header">
+              <h2 id="planModalTitle">Create Future Plan</h2>
+              <button class="modal-close" id="closePlanModal">✕</button>
+            </div>
+            <form id="planForm" class="form">
+              <div class="form-group">
+                <label for="planName">Plan Title</label>
+                <input type="text" id="planName" placeholder="e.g. Master's Degree 2027, Japan Tour, Home Renovation" required />
+              </div>
+              <div class="form-row" style="display:flex;gap:12px;">
+                <div class="form-group" style="flex:1;">
+                  <label for="planTargetDate">Target Completion Date</label>
+                  <input type="date" id="planTargetDate" required />
+                </div>
+              </div>
+
+              <!-- Estimated Cost Items List -->
+              <div class="card" style="background:#f8fafc;padding:14px;border:1px dashed var(--border);margin-bottom:14px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                  <h4 style="margin:0;">Estimated Line Item Expenses</h4>
+                  <button type="button" class="button button-small button-outline" id="addPlanItemBtn">+ Add Estimated Item</button>
+                </div>
+                <div id="planItemsContainer"></div>
+                <div style="text-align:right;margin-top:10px;font-weight:700;font-size:1.05rem;color:var(--success);">
+                  Total Estimated Cost: <span id="planTotalDisplay">$0.00</span>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="planNotes">Notes & Planning Strategy</label>
+                <textarea id="planNotes" placeholder="Savings targets, scholarship notes..."></textarea>
+              </div>
+
+              <button type="submit" class="button button-success" style="width:100%;">Save Future Goal</button>
+            </form>
+          </div>
+        </div>
+
+        <div id="plansList" class="budgets-grid">
+          <p class="placeholder">No future goals planned yet. Click "+ Create Future Goal" to estimate upcoming costs!</p>
+        </div>
+      </section>
+
+      <!-- Transactions Page -->
+      <section id="page-transactions" class="page">
+        <div class="page-header">
+          <h1>All Transactions</h1>
+        </div>
+        <div class="card full-width">
+          <div id="allTransactionsList" class="transactions-list">
+            <p class="placeholder">Loading transactions...</p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Email / Password Auth Modal -->
+    <div class="modal hidden" id="authModal">
+      <div class="modal-content" style="max-width: 420px;">
+        <div class="modal-header">
+          <h2 id="authModalTitle">Sign In</h2>
+          <button class="modal-close" id="closeAuthModal">✕</button>
+        </div>
+        
+        <!-- Auth Tabs -->
+        <div class="auth-tabs" style="display: flex; gap: 8px; margin-bottom: 18px;">
+          <button id="tabLoginBtn" class="button button-small button-primary" style="flex: 1;">Sign In</button>
+          <button id="tabRegisterBtn" class="button button-small button-ghost" style="flex: 1;">Create Account</button>
+        </div>
+
+        <!-- Login Form -->
+        <form id="loginForm" class="form">
+          <div class="form-group">
+            <label for="loginEmail">Email Address</label>
+            <input type="email" id="loginEmail" placeholder="yourname@example.com" required />
+          </div>
+          <div class="form-group">
+            <label for="loginPassword">Password</label>
+            <input type="password" id="loginPassword" placeholder="••••••••" required />
+          </div>
+          <button type="submit" class="button button-primary" style="width: 100%;">Sign In</button>
+        </form>
+
+        <!-- Register Form -->
+        <form id="registerForm" class="form hidden">
+          <div class="form-group">
+            <label for="registerName">Full Name</label>
+            <input type="text" id="registerName" placeholder="John Doe" required />
+          </div>
+          <div class="form-group">
+            <label for="registerEmail">Email Address</label>
+            <input type="email" id="registerEmail" placeholder="yourname@example.com" required />
+          </div>
+          <div class="form-group">
+            <label for="registerPassword">Password (Min 6 characters)</label>
+            <input type="password" id="registerPassword" placeholder="••••••••" minlength="6" required />
+          </div>
+          <button type="submit" class="button button-success" style="width: 100%;">Create Account</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Message Toast -->
+    <div id="message" class="toast hidden"></div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

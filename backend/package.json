@@ -6,7 +6,7 @@
   "private": true,
   "license": "MIT",
   "scripts": {
-    "build": "npm run copy:frontend && npx @nestjs/cli build && npm run copy:public-to-dist",
+    "build": "npm run copy:frontend && npx @nestjs/cli build && npm run copy:public-to-dist && node copy-dist-to-api.js",
     "build:all": "npm run build",
     "copy:frontend": "node copy-frontend.js",
     "copy:public-to-dist": "node copy-public-to-dist.js",
