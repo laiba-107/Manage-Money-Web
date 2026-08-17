@@ -15,11 +15,20 @@ import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 
 const server = express();
 let isAppInitialized = false;
+let initError: any = null;
 
 // Resolve static frontend path
 const publicPathInDist = join(__dirname, 'public');
 const publicPathParent = join(__dirname, '..', 'public');
-const publicPath = fs.existsSync(publicPathInDist) ? publicPathInDist : publicPathParent;
+const publicPathRoot = join(__dirname, '..', '..', 'public');
+let publicPath = publicPathInDist;
+if (fs.existsSync(publicPathInDist)) {
+  publicPath = publicPathInDist;
+} else if (fs.existsSync(publicPathParent)) {
+  publicPath = publicPathParent;
+} else if (fs.existsSync(publicPathRoot)) {
+  publicPath = publicPathRoot;
+}
 
 // Serve static frontend files immediately
 server.use(express.static(publicPath, { index: 'index.html' }));
@@ -79,8 +88,10 @@ async function bootstrapServer() {
 
     await app.init();
     isAppInitialized = true;
+    initError = null;
   } catch (error: any) {
-    console.warn('NestJS Serverless Init Warning (Checking DB connection):', error?.message || error);
+    initError = error;
+    console.error('NestJS Serverless Init Error:', error?.message || error);
   }
 
   return server;
@@ -100,14 +111,26 @@ server.use((req: any, res: any, next: any) => {
 export default async function handler(req: any, res: any) {
   try {
     const expressApp = await bootstrapServer();
+    if (!isAppInitialized && initError) {
+      console.error('Serverless Initialization Failed:', initError);
+      return res.status(500).json({
+        statusCode: 500,
+        error: 'Internal Server Error',
+        message: 'Backend server failed to initialize.',
+        details: initError?.message || String(initError),
+        hint: 'Please check your Vercel Environment Variables (DB_HOST, DB_PASSWORD, DB_SSL, JWT_SECRET).',
+      });
+    }
     expressApp(req, res);
   } catch (error: any) {
     console.error('Vercel Serverless Invocation Error:', error);
-    res.status(500).json({
-      statusCode: 500,
-      message: 'Serverless Function Execution Error',
-      error: error?.message || String(error),
-      detail: 'Please check your Vercel Environment Variables (DB_HOST, DB_PASSWORD, DB_SSL, JWT_SECRET).',
-    });
+    if (!res.headersSent) {
+      res.status(500).json({
+        statusCode: 500,
+        error: 'Serverless Function Execution Error',
+        message: error?.message || String(error),
+        hint: 'Please check your Vercel Environment Variables and function configuration.',
+      });
+    }
   }
 }

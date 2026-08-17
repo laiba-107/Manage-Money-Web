@@ -1,0 +1,14 @@
+{
+  "name": "manage-money-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Manage Money Monorepo",
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "build": "cd backend && npm run build",
+    "start": "cd backend && npm run start"
+  }
+}

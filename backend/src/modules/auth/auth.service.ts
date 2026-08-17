@@ -10,16 +10,6 @@ import { RegisterDto, LoginDto } from './dto/auth.dto';
 import { UsersService } from '../users/users.service';
 import { User } from '../users/entities/user.entity';
 
-export interface GoogleUserData {
-  googleId: string;
-  email: string;
-  displayName: string;
-  firstName?: string;
-  lastName?: string;
-  photoUrl?: string;
-  isEmailVerified?: boolean;
-}
-
 export interface AuthTokens {
   accessToken: string;
   refreshToken: string;
@@ -36,30 +26,6 @@ export class AuthService {
     private jwtService: JwtService,
     private configService: ConfigService,
   ) {}
-
-  async validateGoogleUser(googleData: GoogleUserData): Promise<User> {
-    let user = await this.usersService.findByGoogleId(googleData.googleId);
-
-    if (!user) {
-      // Check if account already exists with same email
-      const existingUser = await this.usersService.findByEmail(
-        googleData.email,
-      );
-      if (existingUser) {
-        // Link Google account to existing user
-        user = await this.usersService.linkGoogleAccount(
-          existingUser.id,
-          googleData,
-        );
-      } else {
-        user = await this.usersService.createFromGoogle(googleData);
-      }
-    }
-
-    await this.usersService.updateLastLogin(user.id);
-    this.logger.log(`User authenticated: ${user.email}`);
-    return user;
-  }
 
   async loginAsDemo(): Promise<AuthTokens> {
     const user = await this.usersService.findOrCreateDemoUser();

@@ -6,7 +6,6 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './entities/user.entity';
-import { GoogleUserData } from '../auth/auth.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
@@ -47,23 +46,6 @@ export class UsersService {
     return this.userRepository.save(user);
   }
 
-  async findByGoogleId(googleId: string): Promise<User | null> {
-    return this.userRepository.findOne({ where: { googleId } });
-  }
-
-  async createFromGoogle(data: GoogleUserData): Promise<User> {
-    const user = this.userRepository.create({
-      googleId: data.googleId,
-      email: data.email,
-      displayName: data.displayName,
-      firstName: data.firstName,
-      lastName: data.lastName,
-      photoUrl: data.photoUrl,
-      isEmailVerified: data.isEmailVerified ?? true,
-    });
-    return this.userRepository.save(user);
-  }
-
   async findOrCreateDemoUser(): Promise<User> {
     const demoEmail = 'demo@managemoney.com';
     let user = await this.findByEmail(demoEmail);
@@ -73,7 +55,6 @@ export class UsersService {
         displayName: 'Demo User',
         firstName: 'Demo',
         lastName: 'User',
-        googleId: 'demo-google-id-12345',
         isEmailVerified: true,
         currency: 'USD',
         theme: 'light',
@@ -81,16 +62,6 @@ export class UsersService {
       user = await this.userRepository.save(user);
     }
     return user;
-  }
-
-  async linkGoogleAccount(userId: string, data: GoogleUserData): Promise<User> {
-    const user = await this.findById(userId);
-    if (!user) throw new NotFoundException('User not found');
-
-    user.googleId = data.googleId;
-    user.photoUrl = data.photoUrl || user.photoUrl;
-    user.isEmailVerified = true;
-    return this.userRepository.save(user);
   }
 
   async update(userId: string, dto: UpdateUserDto): Promise<User> {

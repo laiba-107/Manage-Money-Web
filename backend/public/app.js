@@ -437,7 +437,7 @@ async function handleLogout() {
 }
 
 function handleLogin() {
-  window.location.href = `${API_BASE_URL}${API_PREFIX}/auth/google`;
+  openAuthModal('login');
 }
 
 

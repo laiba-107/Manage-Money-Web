@@ -30,50 +30,49 @@ import { Setting } from './modules/settings/entities/setting.entity';
           .valid('development', 'production', 'test')
           .default('development'),
         PORT: Joi.number().default(3000),
-        DB_HOST: Joi.string().default('localhost'),
+        DB_HOST: Joi.string().allow('', null).default('localhost'),
         DB_PORT: Joi.number().default(5432),
-        DB_USERNAME: Joi.string().default('postgres'),
-        DB_PASSWORD: Joi.string().default('postgres'),
-        DB_NAME: Joi.string().default('manage_money'),
-        DB_SSL: Joi.string().valid('true', 'false').default('false'),
-        JWT_SECRET: Joi.string().min(32).default('manage_money_default_jwt_secret_key_32_chars_min'),
-        JWT_REFRESH_SECRET: Joi.string().min(32).default('manage_money_default_refresh_secret_32_chars'),
-        JWT_EXPIRES_IN: Joi.string().default('7d'),
-        JWT_REFRESH_EXPIRES_IN: Joi.string().default('30d'),
-        GOOGLE_CLIENT_ID: Joi.string().default('optional_google_client_id'),
-        GOOGLE_CLIENT_SECRET: Joi.string().default('optional_google_client_secret'),
-        GOOGLE_CALLBACK_URL: Joi.string().default('http://localhost:3000/api/v1/auth/google/callback'),
-        FRONTEND_URL: Joi.string().default('http://localhost:3000'),
-        ALLOWED_ORIGINS: Joi.string().default('http://localhost:3000,http://localhost:3001,http://localhost'),
+        DB_USERNAME: Joi.string().allow('', null).default('postgres'),
+        DB_PASSWORD: Joi.string().allow('', null).default('postgres'),
+        DB_NAME: Joi.string().allow('', null).default('manage_money'),
+        DB_SSL: Joi.string().allow('true', 'false', '1', '0', '', null).default('false'),
+        JWT_SECRET: Joi.string().allow('', null).default('manage_money_default_jwt_secret_key_32_chars_min'),
+        JWT_REFRESH_SECRET: Joi.string().allow('', null).default('manage_money_default_refresh_secret_32_chars'),
+        JWT_EXPIRES_IN: Joi.string().allow('', null).default('7d'),
+        JWT_REFRESH_EXPIRES_IN: Joi.string().allow('', null).default('30d'),
+        FRONTEND_URL: Joi.string().allow('', null).default('http://localhost:3000'),
+        ALLOWED_ORIGINS: Joi.string().allow('', null).default('http://localhost:3000,http://localhost:3001,http://localhost'),
       }),
     }),
 
     // Database connection
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        type: 'postgres',
-        host: configService.get('DB_HOST'),
-        port: configService.get<number>('DB_PORT'),
-        username: configService.get('DB_USERNAME'),
-        password: configService.get('DB_PASSWORD'),
-        database: configService.get('DB_NAME'),
-        entities: [User, Category, Transaction, Budget, Notification, Setting],
-        synchronize: configService.get('DB_SYNCHRONIZE') === 'true',
-        ssl:
-          configService.get('DB_SSL') === 'true'
-            ? { rejectUnauthorized: false }
-            : false,
-        logging: configService.get('NODE_ENV') === 'development',
-        cache: {
-          duration: 30000, // 30 seconds query cache
-        },
-        extra: {
-          max: 20, // connection pool size
-          idleTimeoutMillis: 30000,
-          connectionTimeoutMillis: 2000,
-        },
-      }),
+      useFactory: (configService: ConfigService) => {
+        const sslVal = String(configService.get('DB_SSL') || '').toLowerCase();
+        const isSsl = sslVal === 'true' || sslVal === '1';
+
+        return {
+          type: 'postgres',
+          host: configService.get('DB_HOST') || 'localhost',
+          port: configService.get<number>('DB_PORT') || 5432,
+          username: configService.get('DB_USERNAME') || 'postgres',
+          password: configService.get('DB_PASSWORD') || 'postgres',
+          database: configService.get('DB_NAME') || 'manage_money',
+          entities: [User, Category, Transaction, Budget, Notification, Setting],
+          synchronize: configService.get('DB_SYNCHRONIZE') === 'true',
+          ssl: isSsl ? { rejectUnauthorized: false } : false,
+          logging: configService.get('NODE_ENV') === 'development',
+          cache: {
+            duration: 30000, // 30 seconds query cache
+          },
+          extra: {
+            max: 20, // connection pool size
+            idleTimeoutMillis: 30000,
+            connectionTimeoutMillis: 5000,
+          },
+        };
+      },
       inject: [ConfigService],
     }),
 

@@ -31,31 +31,6 @@ export class AuthController {
   ) {}
 
   @Public()
-  @Get('google')
-  @UseGuards(AuthGuard('google'))
-  @ApiOperation({ summary: 'Initiate Google OAuth login' })
-  async googleAuth() {
-    // Passport handles redirect
-  }
-
-  @Public()
-  @Get('google/callback')
-  @UseGuards(AuthGuard('google'))
-  @ApiOperation({ summary: 'Google OAuth callback' })
-  async googleAuthCallback(@Req() req: any, @Res() res: Response) {
-    const tokens = await this.authService.generateTokens(req.user);
-    const frontendUrl = this.configService.get<string>(
-      'FRONTEND_URL',
-      'http://localhost:3000',
-    ).replace(/\/$/, '');
-
-    const redirectUrl = `${frontendUrl}/auth_callback.html?accessToken=${encodeURIComponent(
-      tokens.accessToken,
-    )}&refreshToken=${encodeURIComponent(tokens.refreshToken)}`;
-    return res.redirect(redirectUrl);
-  }
-
-  @Public()
   @Post('demo')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Instant Demo Sign-In without OAuth' })
