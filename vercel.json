@@ -3,10 +3,7 @@
   "buildCommand": "cd backend && npm run build",
   "functions": {
     "api/index.js": {
-      "includeFiles": [
-        "backend/dist/**",
-        "backend/dist/**/*"
-      ]
+      "includeFiles": "backend/dist/**"
     }
   },
   "rewrites": [
