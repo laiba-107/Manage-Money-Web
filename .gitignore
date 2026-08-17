@@ -9,8 +9,9 @@ backend/.env.local
 
 # Node
 node_modules/
-dist/
-!api/dist/
+# Ignore dist everywhere EXCEPT api/dist (needed for Vercel serverless)
+backend/dist/
+backend/dist/**
 build/
 *.log
 npm-debug.log*

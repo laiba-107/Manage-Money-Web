@@ -1,6 +1,11 @@
 {
   "version": 2,
-  "buildCommand": "cd backend && npm run build && node copy-dist-to-api.js",
+  "buildCommand": "cd backend && npm run build",
+  "functions": {
+    "api/index.js": {
+      "includeFiles": "api/dist/**"
+    }
+  },
   "rewrites": [
     {
       "source": "/(.*)",
