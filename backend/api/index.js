@@ -1,22 +1,29 @@
 require('reflect-metadata');
 const path = require('path');
+const fs = require('fs');
 
 let handler;
+const errors = [];
 const candidates = [
+  path.join(__dirname, '..', 'dist', 'src', 'serverless.js'),
   path.join(__dirname, '..', 'dist', 'src', 'serverless'),
-  path.join(__dirname, '..', '..', 'backend', 'dist', 'src', 'serverless'),
-  '../dist/src/serverless',
+  path.join(process.cwd(), 'dist', 'src', 'serverless.js'),
+  path.join(process.cwd(), 'backend', 'dist', 'src', 'serverless.js'),
 ];
 
 for (const candidate of candidates) {
   try {
-    const mod = require(candidate);
-    handler = mod.default || mod;
-    if (typeof handler === 'function') {
-      break;
+    if (fs.existsSync(candidate) || fs.existsSync(candidate + '.js')) {
+      const mod = require(candidate);
+      handler = mod.default || mod;
+      if (typeof handler === 'function') {
+        break;
+      }
+    } else {
+      errors.push({ candidate, error: 'File does not exist' });
     }
   } catch (err) {
-    // Try next candidate
+    errors.push({ candidate, error: err?.message || String(err), code: err?.code });
   }
 }
 
@@ -26,7 +33,11 @@ if (!handler) {
       statusCode: 500,
       error: 'Module Resolution Error',
       message: 'Could not load backend serverless module.',
-      details: `Directory: ${__dirname}, CWD: ${process.cwd()}`,
+      details: {
+        directory: __dirname,
+        cwd: process.cwd(),
+        errors: errors,
+      },
     });
   };
 }
