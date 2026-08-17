@@ -2,42 +2,48 @@ require('reflect-metadata');
 const path = require('path');
 const fs = require('fs');
 
+// When deployed via Vercel with root = backend/:
+//   - This file lives at /var/task/api/index.js
+//   - The build compiles src/serverless.ts → dist/serverless.js
+//   - includeFiles: "dist/**" bundles dist/ into /var/task/dist/
+//   - So the compiled module is at /var/task/dist/serverless.js
+//   - From __dirname (/var/task/api), that's ../dist/serverless.js
+
+const localDist = path.join(__dirname, '..', 'dist', 'serverless.js');
+
 let handler;
-const errors = [];
-const candidates = [
-  path.join(__dirname, '..', 'dist', 'src', 'serverless.js'),
-  path.join(__dirname, '..', 'dist', 'src', 'serverless'),
-  path.join(process.cwd(), 'dist', 'src', 'serverless.js'),
-  path.join(process.cwd(), 'backend', 'dist', 'src', 'serverless.js'),
-];
 
-for (const candidate of candidates) {
+if (fs.existsSync(localDist)) {
   try {
-    if (fs.existsSync(candidate) || fs.existsSync(candidate + '.js')) {
-      const mod = require(candidate);
-      handler = mod.default || mod;
-      if (typeof handler === 'function') {
-        break;
-      }
-    } else {
-      errors.push({ candidate, error: 'File does not exist' });
-    }
+    const mod = require(localDist);
+    handler = mod.default || mod;
   } catch (err) {
-    errors.push({ candidate, error: err?.message || String(err), code: err?.code });
+    handler = (req, res) => {
+      res.status(500).json({
+        statusCode: 500,
+        error: 'Serverless Load Error',
+        message: err?.message || String(err),
+      });
+    };
   }
-}
+} else {
+  // Debug: show what's actually in the function bundle
+  let apiContents = [];
+  let distContents = [];
+  let rootContents = [];
+  try { apiContents = fs.readdirSync(__dirname); } catch (_) {}
+  try { distContents = fs.readdirSync(path.join(__dirname, '..', 'dist')); } catch (_) {}
+  try { rootContents = fs.readdirSync(path.join(__dirname, '..')); } catch (_) {}
 
-if (!handler) {
   handler = (req, res) => {
     res.status(500).json({
       statusCode: 500,
-      error: 'Module Resolution Error',
-      message: 'Could not load backend serverless module.',
-      details: {
-        directory: __dirname,
-        cwd: process.cwd(),
-        errors: errors,
-      },
+      error: 'Module Not Found',
+      expected: localDist,
+      apiDir: apiContents,
+      rootDir: rootContents,
+      distDir: distContents,
+      cwd: process.cwd(),
     });
   };
 }
