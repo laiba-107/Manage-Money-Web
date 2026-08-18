@@ -296,6 +296,7 @@ let currentBaseCurrency = localStorage.getItem('user_base_currency') || 'USD';
 function populateCurrencyDropdown(selectEl, selectedValue = currentBaseCurrency) {
   if (!selectEl) return;
   const currentVal = selectedValue || selectEl.value || currentBaseCurrency;
+  const isNavbarSelect = selectEl.id === 'userBaseCurrency';
   selectEl.innerHTML = '';
 
   const popularGroup = document.createElement('optgroup');
@@ -307,7 +308,9 @@ function populateCurrencyDropdown(selectEl, selectedValue = currentBaseCurrency)
     if (c) {
       const opt = document.createElement('option');
       opt.value = code;
-      opt.textContent = `${code} — ${c.name} (${c.symbol.trim()})`;
+      opt.textContent = isNavbarSelect
+        ? `${code} (${c.symbol.trim()})`
+        : `${code} (${c.symbol.trim()}) · ${c.name}`;
       popularGroup.appendChild(opt);
     }
   });
@@ -318,7 +321,9 @@ function populateCurrencyDropdown(selectEl, selectedValue = currentBaseCurrency)
   sorted.forEach((c) => {
     const opt = document.createElement('option');
     opt.value = c.code;
-    opt.textContent = `${c.code} — ${c.name} (${c.symbol.trim()})`;
+    opt.textContent = isNavbarSelect
+      ? `${c.code} (${c.symbol.trim()})`
+      : `${c.code} (${c.symbol.trim()}) · ${c.name}`;
     allGroup.appendChild(opt);
   });
 
@@ -803,8 +808,20 @@ document.getElementById('heroExploreFeaturesBtn')?.addEventListener('click', () 
 // Mobile menu toggle
 const mobileNavToggle = document.getElementById('mobileNavToggle');
 const navMenu = document.getElementById('navMenu');
-mobileNavToggle?.addEventListener('click', () => {
+
+mobileNavToggle?.addEventListener('click', (e) => {
+  e.preventDefault();
+  e.stopPropagation();
   navMenu?.classList.toggle('mobile-open');
+  mobileNavToggle?.classList.toggle('active');
+});
+
+// Close mobile menu when clicking outside
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('#navbarAdvanced')) {
+    navMenu?.classList.remove('mobile-open');
+    mobileNavToggle?.classList.remove('active');
+  }
 });
 
 /* ---------------------------------------------------------------------- */

@@ -303,6 +303,49 @@ button {
   white-space: nowrap;
 }
 
+/* Mobile Toggle Hamburger Button (Hidden on Desktop) */
+.mobile-toggle {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  width: 34px;
+  height: 34px;
+  padding: 6px;
+  border-radius: 10px;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.mobile-toggle:hover {
+  background: #f1f5f9;
+  border-color: var(--primary);
+}
+
+.mobile-toggle span {
+  display: block;
+  width: 18px;
+  height: 2px;
+  background: #0f172a;
+  border-radius: 2px;
+  transition: transform 0.25s ease, opacity 0.25s ease;
+}
+
+.mobile-toggle.active span:nth-child(1) {
+  transform: translateY(6px) rotate(45deg);
+}
+.mobile-toggle.active span:nth-child(2) {
+  opacity: 0;
+}
+.mobile-toggle.active span:nth-child(3) {
+  transform: translateY(-6px) rotate(-45deg);
+}
+
 /* Currency Picker Pill */
 .currency-picker-container {
   background: #ffffff;
@@ -1315,31 +1358,40 @@ button {
     position: relative !important;
   }
 
-  .nav-menu:not(.mobile-open) {
+  .nav-menu {
     display: none !important;
   }
 
   .nav-menu.mobile-open {
     display: flex !important;
     position: absolute !important;
-    top: calc(100% + 8px) !important;
+    top: calc(100% + 10px) !important;
     left: 0 !important;
     right: 0 !important;
     width: 100% !important;
+    box-sizing: border-box !important;
     flex-direction: column !important;
     background: #ffffff !important;
     padding: 12px !important;
     border-radius: 18px !important;
-    box-shadow: 0 20px 40px rgba(15, 23, 42, 0.22) !important;
+    box-shadow: 0 24px 48px rgba(15, 23, 42, 0.25) !important;
     border: 1px solid var(--border) !important;
-    z-index: 200 !important;
+    z-index: 9999 !important;
+    gap: 6px !important;
+    animation: fadeInSlideDown 0.2s ease-out;
   }
 
   .nav-menu.mobile-open .nav-link {
+    display: flex !important;
     width: 100% !important;
     justify-content: flex-start !important;
-    padding: 10px 14px !important;
-    font-size: 0.92rem !important;
+    padding: 12px 16px !important;
+    font-size: 0.95rem !important;
+    border-radius: 12px !important;
+  }
+
+  .nav-menu.mobile-open .nav-link.hidden {
+    display: none !important;
   }
 
   .mobile-toggle {
