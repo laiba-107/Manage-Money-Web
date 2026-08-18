@@ -44,7 +44,7 @@ export class TransactionsService {
       amount: Number(data.amount),
       type: data.type,
       title: data.title,
-      notes: data.notes,
+      notes: data.notes || '',
       date: data.date?.toDate?.() ?? new Date(data.date),
       paymentMethod: data.paymentMethod,
       receiptUrl: data.receiptUrl,
@@ -65,6 +65,18 @@ export class TransactionsService {
   async create(userId: string, dto: CreateTransactionDto): Promise<Transaction> {
     const id = uuidv4();
     const now = new Date();
+
+    let categoryData: any = undefined;
+    if (dto.categoryId) {
+      try {
+        const catDoc = await this.firebase.collection('categories').doc(dto.categoryId).get();
+        if (catDoc.exists) {
+          const c = catDoc.data()!;
+          categoryData = { id: catDoc.id, name: c.name, icon: c.icon, color: c.color };
+        }
+      } catch (_) {}
+    }
+
     const tx: Transaction = {
       id,
       userId,
@@ -81,11 +93,12 @@ export class TransactionsService {
       exchangeRate: 1,
       tags: dto.tags ?? [],
       categoryId: dto.categoryId,
+      category: categoryData,
       createdAt: now,
       updatedAt: now,
     };
 
-    await this.col().doc(id).set(tx);
+    await this.col().doc(id).set(this.firebase.clean(tx));
 
     if (dto.isRecurring && dto.recurrenceInterval) {
       await this.createRecurringTransactions(tx);
@@ -103,8 +116,6 @@ export class TransactionsService {
       page = 1, limit = 20, sortBy = 'date', sortOrder = 'DESC', tag,
     } = query;
 
-    // Fetch all user transactions and filter in memory
-    // (Firestore compound queries are limited; for personal finance scale this is fine)
     let q: FirebaseFirestore.Query = this.col().where('userId', '==', userId);
 
     if (type) q = q.where('type', '==', type);
@@ -164,13 +175,27 @@ export class TransactionsService {
 
   async update(userId: string, id: string, dto: UpdateTransactionDto): Promise<Transaction> {
     const tx = await this.findOne(userId, id);
+
+    let categoryData = tx.category;
+    if (dto.categoryId && dto.categoryId !== tx.categoryId) {
+      try {
+        const catDoc = await this.firebase.collection('categories').doc(dto.categoryId).get();
+        if (catDoc.exists) {
+          const c = catDoc.data()!;
+          categoryData = { id: catDoc.id, name: c.name, icon: c.icon, color: c.color };
+        }
+      } catch (_) {}
+    }
+
     const updates: Partial<Transaction> = {
       ...dto,
       date: dto.date ? new Date(dto.date) : tx.date,
       recurrenceEndDate: dto.recurrenceEndDate ? new Date(dto.recurrenceEndDate) : tx.recurrenceEndDate,
+      category: categoryData,
       updatedAt: new Date(),
     };
-    await this.col().doc(id).update(updates as any);
+
+    await this.col().doc(id).update(this.firebase.clean(updates));
     return { ...tx, ...updates };
   }
 
@@ -209,6 +234,14 @@ export class TransactionsService {
       .where('type', '==', TransactionType.EXPENSE)
       .get();
 
+    // Cache categories lookup
+    const catSnap = await this.firebase.collection('categories').get();
+    const catMap = new Map<string, { name: string; icon: string; color: string }>();
+    catSnap.docs.forEach((d) => {
+      const data = d.data();
+      catMap.set(d.id, { name: data.name, icon: data.icon, color: data.color });
+    });
+
     const map = new Map<string, { categoryId: string; categoryName: string; icon: string; color: string; total: number; count: number }>();
 
     snap.docs.forEach((d) => {
@@ -216,6 +249,8 @@ export class TransactionsService {
       if (tx.date < startDate || tx.date > endDate) return;
 
       const key = tx.categoryId ?? 'uncategorized';
+      const catInfo = (tx.categoryId && catMap.get(tx.categoryId)) || tx.category;
+
       const existing = map.get(key);
       if (existing) {
         existing.total += tx.amount;
@@ -223,9 +258,9 @@ export class TransactionsService {
       } else {
         map.set(key, {
           categoryId: key,
-          categoryName: tx.category?.name ?? 'Uncategorized',
-          icon: tx.category?.icon ?? 'category',
-          color: tx.category?.color ?? '#9E9E9E',
+          categoryName: catInfo?.name ?? 'Other',
+          icon: catInfo?.icon ?? 'category',
+          color: catInfo?.color ?? '#9E9E9E',
           total: tx.amount,
           count: 1,
         });
@@ -297,6 +332,7 @@ export class TransactionsService {
         notes: parent.notes,
         date,
         categoryId: parent.categoryId,
+        category: parent.category,
         paymentMethod: parent.paymentMethod,
         currency: parent.currency,
         tags: parent.tags,
@@ -307,7 +343,7 @@ export class TransactionsService {
         createdAt: now,
         updatedAt: now,
       };
-      batch.set(ref, tx);
+      batch.set(ref, this.firebase.clean(tx));
     });
 
     await batch.commit();

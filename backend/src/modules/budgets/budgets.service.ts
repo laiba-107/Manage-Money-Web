@@ -67,7 +67,7 @@ export class BudgetsService {
       updatedAt: now,
     };
 
-    await this.col().doc(id).set(budget);
+    await this.col().doc(id).set(this.firebase.clean(budget));
     return budget;
   }
 
@@ -103,7 +103,7 @@ export class BudgetsService {
       endDate: dto.endDate ? new Date(dto.endDate) : budget.endDate,
       updatedAt: new Date(),
     };
-    await this.col().doc(id).update(updates as any);
+    await this.col().doc(id).update(this.firebase.clean(updates));
     return { ...budget, ...updates };
   }
 

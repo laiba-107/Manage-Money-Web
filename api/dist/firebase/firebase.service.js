@@ -51,6 +51,10 @@ const admin = __importStar(require("firebase-admin"));
 let FirebaseService = class FirebaseService {
     constructor(app) {
         this.app = app;
+        try {
+            this.app.firestore().settings({ ignoreUndefinedProperties: true });
+        }
+        catch (_) { }
     }
     firestore() {
         return this.app.firestore();
@@ -60,6 +64,15 @@ let FirebaseService = class FirebaseService {
     }
     newId(collection) {
         return this.app.firestore().collection(collection).doc().id;
+    }
+    clean(obj) {
+        const result = {};
+        for (const [key, value] of Object.entries(obj)) {
+            if (value !== undefined) {
+                result[key] = value;
+            }
+        }
+        return result;
     }
 };
 exports.FirebaseService = FirebaseService;

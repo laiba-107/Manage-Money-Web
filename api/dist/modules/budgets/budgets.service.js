@@ -65,7 +65,7 @@ let BudgetsService = class BudgetsService {
             createdAt: now,
             updatedAt: now,
         };
-        await this.col().doc(id).set(budget);
+        await this.col().doc(id).set(this.firebase.clean(budget));
         return budget;
     }
     async findAll(userId) {
@@ -99,7 +99,7 @@ let BudgetsService = class BudgetsService {
             endDate: dto.endDate ? new Date(dto.endDate) : budget.endDate,
             updatedAt: new Date(),
         };
-        await this.col().doc(id).update(updates);
+        await this.col().doc(id).update(this.firebase.clean(updates));
         return { ...budget, ...updates };
     }
     async remove(userId, id) {

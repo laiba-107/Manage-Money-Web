@@ -5,4 +5,5 @@ export declare class FirebaseService {
     firestore(): admin.firestore.Firestore;
     collection(name: string): admin.firestore.CollectionReference;
     newId(collection: string): string;
+    clean<T extends Record<string, any>>(obj: T): T;
 }
