@@ -137,16 +137,16 @@ button {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 12px;
-  padding: 10px 18px;
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.92);
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.94);
   box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08), 0 0 0 1px rgba(255, 255, 255, 0.9) inset;
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(226, 232, 240, 0.8);
   position: sticky;
-  top: 12px;
+  top: 10px;
   z-index: 50;
   width: 100%;
   max-width: 100%;
@@ -156,29 +156,30 @@ button {
 .nav-brand-container {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   flex-shrink: 0;
 }
 
 .brand {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   text-decoration: none;
   cursor: pointer;
 }
 
 .brand-mark {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   display: grid;
   place-items: center;
-  border-radius: 14px;
+  border-radius: 12px;
   background: linear-gradient(135deg, #4f46e5 0%, #6366f1 50%, #38bdf8 100%);
   color: #ffffff;
-  font-size: 20px;
-  box-shadow: 0 8px 16px rgba(79, 70, 229, 0.25);
+  font-size: 18px;
+  box-shadow: 0 6px 14px rgba(79, 70, 229, 0.25);
   transition: transform 0.25s ease;
+  flex-shrink: 0;
 }
 
 .brand:hover .brand-mark {
@@ -187,49 +188,45 @@ button {
 
 .brand strong {
   display: block;
-  font-size: 1.12rem;
+  font-size: 1.02rem;
   font-weight: 800;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.02em;
   background: linear-gradient(135deg, #0f172a 0%, #334155 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+  line-height: 1.15;
 }
 
 .brand small {
   color: var(--muted);
   font-weight: 600;
-  font-size: 0.76rem;
+  font-size: 0.72rem;
+  line-height: 1;
 }
 
 /* Center Navigation Links */
 .nav-menu {
   display: flex;
   align-items: center;
-  gap: 4px;
-  background: rgba(241, 245, 249, 0.8);
-  padding: 4px;
-  border-radius: 16px;
+  gap: 3px;
+  background: rgba(241, 245, 249, 0.85);
+  padding: 3px;
+  border-radius: 14px;
   border: 1px solid rgba(226, 232, 240, 0.8);
-  flex: 1;
-  min-width: 0;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-.nav-menu::-webkit-scrollbar {
-  display: none;
+  flex-shrink: 0;
 }
 
 .nav-link {
   border: none;
   background: transparent;
-  padding: 6px 12px;
-  border-radius: 10px;
-  font-size: 0.84rem;
+  padding: 6px 10px;
+  border-radius: 9px;
+  font-size: 0.82rem;
   font-weight: 700;
   color: #475569;
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
   white-space: nowrap;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   flex-shrink: 0;
@@ -243,17 +240,17 @@ button {
 .nav-link.active {
   background: #ffffff;
   color: var(--primary);
-  box-shadow: 0 3px 10px rgba(79, 70, 229, 0.12);
+  box-shadow: 0 3px 8px rgba(79, 70, 229, 0.12);
 }
 
 .nav-icon {
-  font-size: 0.92rem;
+  font-size: 0.88rem;
 }
 
 .nav-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   flex-shrink: 0;
 }
 
@@ -261,75 +258,61 @@ button {
 .user-profile-badge {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   background: #ffffff;
-  padding: 4px 10px 4px 6px;
-  border-radius: 14px;
+  padding: 3px 8px 3px 5px;
+  border-radius: 12px;
   border: 1px solid var(--border);
   box-shadow: var(--shadow-sm);
   flex-shrink: 0;
 }
 
 .user-avatar {
-  width: 34px;
-  height: 34px;
-  border-radius: 12px;
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
   background: var(--primary-gradient);
   color: #fff;
   font-weight: 800;
   display: grid;
   place-items: center;
-  font-size: 0.95rem;
+  font-size: 0.82rem;
+  flex-shrink: 0;
 }
 
 .user-details {
   display: flex;
   flex-direction: column;
-  line-height: 1.2;
+  line-height: 1.15;
 }
 
 .user-name {
   font-weight: 700;
-  font-size: 0.88rem;
+  font-size: 0.82rem;
   color: #0f172a;
+  white-space: nowrap;
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .user-status {
-  font-size: 0.74rem;
+  font-size: 0.70rem;
   color: var(--success);
   font-weight: 600;
-}
-
-/* Mobile Toggle Hamburger */
-.mobile-toggle {
-  display: none;
-  flex-direction: column;
-  gap: 4px;
-  background: #f1f5f9;
-  border: none;
-  padding: 8px 10px;
-  border-radius: 10px;
-  cursor: pointer;
-}
-
-.mobile-toggle span {
-  width: 20px;
-  height: 2px;
-  background: #0f172a;
-  border-radius: 2px;
-  transition: all 0.2s ease;
+  white-space: nowrap;
 }
 
 /* Currency Picker Pill */
 .currency-picker-container {
   background: #ffffff;
-  padding: 4px 8px 4px 10px;
-  border-radius: 12px;
+  padding: 3px 6px 3px 8px;
+  border-radius: 11px;
   border: 1px solid var(--border);
   box-shadow: var(--shadow-sm);
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   width: fit-content;
   max-width: fit-content;
   flex-shrink: 0;
@@ -344,14 +327,14 @@ button {
 .currency-picker-container .currency-select {
   border: none;
   background: transparent;
-  font-weight: 700;
-  font-size: 0.84rem;
+  font-weight: 750;
+  font-size: 0.82rem;
   color: #1e293b;
   outline: none;
   cursor: pointer;
-  padding: 0 2px 0 0;
+  padding: 0;
   width: auto;
-  max-width: 110px;
+  max-width: 66px;
 }
 
 /* Modal Form Currency Selects */
