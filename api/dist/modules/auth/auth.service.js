@@ -56,12 +56,6 @@ let AuthService = AuthService_1 = class AuthService {
         this.configService = configService;
         this.logger = new common_1.Logger(AuthService_1.name);
     }
-    async loginAsDemo() {
-        const user = await this.usersService.findOrCreateDemoUser();
-        await this.usersService.updateLastLogin(user.id);
-        this.logger.log(`Demo user logged in: ${user.email}`);
-        return this.generateTokens(user);
-    }
     async register(dto) {
         const hashedPassword = await bcrypt.hash(dto.password, 10);
         const user = await this.usersService.createWithPassword(dto.email, hashedPassword, dto.displayName);
@@ -82,7 +76,7 @@ let AuthService = AuthService_1 = class AuthService {
             throw new common_1.UnauthorizedException('Account is deactivated');
         }
         await this.usersService.updateLastLogin(user.id);
-        this.logger.log(`User logged in with password: ${user.email}`);
+        this.logger.log(`User logged in: ${user.email}`);
         return this.generateTokens(user);
     }
     async generateTokens(user) {
@@ -133,7 +127,7 @@ let AuthService = AuthService_1 = class AuthService {
         return this.sanitizeUser(user);
     }
     sanitizeUser(user) {
-        const { refreshToken, ...safeUser } = user;
+        const { password, refreshToken, ...safeUser } = user;
         return safeUser;
     }
     parseExpiresIn(expiresIn) {

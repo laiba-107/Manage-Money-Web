@@ -8,16 +8,12 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-var __param = (this && this.__param) || function (paramIndex, decorator) {
-    return function (target, key) { decorator(target, key, paramIndex); }
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SettingsService = void 0;
 const common_1 = require("@nestjs/common");
-const typeorm_1 = require("@nestjs/typeorm");
-const typeorm_2 = require("typeorm");
-const setting_entity_1 = require("./entities/setting.entity");
+const firebase_service_1 = require("../../firebase/firebase.service");
 const users_service_1 = require("../users/users.service");
+const uuid_1 = require("uuid");
 const DEFAULT_SETTINGS = {
     currency: 'USD',
     theme: 'light',
@@ -36,17 +32,19 @@ const DEFAULT_SETTINGS = {
     numberFormat: 'en-US',
 };
 let SettingsService = class SettingsService {
-    constructor(settingRepository, usersService) {
-        this.settingRepository = settingRepository;
+    constructor(firebase, usersService) {
+        this.firebase = firebase;
         this.usersService = usersService;
     }
+    col() {
+        return this.firebase.collection('settings');
+    }
     async getAll(userId) {
-        const settings = await this.settingRepository.find({
-            where: { userId },
-        });
+        const snap = await this.col().where('userId', '==', userId).get();
         const result = { ...DEFAULT_SETTINGS };
-        settings.forEach((s) => {
-            result[s.key] = s.value;
+        snap.docs.forEach((d) => {
+            const data = d.data();
+            result[data.key] = data.value;
         });
         const user = await this.usersService.findById(userId);
         if (user) {
@@ -56,16 +54,18 @@ let SettingsService = class SettingsService {
         return result;
     }
     async update(userId, key, value) {
-        const existing = await this.settingRepository.findOne({
-            where: { userId, key },
-        });
-        if (existing) {
-            existing.value = value;
-            await this.settingRepository.save(existing);
+        const snap = await this.col()
+            .where('userId', '==', userId)
+            .where('key', '==', key)
+            .limit(1)
+            .get();
+        const now = new Date();
+        if (!snap.empty) {
+            await snap.docs[0].ref.update({ value, updatedAt: now });
         }
         else {
-            const setting = this.settingRepository.create({ userId, key, value });
-            await this.settingRepository.save(setting);
+            const id = (0, uuid_1.v4)();
+            await this.col().doc(id).set({ id, userId, key, value, createdAt: now, updatedAt: now });
         }
         if (key === 'currency') {
             await this.usersService.updateCurrency(userId, value);
@@ -81,8 +81,7 @@ let SettingsService = class SettingsService {
 exports.SettingsService = SettingsService;
 exports.SettingsService = SettingsService = __decorate([
     (0, common_1.Injectable)(),
-    __param(0, (0, typeorm_1.InjectRepository)(setting_entity_1.Setting)),
-    __metadata("design:paramtypes", [typeorm_2.Repository,
+    __metadata("design:paramtypes", [firebase_service_1.FirebaseService,
         users_service_1.UsersService])
 ], SettingsService);
 //# sourceMappingURL=settings.service.js.map

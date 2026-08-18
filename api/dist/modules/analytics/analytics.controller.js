@@ -18,7 +18,6 @@ const swagger_1 = require("@nestjs/swagger");
 const analytics_service_1 = require("./analytics.service");
 const jwt_auth_guard_1 = require("../../common/guards/jwt-auth.guard");
 const current_user_decorator_1 = require("../../common/decorators/current-user.decorator");
-const user_entity_1 = require("../users/entities/user.entity");
 let AnalyticsController = class AnalyticsController {
     constructor(analyticsService) {
         this.analyticsService = analyticsService;
@@ -47,7 +46,7 @@ __decorate([
     (0, swagger_1.ApiOperation)({ summary: 'Get complete dashboard analytics data' }),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [user_entity_1.User]),
+    __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], AnalyticsController.prototype, "getDashboard", null);
 __decorate([
@@ -62,7 +61,7 @@ __decorate([
     __param(1, (0, common_1.Query)('period')),
     __param(2, (0, common_1.Query)('date')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [user_entity_1.User, String, String]),
+    __metadata("design:paramtypes", [Object, String, String]),
     __metadata("design:returntype", Promise)
 ], AnalyticsController.prototype, "getReport", null);
 __decorate([
@@ -71,7 +70,7 @@ __decorate([
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __param(1, (0, common_1.Query)('months')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [user_entity_1.User, Number]),
+    __metadata("design:paramtypes", [Object, Number]),
     __metadata("design:returntype", Promise)
 ], AnalyticsController.prototype, "getTrends", null);
 __decorate([
@@ -79,7 +78,7 @@ __decorate([
     (0, swagger_1.ApiOperation)({ summary: 'Get AI-powered financial insights and suggestions' }),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [user_entity_1.User]),
+    __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], AnalyticsController.prototype, "getInsights", null);
 exports.AnalyticsController = AnalyticsController = __decorate([

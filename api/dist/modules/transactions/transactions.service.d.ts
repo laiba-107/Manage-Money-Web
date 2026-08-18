@@ -1,4 +1,4 @@
-import { Repository } from 'typeorm';
+import { FirebaseService } from '../../firebase/firebase.service';
 import { Transaction } from './entities/transaction.entity';
 import { CreateTransactionDto, UpdateTransactionDto } from './dto/create-transaction.dto';
 import { QueryTransactionDto } from './dto/query-transaction.dto';
@@ -12,8 +12,10 @@ export interface PaginatedResult<T> {
     };
 }
 export declare class TransactionsService {
-    private transactionRepository;
-    constructor(transactionRepository: Repository<Transaction>);
+    private readonly firebase;
+    constructor(firebase: FirebaseService);
+    private col;
+    private docToTransaction;
     create(userId: string, dto: CreateTransactionDto): Promise<Transaction>;
     findAll(userId: string, query: QueryTransactionDto): Promise<PaginatedResult<Transaction>>;
     findOne(userId: string, id: string): Promise<Transaction>;
@@ -26,6 +28,7 @@ export declare class TransactionsService {
     }>;
     getCategorySpending(userId: string, startDate: Date, endDate: Date): Promise<any[]>;
     getDailyTotals(userId: string, startDate: Date, endDate: Date): Promise<any[]>;
+    getAllForUser(userId: string): Promise<Transaction[]>;
     private createRecurringTransactions;
     private getNextDate;
 }

@@ -78,7 +78,7 @@ const INCOME_SOURCES = {
 /* ---------------------------------------------------------------------- */
 
 const authButton = document.getElementById('authButton');
-const demoAuthButton = document.getElementById('demoAuthButton');
+
 const emailAuthButton = document.getElementById('emailAuthButton');
 const authModal = document.getElementById('authModal');
 const closeAuthModal = document.getElementById('closeAuthModal');
@@ -630,7 +630,7 @@ document.getElementById('heroGetStartedBtn')?.addEventListener('click', () => {
   }
 });
 
-document.getElementById('heroDemoBtn')?.addEventListener('click', handleDemoLogin);
+
 
 document.getElementById('heroExploreFeaturesBtn')?.addEventListener('click', () => {
   document.getElementById('featuresSection')?.scrollIntoView({ behavior: 'smooth' });

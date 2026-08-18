@@ -6,10 +6,6 @@ export declare class AuthController {
     private authService;
     private configService;
     constructor(authService: AuthService, configService: ConfigService);
-    demoLogin(): Promise<{
-        data: import("./auth.service").AuthTokens;
-        message: string;
-    }>;
     register(dto: RegisterDto): Promise<{
         data: import("./auth.service").AuthTokens;
         message: string;

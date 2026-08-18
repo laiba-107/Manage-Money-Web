@@ -27,13 +27,6 @@ export class AuthService {
     private configService: ConfigService,
   ) {}
 
-  async loginAsDemo(): Promise<AuthTokens> {
-    const user = await this.usersService.findOrCreateDemoUser();
-    await this.usersService.updateLastLogin(user.id);
-    this.logger.log(`Demo user logged in: ${user.email}`);
-    return this.generateTokens(user);
-  }
-
   async register(dto: RegisterDto): Promise<AuthTokens> {
     const hashedPassword = await bcrypt.hash(dto.password, 10);
     const user = await this.usersService.createWithPassword(
@@ -59,7 +52,7 @@ export class AuthService {
       throw new UnauthorizedException('Account is deactivated');
     }
     await this.usersService.updateLastLogin(user.id);
-    this.logger.log(`User logged in with password: ${user.email}`);
+    this.logger.log(`User logged in: ${user.email}`);
     return this.generateTokens(user);
   }
 
@@ -78,7 +71,6 @@ export class AuthService {
       }),
     ]);
 
-    // Store hashed refresh token
     await this.usersService.updateRefreshToken(user.id, refreshToken);
 
     const expiresInSeconds = this.parseExpiresIn(expiresIn);
@@ -120,14 +112,14 @@ export class AuthService {
   }
 
   private sanitizeUser(user: User): Partial<User> {
-    const { refreshToken, ...safeUser } = user;
+    const { password, refreshToken, ...safeUser } = user;
     return safeUser;
   }
 
   private parseExpiresIn(expiresIn: string): number {
     const units: Record<string, number> = { s: 1, m: 60, h: 3600, d: 86400 };
     const match = expiresIn.match(/^(\d+)([smhd])$/);
-    if (!match) return 604800; // default 7 days
+    if (!match) return 604800;
     return parseInt(match[1]) * (units[match[2]] || 1);
   }
 }

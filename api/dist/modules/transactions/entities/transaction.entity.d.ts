@@ -1,5 +1,3 @@
-import { User } from '../../users/entities/user.entity';
-import { Category } from '../../categories/entities/category.entity';
 export declare enum TransactionType {
     INCOME = "income",
     EXPENSE = "expense"
@@ -20,26 +18,30 @@ export declare enum RecurrenceInterval {
     QUARTERLY = "quarterly",
     YEARLY = "yearly"
 }
-export declare class Transaction {
+export interface Transaction {
     id: string;
+    userId: string;
     amount: number;
     type: TransactionType;
     title: string;
-    notes: string;
+    notes?: string;
     date: Date;
-    paymentMethod: PaymentMethod;
-    receiptUrl: string;
+    paymentMethod?: PaymentMethod;
+    receiptUrl?: string;
     isRecurring: boolean;
-    recurrenceInterval: RecurrenceInterval;
-    recurrenceEndDate: Date;
-    recurrenceParentId: string;
+    recurrenceInterval?: RecurrenceInterval;
+    recurrenceEndDate?: Date;
+    recurrenceParentId?: string;
     currency: string;
     exchangeRate: number;
-    tags: string[];
-    userId: string;
-    categoryId: string;
+    tags?: string[];
+    categoryId?: string;
+    category?: {
+        id: string;
+        name: string;
+        icon: string;
+        color: string;
+    };
     createdAt: Date;
     updatedAt: Date;
-    user: User;
-    category: Category;
 }

@@ -20,9 +20,7 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "typeorm": "typeorm-ts-node-commonjs",
-    "migration:run": "npm run typeorm -- migration:run -d src/config/data-source.ts",
-    "migration:revert": "npm run typeorm -- migration:revert -d src/config/data-source.ts"
+    "db:seed": "echo 'Firestore seeds are applied automatically on first boot'"
   },
   "dependencies": {
     "@nestjs/cli": "^11.0.21",
@@ -34,7 +32,6 @@
     "@nestjs/platform-express": "^11.1.24",
     "@nestjs/swagger": "^11.4.4",
     "@nestjs/throttler": "^6.5.0",
-    "@nestjs/typeorm": "^11.0.1",
     "@types/bcryptjs": "^2.4.6",
     "bcryptjs": "^3.0.3",
     "class-transformer": "^0.5.1",
@@ -42,6 +39,7 @@
     "compression": "^1.7.4",
     "date-fns": "^3.2.0",
     "express-rate-limit": "^7.1.5",
+    "firebase-admin": "^13.10.0",
     "helmet": "^7.1.0",
     "joi": "^17.11.0",
     "json2csv": "^6.0.0-alpha.2",
@@ -50,10 +48,8 @@
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "pdf-lib": "^1.17.1",
-    "pg": "^8.11.3",
     "reflect-metadata": "^0.2.1",
     "rxjs": "^7.8.1",
-    "typeorm": "^0.3.19",
     "uuid": "^14.0.0",
     "winston": "^3.11.0",
     "winston-daily-rotate-file": "^4.7.1"

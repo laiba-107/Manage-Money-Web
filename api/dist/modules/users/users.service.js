@@ -8,104 +8,125 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-var __param = (this && this.__param) || function (paramIndex, decorator) {
-    return function (target, key) { decorator(target, key, paramIndex); }
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UsersService = void 0;
 const common_1 = require("@nestjs/common");
-const typeorm_1 = require("@nestjs/typeorm");
-const typeorm_2 = require("typeorm");
-const user_entity_1 = require("./entities/user.entity");
+const firebase_service_1 = require("../../firebase/firebase.service");
+const uuid_1 = require("uuid");
 let UsersService = class UsersService {
-    constructor(userRepository) {
-        this.userRepository = userRepository;
+    constructor(firebase) {
+        this.firebase = firebase;
+    }
+    col() {
+        return this.firebase.collection('users');
+    }
+    docToUser(id, data) {
+        return {
+            id,
+            email: data.email,
+            password: data.password,
+            displayName: data.displayName,
+            firstName: data.firstName,
+            lastName: data.lastName,
+            photoUrl: data.photoUrl,
+            refreshToken: data.refreshToken,
+            isActive: data.isActive ?? true,
+            isEmailVerified: data.isEmailVerified ?? false,
+            lastLoginAt: data.lastLoginAt?.toDate?.() ?? null,
+            timezone: data.timezone,
+            currency: data.currency ?? 'USD',
+            theme: data.theme ?? 'light',
+            biometricEnabled: data.biometricEnabled,
+            createdAt: data.createdAt?.toDate?.() ?? new Date(),
+            updatedAt: data.updatedAt?.toDate?.() ?? new Date(),
+        };
     }
     async findById(id) {
-        return this.userRepository.findOne({ where: { id } });
+        const doc = await this.col().doc(id).get();
+        if (!doc.exists)
+            return null;
+        return this.docToUser(doc.id, doc.data());
     }
     async findByEmail(email) {
-        return this.userRepository.findOne({ where: { email } });
+        const snap = await this.col()
+            .where('email', '==', email)
+            .limit(1)
+            .get();
+        if (snap.empty)
+            return null;
+        const doc = snap.docs[0];
+        return this.docToUser(doc.id, doc.data());
     }
     async findByEmailWithPassword(email) {
-        return this.userRepository.findOne({
-            where: { email },
-            select: ['id', 'email', 'password', 'displayName', 'firstName', 'lastName', 'photoUrl', 'isActive', 'currency', 'theme'],
-        });
+        return this.findByEmail(email);
     }
     async createWithPassword(email, hashedPassword, displayName) {
         const existing = await this.findByEmail(email);
         if (existing) {
             throw new common_1.ConflictException('An account with this email already exists.');
         }
-        const user = this.userRepository.create({
+        const id = (0, uuid_1.v4)();
+        const now = new Date();
+        const user = {
+            id,
             email,
             password: hashedPassword,
             displayName,
             isEmailVerified: true,
+            isActive: true,
             currency: 'USD',
             theme: 'light',
+            createdAt: now,
+            updatedAt: now,
+        };
+        await this.col().doc(id).set({
+            ...user,
+            createdAt: now,
+            updatedAt: now,
         });
-        return this.userRepository.save(user);
-    }
-    async findOrCreateDemoUser() {
-        const demoEmail = 'demo@managemoney.com';
-        let user = await this.findByEmail(demoEmail);
-        if (!user) {
-            user = this.userRepository.create({
-                email: demoEmail,
-                displayName: 'Demo User',
-                firstName: 'Demo',
-                lastName: 'User',
-                isEmailVerified: true,
-                currency: 'USD',
-                theme: 'light',
-            });
-            user = await this.userRepository.save(user);
-        }
         return user;
     }
     async update(userId, dto) {
         const user = await this.findById(userId);
         if (!user)
             throw new common_1.NotFoundException('User not found');
-        Object.assign(user, dto);
-        return this.userRepository.save(user);
+        const updates = { ...dto, updatedAt: new Date() };
+        await this.col().doc(userId).update(updates);
+        return { ...user, ...updates };
     }
     async updateLastLogin(userId) {
-        await this.userRepository.update(userId, { lastLoginAt: new Date() });
+        await this.col().doc(userId).update({ lastLoginAt: new Date() });
     }
     async updateRefreshToken(userId, token) {
-        await this.userRepository.update(userId, { refreshToken: token });
+        await this.col().doc(userId).update({ refreshToken: token });
     }
     async deactivate(userId) {
-        await this.userRepository.update(userId, { isActive: false });
+        await this.col().doc(userId).update({ isActive: false });
     }
     async delete(userId) {
         const user = await this.findById(userId);
         if (!user)
             throw new common_1.NotFoundException('User not found');
-        await this.userRepository.remove(user);
+        await this.col().doc(userId).delete();
     }
     async updateCurrency(userId, currency) {
         const user = await this.findById(userId);
         if (!user)
             throw new common_1.NotFoundException('User not found');
-        user.currency = currency;
-        return this.userRepository.save(user);
+        await this.col().doc(userId).update({ currency, updatedAt: new Date() });
+        return { ...user, currency };
     }
     async updateTheme(userId, theme) {
         const user = await this.findById(userId);
         if (!user)
             throw new common_1.NotFoundException('User not found');
-        user.theme = theme;
-        return this.userRepository.save(user);
+        await this.col().doc(userId).update({ theme, updatedAt: new Date() });
+        return { ...user, theme };
     }
 };
 exports.UsersService = UsersService;
 exports.UsersService = UsersService = __decorate([
     (0, common_1.Injectable)(),
-    __param(0, (0, typeorm_1.InjectRepository)(user_entity_1.User)),
-    __metadata("design:paramtypes", [typeorm_2.Repository])
+    __metadata("design:paramtypes", [firebase_service_1.FirebaseService])
 ], UsersService);
 //# sourceMappingURL=users.service.js.map

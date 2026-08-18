@@ -1,4 +1,4 @@
-import { Repository } from 'typeorm';
+import { FirebaseService } from '../../firebase/firebase.service';
 import { Budget } from './entities/budget.entity';
 import { CreateBudgetDto, UpdateBudgetDto } from './dto/create-budget.dto';
 import { TransactionsService } from '../transactions/transactions.service';
@@ -9,9 +9,11 @@ export interface BudgetWithUsage extends Budget {
     isOverBudget: boolean;
 }
 export declare class BudgetsService {
-    private budgetRepository;
+    private readonly firebase;
     private transactionsService;
-    constructor(budgetRepository: Repository<Budget>, transactionsService: TransactionsService);
+    constructor(firebase: FirebaseService, transactionsService: TransactionsService);
+    private col;
+    private docToBudget;
     create(userId: string, dto: CreateBudgetDto): Promise<Budget>;
     findAll(userId: string): Promise<BudgetWithUsage[]>;
     findOne(userId: string, id: string): Promise<BudgetWithUsage>;

@@ -42,9 +42,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AppModule = void 0;
 const common_1 = require("@nestjs/common");
 const config_1 = require("@nestjs/config");
-const typeorm_1 = require("@nestjs/typeorm");
-const throttler_1 = require("@nestjs/throttler");
 const Joi = __importStar(require("joi"));
+const firebase_module_1 = require("./firebase/firebase.module");
 const auth_module_1 = require("./modules/auth/auth.module");
 const users_module_1 = require("./modules/users/users.module");
 const transactions_module_1 = require("./modules/transactions/transactions.module");
@@ -53,12 +52,6 @@ const analytics_module_1 = require("./modules/analytics/analytics.module");
 const categories_module_1 = require("./modules/categories/categories.module");
 const settings_module_1 = require("./modules/settings/settings.module");
 const notifications_module_1 = require("./modules/notifications/notifications.module");
-const user_entity_1 = require("./modules/users/entities/user.entity");
-const category_entity_1 = require("./modules/categories/entities/category.entity");
-const transaction_entity_1 = require("./modules/transactions/entities/transaction.entity");
-const budget_entity_1 = require("./modules/budgets/entities/budget.entity");
-const notification_entity_1 = require("./modules/notifications/entities/notification.entity");
-const setting_entity_1 = require("./modules/settings/entities/setting.entity");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -72,12 +65,9 @@ exports.AppModule = AppModule = __decorate([
                         .valid('development', 'production', 'test')
                         .default('development'),
                     PORT: Joi.number().default(3000),
-                    DB_HOST: Joi.string().allow('', null).default('localhost'),
-                    DB_PORT: Joi.number().default(5432),
-                    DB_USERNAME: Joi.string().allow('', null).default('postgres'),
-                    DB_PASSWORD: Joi.string().allow('', null).default('postgres'),
-                    DB_NAME: Joi.string().allow('', null).default('manage_money'),
-                    DB_SSL: Joi.string().allow('true', 'false', '1', '0', '', null).default('false'),
+                    FIREBASE_PROJECT_ID: Joi.string().allow('', null).optional(),
+                    FIREBASE_CLIENT_EMAIL: Joi.string().allow('', null).optional(),
+                    FIREBASE_PRIVATE_KEY: Joi.string().allow('', null).optional(),
                     JWT_SECRET: Joi.string().allow('', null).default('manage_money_default_jwt_secret_key_32_chars_min'),
                     JWT_REFRESH_SECRET: Joi.string().allow('', null).default('manage_money_default_refresh_secret_32_chars'),
                     JWT_EXPIRES_IN: Joi.string().allow('', null).default('7d'),
@@ -86,44 +76,7 @@ exports.AppModule = AppModule = __decorate([
                     ALLOWED_ORIGINS: Joi.string().allow('', null).default('http://localhost:3000,http://localhost:3001,http://localhost'),
                 }),
             }),
-            typeorm_1.TypeOrmModule.forRootAsync({
-                imports: [config_1.ConfigModule],
-                useFactory: (configService) => {
-                    const sslVal = String(configService.get('DB_SSL') || '').toLowerCase();
-                    const isSsl = sslVal === 'true' || sslVal === '1';
-                    return {
-                        type: 'postgres',
-                        host: configService.get('DB_HOST') || 'localhost',
-                        port: configService.get('DB_PORT') || 5432,
-                        username: configService.get('DB_USERNAME') || 'postgres',
-                        password: configService.get('DB_PASSWORD') || 'postgres',
-                        database: configService.get('DB_NAME') || 'manage_money',
-                        entities: [user_entity_1.User, category_entity_1.Category, transaction_entity_1.Transaction, budget_entity_1.Budget, notification_entity_1.Notification, setting_entity_1.Setting],
-                        synchronize: configService.get('DB_SYNCHRONIZE') === 'true',
-                        ssl: isSsl ? { rejectUnauthorized: false } : false,
-                        logging: configService.get('NODE_ENV') === 'development',
-                        cache: {
-                            duration: 30000,
-                        },
-                        extra: {
-                            max: 20,
-                            idleTimeoutMillis: 30000,
-                            connectionTimeoutMillis: 5000,
-                        },
-                    };
-                },
-                inject: [config_1.ConfigService],
-            }),
-            throttler_1.ThrottlerModule.forRootAsync({
-                imports: [config_1.ConfigModule],
-                useFactory: (configService) => [
-                    {
-                        ttl: configService.get('THROTTLE_TTL', 60) * 1000,
-                        limit: configService.get('THROTTLE_LIMIT', 100),
-                    },
-                ],
-                inject: [config_1.ConfigService],
-            }),
+            firebase_module_1.FirebaseModule,
             auth_module_1.AuthModule,
             users_module_1.UsersModule,
             transactions_module_1.TransactionsModule,

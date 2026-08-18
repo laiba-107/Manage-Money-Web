@@ -18,7 +18,6 @@ const swagger_1 = require("@nestjs/swagger");
 const settings_service_1 = require("./settings.service");
 const jwt_auth_guard_1 = require("../../common/guards/jwt-auth.guard");
 const current_user_decorator_1 = require("../../common/decorators/current-user.decorator");
-const user_entity_1 = require("../users/entities/user.entity");
 let SettingsController = class SettingsController {
     constructor(settingsService) {
         this.settingsService = settingsService;
@@ -39,7 +38,7 @@ __decorate([
     (0, swagger_1.ApiOperation)({ summary: 'Get all user settings' }),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [user_entity_1.User]),
+    __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], SettingsController.prototype, "getAll", null);
 __decorate([
@@ -48,7 +47,7 @@ __decorate([
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [user_entity_1.User, Object]),
+    __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", Promise)
 ], SettingsController.prototype, "updateMany", null);
 exports.SettingsController = SettingsController = __decorate([

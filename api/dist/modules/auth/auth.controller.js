@@ -21,16 +21,10 @@ const jwt_auth_guard_1 = require("../../common/guards/jwt-auth.guard");
 const current_user_decorator_1 = require("../../common/decorators/current-user.decorator");
 const public_decorator_1 = require("../../common/decorators/public.decorator");
 const auth_dto_1 = require("./dto/auth.dto");
-const user_entity_1 = require("../users/entities/user.entity");
-const throttler_1 = require("@nestjs/throttler");
 let AuthController = class AuthController {
     constructor(authService, configService) {
         this.authService = authService;
         this.configService = configService;
-    }
-    async demoLogin() {
-        const tokens = await this.authService.loginAsDemo();
-        return { data: tokens, message: 'Signed in as Demo user' };
     }
     async register(dto) {
         const tokens = await this.authService.register(dto);
@@ -54,15 +48,6 @@ let AuthController = class AuthController {
     }
 };
 exports.AuthController = AuthController;
-__decorate([
-    (0, public_decorator_1.Public)(),
-    (0, common_1.Post)('demo'),
-    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
-    (0, swagger_1.ApiOperation)({ summary: 'Instant Demo Sign-In without OAuth' }),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
-    __metadata("design:returntype", Promise)
-], AuthController.prototype, "demoLogin", null);
 __decorate([
     (0, public_decorator_1.Public)(),
     (0, common_1.Post)('register'),
@@ -101,7 +86,7 @@ __decorate([
     (0, swagger_1.ApiOperation)({ summary: 'Logout and invalidate tokens' }),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [user_entity_1.User]),
+    __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "logout", null);
 __decorate([
@@ -111,13 +96,12 @@ __decorate([
     (0, swagger_1.ApiOperation)({ summary: 'Get current authenticated user profile' }),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [user_entity_1.User]),
+    __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "getProfile", null);
 exports.AuthController = AuthController = __decorate([
     (0, swagger_1.ApiTags)('auth'),
     (0, common_1.Controller)({ path: 'auth', version: '1' }),
-    (0, common_1.UseGuards)(throttler_1.ThrottlerGuard),
     __metadata("design:paramtypes", [auth_service_1.AuthService,
         config_1.ConfigService])
 ], AuthController);

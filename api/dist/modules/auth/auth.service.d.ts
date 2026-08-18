@@ -15,7 +15,6 @@ export declare class AuthService {
     private configService;
     private readonly logger;
     constructor(usersService: UsersService, jwtService: JwtService, configService: ConfigService);
-    loginAsDemo(): Promise<AuthTokens>;
     register(dto: RegisterDto): Promise<AuthTokens>;
     loginWithPassword(dto: LoginDto): Promise<AuthTokens>;
     generateTokens(user: User): Promise<AuthTokens>;

@@ -8,16 +8,13 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-var __param = (this && this.__param) || function (paramIndex, decorator) {
-    return function (target, key) { decorator(target, key, paramIndex); }
-};
 var CategoriesService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CategoriesService = void 0;
 const common_1 = require("@nestjs/common");
-const typeorm_1 = require("@nestjs/typeorm");
-const typeorm_2 = require("typeorm");
+const firebase_service_1 = require("../../firebase/firebase.service");
 const category_entity_1 = require("./entities/category.entity");
+const uuid_1 = require("uuid");
 const DEFAULT_CATEGORIES = [
     { name: 'Salary', icon: 'work', color: '#4CAF50', type: category_entity_1.CategoryType.INCOME },
     { name: 'Freelance', icon: 'laptop', color: '#2196F3', type: category_entity_1.CategoryType.INCOME },
@@ -40,57 +37,90 @@ const DEFAULT_CATEGORIES = [
     { name: 'Other', icon: 'category', color: '#9E9E9E', type: category_entity_1.CategoryType.BOTH },
 ];
 let CategoriesService = CategoriesService_1 = class CategoriesService {
-    constructor(categoryRepository) {
-        this.categoryRepository = categoryRepository;
+    constructor(firebase) {
+        this.firebase = firebase;
         this.logger = new common_1.Logger(CategoriesService_1.name);
     }
-    async onModuleInit() {
+    async onApplicationBootstrap() {
         await this.seedDefaultCategories();
     }
+    col() {
+        return this.firebase.collection('categories');
+    }
+    docToCategory(id, data) {
+        return {
+            id,
+            name: data.name,
+            icon: data.icon,
+            color: data.color,
+            type: data.type ?? category_entity_1.CategoryType.EXPENSE,
+            isDefault: data.isDefault ?? false,
+            userId: data.userId ?? null,
+            createdAt: data.createdAt?.toDate?.() ?? new Date(),
+            updatedAt: data.updatedAt?.toDate?.() ?? new Date(),
+        };
+    }
     async findAll(userId) {
-        const query = this.categoryRepository
-            .createQueryBuilder('c')
-            .where('c.isDefault = true')
-            .orWhere('c.userId = :userId', { userId: userId || '' })
-            .orderBy('c.type', 'ASC')
-            .addOrderBy('c.name', 'ASC');
-        return query.getMany();
+        const snap = await this.col().get();
+        return snap.docs
+            .map((d) => this.docToCategory(d.id, d.data()))
+            .filter((c) => c.isDefault || (userId && c.userId === userId))
+            .sort((a, b) => {
+            if (a.type < b.type)
+                return -1;
+            if (a.type > b.type)
+                return 1;
+            return a.name.localeCompare(b.name);
+        });
     }
     async findByType(type, userId) {
-        return this.categoryRepository
-            .createQueryBuilder('c')
-            .where('c.type IN (:...types)', { types: [type, category_entity_1.CategoryType.BOTH] })
-            .andWhere('(c.isDefault = true OR c.userId = :userId)', {
-            userId: userId || '',
-        })
-            .orderBy('c.name', 'ASC')
-            .getMany();
+        const snap = await this.col().get();
+        return snap.docs
+            .map((d) => this.docToCategory(d.id, d.data()))
+            .filter((c) => (c.type === type || c.type === category_entity_1.CategoryType.BOTH) &&
+            (c.isDefault || (userId && c.userId === userId)))
+            .sort((a, b) => a.name.localeCompare(b.name));
     }
     async createCustom(userId, data) {
-        const category = this.categoryRepository.create({
-            ...data,
-            userId,
+        const id = (0, uuid_1.v4)();
+        const now = new Date();
+        const category = {
+            id,
+            name: data.name,
+            icon: data.icon,
+            color: data.color,
+            type: data.type ?? category_entity_1.CategoryType.EXPENSE,
             isDefault: false,
-        });
-        return this.categoryRepository.save(category);
+            userId,
+            createdAt: now,
+            updatedAt: now,
+        };
+        await this.col().doc(id).set(category);
+        return category;
     }
     async seedDefaultCategories() {
         try {
-            const count = await this.categoryRepository.count({ where: { isDefault: true } });
-            if (count > 0)
+            const snap = await this.col().where('isDefault', '==', true).limit(1).get();
+            if (!snap.empty)
                 return;
-            const categories = DEFAULT_CATEGORIES.map((c) => this.categoryRepository.create({ ...c, isDefault: true }));
-            await this.categoryRepository.save(categories);
+            const batch = this.firebase.firestore().batch();
+            const now = new Date();
+            DEFAULT_CATEGORIES.forEach((c) => {
+                const id = (0, uuid_1.v4)();
+                const ref = this.col().doc(id);
+                batch.set(ref, { id, ...c, isDefault: true, userId: null, createdAt: now, updatedAt: now });
+            });
+            await batch.commit();
+            this.logger.log('Default categories seeded to Firestore');
         }
         catch (error) {
-            this.logger?.warn?.(`Skipping default category seed: ${error instanceof Error ? error.message : String(error)}`);
+            this.logger.warn(`Skipping default category seed: ${error instanceof Error ? error.message : String(error)}`);
         }
     }
 };
 exports.CategoriesService = CategoriesService;
 exports.CategoriesService = CategoriesService = CategoriesService_1 = __decorate([
     (0, common_1.Injectable)(),
-    __param(0, (0, typeorm_1.InjectRepository)(category_entity_1.Category)),
-    __metadata("design:paramtypes", [typeorm_2.Repository])
+    __metadata("design:paramtypes", [firebase_service_1.FirebaseService])
 ], CategoriesService);
 //# sourceMappingURL=categories.service.js.map

@@ -8,75 +8,123 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-var __param = (this && this.__param) || function (paramIndex, decorator) {
-    return function (target, key) { decorator(target, key, paramIndex); }
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BudgetsService = void 0;
 const common_1 = require("@nestjs/common");
-const typeorm_1 = require("@nestjs/typeorm");
-const typeorm_2 = require("typeorm");
+const firebase_service_1 = require("../../firebase/firebase.service");
 const budget_entity_1 = require("./entities/budget.entity");
 const transactions_service_1 = require("../transactions/transactions.service");
 const transaction_entity_1 = require("../transactions/entities/transaction.entity");
 const date_fns_1 = require("date-fns");
+const uuid_1 = require("uuid");
 let BudgetsService = class BudgetsService {
-    constructor(budgetRepository, transactionsService) {
-        this.budgetRepository = budgetRepository;
+    constructor(firebase, transactionsService) {
+        this.firebase = firebase;
         this.transactionsService = transactionsService;
     }
+    col() {
+        return this.firebase.collection('budgets');
+    }
+    docToBudget(id, data) {
+        return {
+            id,
+            userId: data.userId,
+            name: data.name,
+            amount: Number(data.amount),
+            period: data.period ?? budget_entity_1.BudgetPeriod.MONTHLY,
+            month: data.month,
+            year: data.year,
+            startDate: data.startDate?.toDate?.(),
+            endDate: data.endDate?.toDate?.(),
+            isActive: data.isActive ?? true,
+            alertThreshold: data.alertThreshold ?? 80,
+            alertSent: data.alertSent ?? false,
+            categoryId: data.categoryId,
+            category: data.category,
+            createdAt: data.createdAt?.toDate?.() ?? new Date(),
+            updatedAt: data.updatedAt?.toDate?.() ?? new Date(),
+        };
+    }
     async create(userId, dto) {
-        const budget = this.budgetRepository.create({ ...dto, userId });
-        if (dto.startDate)
-            budget.startDate = new Date(dto.startDate);
-        if (dto.endDate)
-            budget.endDate = new Date(dto.endDate);
-        return this.budgetRepository.save(budget);
+        const id = (0, uuid_1.v4)();
+        const now = new Date();
+        const budget = {
+            id,
+            userId,
+            name: dto.name,
+            amount: Number(dto.amount),
+            period: dto.period ?? budget_entity_1.BudgetPeriod.MONTHLY,
+            month: dto.month,
+            year: dto.year,
+            startDate: dto.startDate ? new Date(dto.startDate) : undefined,
+            endDate: dto.endDate ? new Date(dto.endDate) : undefined,
+            isActive: true,
+            alertThreshold: dto.alertThreshold ?? 80,
+            alertSent: false,
+            categoryId: dto.categoryId,
+            createdAt: now,
+            updatedAt: now,
+        };
+        await this.col().doc(id).set(budget);
+        return budget;
     }
     async findAll(userId) {
-        const budgets = await this.budgetRepository.find({
-            where: { userId, isActive: true },
-            relations: ['category'],
-            order: { createdAt: 'DESC' },
-        });
+        const snap = await this.col()
+            .where('userId', '==', userId)
+            .where('isActive', '==', true)
+            .get();
+        const budgets = snap.docs.map((d) => this.docToBudget(d.id, d.data()));
+        budgets.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
         return Promise.all(budgets.map((b) => this.enrichWithUsage(b)));
     }
     async findOne(userId, id) {
-        const budget = await this.budgetRepository.findOne({
-            where: { id, userId },
-            relations: ['category'],
-        });
-        if (!budget)
+        const doc = await this.col().doc(id).get();
+        if (!doc.exists)
+            throw new common_1.NotFoundException('Budget not found');
+        const budget = this.docToBudget(doc.id, doc.data());
+        if (budget.userId !== userId)
             throw new common_1.NotFoundException('Budget not found');
         return this.enrichWithUsage(budget);
     }
     async update(userId, id, dto) {
-        const budget = await this.budgetRepository.findOne({ where: { id, userId } });
-        if (!budget)
+        const doc = await this.col().doc(id).get();
+        if (!doc.exists)
             throw new common_1.NotFoundException('Budget not found');
-        Object.assign(budget, dto);
-        if (dto.startDate)
-            budget.startDate = new Date(dto.startDate);
-        if (dto.endDate)
-            budget.endDate = new Date(dto.endDate);
-        return this.budgetRepository.save(budget);
+        const budget = this.docToBudget(doc.id, doc.data());
+        if (budget.userId !== userId)
+            throw new common_1.NotFoundException('Budget not found');
+        const updates = {
+            ...dto,
+            startDate: dto.startDate ? new Date(dto.startDate) : budget.startDate,
+            endDate: dto.endDate ? new Date(dto.endDate) : budget.endDate,
+            updatedAt: new Date(),
+        };
+        await this.col().doc(id).update(updates);
+        return { ...budget, ...updates };
     }
     async remove(userId, id) {
-        const budget = await this.budgetRepository.findOne({ where: { id, userId } });
-        if (!budget)
+        const doc = await this.col().doc(id).get();
+        if (!doc.exists)
             throw new common_1.NotFoundException('Budget not found');
-        await this.budgetRepository.remove(budget);
+        const budget = this.docToBudget(doc.id, doc.data());
+        if (budget.userId !== userId)
+            throw new common_1.NotFoundException('Budget not found');
+        await this.col().doc(id).delete();
     }
     async getMonthlyBudgetStatus(userId, month, year) {
         const now = new Date();
         const targetMonth = month ?? now.getMonth() + 1;
         const targetYear = year ?? now.getFullYear();
-        const budgets = await this.budgetRepository.find({
-            where: [
-                { userId, month: targetMonth, year: targetYear, isActive: true },
-                { userId, month: null, year: null, isActive: true },
-            ],
-            relations: ['category'],
+        const snap = await this.col()
+            .where('userId', '==', userId)
+            .where('isActive', '==', true)
+            .get();
+        const budgets = snap.docs
+            .map((d) => this.docToBudget(d.id, d.data()))
+            .filter((b) => {
+            if (!b.month && !b.year)
+                return true;
+            return b.month === targetMonth && b.year === targetYear;
         });
         return Promise.all(budgets.map((b) => this.enrichWithUsage(b)));
     }
@@ -84,7 +132,7 @@ let BudgetsService = class BudgetsService {
         const { startDate, endDate } = this.getBudgetDateRange(budget);
         const spent = await this.getSpentAmount(budget, startDate, endDate);
         const remaining = Math.max(0, budget.amount - spent);
-        const percentageUsed = (spent / budget.amount) * 100;
+        const percentageUsed = budget.amount > 0 ? (spent / budget.amount) * 100 : 0;
         return {
             ...budget,
             spent,
@@ -105,27 +153,19 @@ let BudgetsService = class BudgetsService {
         return { startDate: (0, date_fns_1.startOfMonth)(now), endDate: (0, date_fns_1.endOfMonth)(now) };
     }
     async getSpentAmount(budget, startDate, endDate) {
-        const query = this.budgetRepository.manager
-            .createQueryBuilder()
-            .select('COALESCE(SUM(t.amount), 0)', 'total')
-            .from('transactions', 't')
-            .where('t.userId = :userId', { userId: budget.userId })
-            .andWhere('t.type = :type', { type: transaction_entity_1.TransactionType.EXPENSE })
-            .andWhere('t.date BETWEEN :startDate AND :endDate', { startDate, endDate });
-        if (budget.categoryId) {
-            query.andWhere('t.categoryId = :categoryId', {
-                categoryId: budget.categoryId,
-            });
-        }
-        const result = await query.getRawOne();
-        return parseFloat(result?.total || '0');
+        const transactions = await this.transactionsService.getAllForUser(budget.userId);
+        return transactions
+            .filter((t) => t.type === transaction_entity_1.TransactionType.EXPENSE &&
+            t.date >= startDate &&
+            t.date <= endDate &&
+            (!budget.categoryId || t.categoryId === budget.categoryId))
+            .reduce((sum, t) => sum + t.amount, 0);
     }
 };
 exports.BudgetsService = BudgetsService;
 exports.BudgetsService = BudgetsService = __decorate([
     (0, common_1.Injectable)(),
-    __param(0, (0, typeorm_1.InjectRepository)(budget_entity_1.Budget)),
-    __metadata("design:paramtypes", [typeorm_2.Repository,
+    __metadata("design:paramtypes", [firebase_service_1.FirebaseService,
         transactions_service_1.TransactionsService])
 ], BudgetsService);
 //# sourceMappingURL=budgets.service.js.map

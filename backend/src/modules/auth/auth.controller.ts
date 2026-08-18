@@ -2,42 +2,27 @@ import {
   Controller,
   Get,
   Post,
-  UseGuards,
-  Req,
-  Res,
   Body,
   HttpCode,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
-import { Response } from 'express';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Public } from '../../common/decorators/public.decorator';
 import { RefreshTokenDto, RegisterDto, LoginDto } from './dto/auth.dto';
 import { User } from '../users/entities/user.entity';
-import { ThrottlerGuard } from '@nestjs/throttler';
 
 @ApiTags('auth')
 @Controller({ path: 'auth', version: '1' })
-@UseGuards(ThrottlerGuard)
 export class AuthController {
   constructor(
     private authService: AuthService,
     private configService: ConfigService,
   ) {}
-
-  @Public()
-  @Post('demo')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Instant Demo Sign-In without OAuth' })
-  async demoLogin() {
-    const tokens = await this.authService.loginAsDemo();
-    return { data: tokens, message: 'Signed in as Demo user' };
-  }
 
   @Public()
   @Post('register')

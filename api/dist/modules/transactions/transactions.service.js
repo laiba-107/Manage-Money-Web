@@ -8,143 +8,205 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-var __param = (this && this.__param) || function (paramIndex, decorator) {
-    return function (target, key) { decorator(target, key, paramIndex); }
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TransactionsService = void 0;
 const common_1 = require("@nestjs/common");
-const typeorm_1 = require("@nestjs/typeorm");
-const typeorm_2 = require("typeorm");
+const firebase_service_1 = require("../../firebase/firebase.service");
 const transaction_entity_1 = require("./entities/transaction.entity");
 const date_fns_1 = require("date-fns");
+const uuid_1 = require("uuid");
 let TransactionsService = class TransactionsService {
-    constructor(transactionRepository) {
-        this.transactionRepository = transactionRepository;
+    constructor(firebase) {
+        this.firebase = firebase;
+    }
+    col() {
+        return this.firebase.collection('transactions');
+    }
+    docToTransaction(id, data) {
+        return {
+            id,
+            userId: data.userId,
+            amount: Number(data.amount),
+            type: data.type,
+            title: data.title,
+            notes: data.notes,
+            date: data.date?.toDate?.() ?? new Date(data.date),
+            paymentMethod: data.paymentMethod,
+            receiptUrl: data.receiptUrl,
+            isRecurring: data.isRecurring ?? false,
+            recurrenceInterval: data.recurrenceInterval,
+            recurrenceEndDate: data.recurrenceEndDate?.toDate?.(),
+            recurrenceParentId: data.recurrenceParentId,
+            currency: data.currency ?? 'USD',
+            exchangeRate: Number(data.exchangeRate ?? 1),
+            tags: data.tags ?? [],
+            categoryId: data.categoryId,
+            category: data.category,
+            createdAt: data.createdAt?.toDate?.() ?? new Date(),
+            updatedAt: data.updatedAt?.toDate?.() ?? new Date(),
+        };
     }
     async create(userId, dto) {
-        const transaction = this.transactionRepository.create({
-            ...dto,
+        const id = (0, uuid_1.v4)();
+        const now = new Date();
+        const tx = {
+            id,
             userId,
+            amount: Number(dto.amount),
+            type: dto.type,
+            title: dto.title,
+            notes: dto.notes,
             date: new Date(dto.date),
-        });
-        const saved = await this.transactionRepository.save(transaction);
+            paymentMethod: dto.paymentMethod,
+            isRecurring: dto.isRecurring ?? false,
+            recurrenceInterval: dto.recurrenceInterval,
+            recurrenceEndDate: dto.recurrenceEndDate ? new Date(dto.recurrenceEndDate) : undefined,
+            currency: dto.currency ?? 'USD',
+            exchangeRate: 1,
+            tags: dto.tags ?? [],
+            categoryId: dto.categoryId,
+            createdAt: now,
+            updatedAt: now,
+        };
+        await this.col().doc(id).set(tx);
         if (dto.isRecurring && dto.recurrenceInterval) {
-            await this.createRecurringTransactions(saved);
+            await this.createRecurringTransactions(tx);
         }
-        return saved;
+        return tx;
     }
     async findAll(userId, query) {
         const { type, categoryId, startDate, endDate, search, page = 1, limit = 20, sortBy = 'date', sortOrder = 'DESC', tag, } = query;
-        const qb = this.transactionRepository
-            .createQueryBuilder('t')
-            .leftJoinAndSelect('t.category', 'category')
-            .where('t.userId = :userId', { userId });
+        let q = this.col().where('userId', '==', userId);
         if (type)
-            qb.andWhere('t.type = :type', { type });
+            q = q.where('type', '==', type);
         if (categoryId)
-            qb.andWhere('t.categoryId = :categoryId', { categoryId });
-        if (startDate)
-            qb.andWhere('t.date >= :startDate', { startDate });
-        if (endDate)
-            qb.andWhere('t.date <= :endDate', { endDate });
-        if (search) {
-            qb.andWhere('(t.title ILIKE :search OR t.notes ILIKE :search)', {
-                search: `%${search}%`,
-            });
+            q = q.where('categoryId', '==', categoryId);
+        const snap = await q.get();
+        let transactions = snap.docs.map((d) => this.docToTransaction(d.id, d.data()));
+        if (startDate) {
+            const start = new Date(startDate);
+            transactions = transactions.filter((t) => t.date >= start);
         }
-        if (tag)
-            qb.andWhere(':tag = ANY(t.tags)', { tag });
-        const allowedSortFields = ['date', 'amount', 'title', 'createdAt'];
-        const safeSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'date';
-        qb.orderBy(`t.${safeSortBy}`, sortOrder);
-        const total = await qb.getCount();
-        const data = await qb
-            .skip((page - 1) * limit)
-            .take(limit)
-            .getMany();
+        if (endDate) {
+            const end = new Date(endDate);
+            transactions = transactions.filter((t) => t.date <= end);
+        }
+        if (search) {
+            const s = search.toLowerCase();
+            transactions = transactions.filter((t) => t.title.toLowerCase().includes(s) ||
+                (t.notes && t.notes.toLowerCase().includes(s)));
+        }
+        if (tag) {
+            transactions = transactions.filter((t) => t.tags?.includes(tag));
+        }
+        const allowedSort = ['date', 'amount', 'title', 'createdAt'];
+        const sf = allowedSort.includes(sortBy) ? sortBy : 'date';
+        transactions.sort((a, b) => {
+            const av = a[sf];
+            const bv = b[sf];
+            if (av < bv)
+                return sortOrder === 'ASC' ? -1 : 1;
+            if (av > bv)
+                return sortOrder === 'ASC' ? 1 : -1;
+            return 0;
+        });
+        const total = transactions.length;
+        const data = transactions.slice((page - 1) * limit, page * limit);
         return {
             data,
             meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
         };
     }
     async findOne(userId, id) {
-        const transaction = await this.transactionRepository.findOne({
-            where: { id, userId },
-            relations: ['category'],
-        });
-        if (!transaction)
+        const doc = await this.col().doc(id).get();
+        if (!doc.exists)
             throw new common_1.NotFoundException('Transaction not found');
-        return transaction;
+        const tx = this.docToTransaction(doc.id, doc.data());
+        if (tx.userId !== userId)
+            throw new common_1.NotFoundException('Transaction not found');
+        return tx;
     }
     async update(userId, id, dto) {
-        const transaction = await this.findOne(userId, id);
-        delete transaction.category;
-        let targetCategoryId = dto.categoryId;
-        if (!targetCategoryId && dto.title) {
-            const cat = await this.transactionRepository.manager.findOne('categories', {
-                where: [
-                    { name: dto.title },
-                    { name: dto.title, type: dto.type || transaction.type },
-                ],
-            });
-            if (cat) {
-                targetCategoryId = cat.id;
-            }
-        }
-        Object.assign(transaction, {
+        const tx = await this.findOne(userId, id);
+        const updates = {
             ...dto,
-            categoryId: targetCategoryId || transaction.categoryId,
-            date: dto.date ? new Date(dto.date) : transaction.date,
-        });
-        await this.transactionRepository.save(transaction);
-        return this.findOne(userId, id);
+            date: dto.date ? new Date(dto.date) : tx.date,
+            recurrenceEndDate: dto.recurrenceEndDate ? new Date(dto.recurrenceEndDate) : tx.recurrenceEndDate,
+            updatedAt: new Date(),
+        };
+        await this.col().doc(id).update(updates);
+        return { ...tx, ...updates };
     }
     async remove(userId, id) {
-        const transaction = await this.findOne(userId, id);
-        await this.transactionRepository.remove(transaction);
+        await this.findOne(userId, id);
+        await this.col().doc(id).delete();
     }
     async getSummary(userId, startDate, endDate) {
-        const result = await this.transactionRepository
-            .createQueryBuilder('t')
-            .select('t.type', 'type')
-            .addSelect('SUM(t.amount)', 'total')
-            .where('t.userId = :userId', { userId })
-            .andWhere('t.date BETWEEN :startDate AND :endDate', { startDate, endDate })
-            .groupBy('t.type')
-            .getRawMany();
-        const income = parseFloat(result.find((r) => r.type === transaction_entity_1.TransactionType.INCOME)?.total || '0');
-        const expenses = parseFloat(result.find((r) => r.type === transaction_entity_1.TransactionType.EXPENSE)?.total || '0');
+        const snap = await this.col().where('userId', '==', userId).get();
+        let income = 0;
+        let expenses = 0;
+        snap.docs.forEach((d) => {
+            const tx = this.docToTransaction(d.id, d.data());
+            if (tx.date >= startDate && tx.date <= endDate) {
+                if (tx.type === transaction_entity_1.TransactionType.INCOME)
+                    income += tx.amount;
+                else
+                    expenses += tx.amount;
+            }
+        });
         return { income, expenses, balance: income - expenses };
     }
     async getCategorySpending(userId, startDate, endDate) {
-        return this.transactionRepository
-            .createQueryBuilder('t')
-            .select('c.id', 'categoryId')
-            .addSelect('c.name', 'categoryName')
-            .addSelect('c.icon', 'icon')
-            .addSelect('c.color', 'color')
-            .addSelect('SUM(t.amount)', 'total')
-            .addSelect('COUNT(t.id)', 'count')
-            .leftJoin('t.category', 'c')
-            .where('t.userId = :userId', { userId })
-            .andWhere('t.type = :type', { type: transaction_entity_1.TransactionType.EXPENSE })
-            .andWhere('t.date BETWEEN :startDate AND :endDate', { startDate, endDate })
-            .groupBy('c.id, c.name, c.icon, c.color')
-            .orderBy('total', 'DESC')
-            .getRawMany();
+        const snap = await this.col()
+            .where('userId', '==', userId)
+            .where('type', '==', transaction_entity_1.TransactionType.EXPENSE)
+            .get();
+        const map = new Map();
+        snap.docs.forEach((d) => {
+            const tx = this.docToTransaction(d.id, d.data());
+            if (tx.date < startDate || tx.date > endDate)
+                return;
+            const key = tx.categoryId ?? 'uncategorized';
+            const existing = map.get(key);
+            if (existing) {
+                existing.total += tx.amount;
+                existing.count += 1;
+            }
+            else {
+                map.set(key, {
+                    categoryId: key,
+                    categoryName: tx.category?.name ?? 'Uncategorized',
+                    icon: tx.category?.icon ?? 'category',
+                    color: tx.category?.color ?? '#9E9E9E',
+                    total: tx.amount,
+                    count: 1,
+                });
+            }
+        });
+        return Array.from(map.values()).sort((a, b) => b.total - a.total);
     }
     async getDailyTotals(userId, startDate, endDate) {
-        return this.transactionRepository
-            .createQueryBuilder('t')
-            .select('DATE(t.date)', 'date')
-            .addSelect('t.type', 'type')
-            .addSelect('SUM(t.amount)', 'total')
-            .where('t.userId = :userId', { userId })
-            .andWhere('t.date BETWEEN :startDate AND :endDate', { startDate, endDate })
-            .groupBy('DATE(t.date), t.type')
-            .orderBy('DATE(t.date)', 'ASC')
-            .getRawMany();
+        const snap = await this.col().where('userId', '==', userId).get();
+        const map = new Map();
+        snap.docs.forEach((d) => {
+            const tx = this.docToTransaction(d.id, d.data());
+            if (tx.date < startDate || tx.date > endDate)
+                return;
+            const dateStr = tx.date.toISOString().split('T')[0];
+            const key = `${dateStr}_${tx.type}`;
+            const existing = map.get(key);
+            if (existing) {
+                existing.total += tx.amount;
+            }
+            else {
+                map.set(key, { date: dateStr, type: tx.type, total: tx.amount });
+            }
+        });
+        return Array.from(map.values()).sort((a, b) => a.date.localeCompare(b.date));
+    }
+    async getAllForUser(userId) {
+        const snap = await this.col().where('userId', '==', userId).get();
+        return snap.docs.map((d) => this.docToTransaction(d.id, d.data()));
     }
     async createRecurringTransactions(parent) {
         if (!parent.recurrenceInterval)
@@ -160,46 +222,49 @@ let TransactionsService = class TransactionsService {
                 dates.push(new Date(current));
             }
         }
-        const recurring = dates.map((date) => this.transactionRepository.create({
-            amount: parent.amount,
-            type: parent.type,
-            title: parent.title,
-            notes: parent.notes,
-            date,
-            categoryId: parent.categoryId,
-            userId: parent.userId,
-            paymentMethod: parent.paymentMethod,
-            currency: parent.currency,
-            tags: parent.tags,
-            isRecurring: true,
-            recurrenceInterval: parent.recurrenceInterval,
-            recurrenceParentId: parent.id,
-        }));
-        await this.transactionRepository.save(recurring);
+        const now = new Date();
+        const batch = this.firebase.firestore().batch();
+        dates.forEach((date) => {
+            const id = (0, uuid_1.v4)();
+            const ref = this.col().doc(id);
+            const tx = {
+                id,
+                userId: parent.userId,
+                amount: parent.amount,
+                type: parent.type,
+                title: parent.title,
+                notes: parent.notes,
+                date,
+                categoryId: parent.categoryId,
+                paymentMethod: parent.paymentMethod,
+                currency: parent.currency,
+                tags: parent.tags,
+                isRecurring: true,
+                recurrenceInterval: parent.recurrenceInterval,
+                recurrenceParentId: parent.id,
+                exchangeRate: parent.exchangeRate,
+                createdAt: now,
+                updatedAt: now,
+            };
+            batch.set(ref, tx);
+        });
+        await batch.commit();
     }
     getNextDate(date, interval) {
         switch (interval) {
-            case transaction_entity_1.RecurrenceInterval.DAILY:
-                return (0, date_fns_1.addDays)(date, 1);
-            case transaction_entity_1.RecurrenceInterval.WEEKLY:
-                return (0, date_fns_1.addWeeks)(date, 1);
-            case transaction_entity_1.RecurrenceInterval.BIWEEKLY:
-                return (0, date_fns_1.addWeeks)(date, 2);
-            case transaction_entity_1.RecurrenceInterval.MONTHLY:
-                return (0, date_fns_1.addMonths)(date, 1);
-            case transaction_entity_1.RecurrenceInterval.QUARTERLY:
-                return (0, date_fns_1.addMonths)(date, 3);
-            case transaction_entity_1.RecurrenceInterval.YEARLY:
-                return (0, date_fns_1.addYears)(date, 1);
-            default:
-                return (0, date_fns_1.addMonths)(date, 1);
+            case transaction_entity_1.RecurrenceInterval.DAILY: return (0, date_fns_1.addDays)(date, 1);
+            case transaction_entity_1.RecurrenceInterval.WEEKLY: return (0, date_fns_1.addWeeks)(date, 1);
+            case transaction_entity_1.RecurrenceInterval.BIWEEKLY: return (0, date_fns_1.addWeeks)(date, 2);
+            case transaction_entity_1.RecurrenceInterval.MONTHLY: return (0, date_fns_1.addMonths)(date, 1);
+            case transaction_entity_1.RecurrenceInterval.QUARTERLY: return (0, date_fns_1.addMonths)(date, 3);
+            case transaction_entity_1.RecurrenceInterval.YEARLY: return (0, date_fns_1.addYears)(date, 1);
+            default: return (0, date_fns_1.addMonths)(date, 1);
         }
     }
 };
 exports.TransactionsService = TransactionsService;
 exports.TransactionsService = TransactionsService = __decorate([
     (0, common_1.Injectable)(),
-    __param(0, (0, typeorm_1.InjectRepository)(transaction_entity_1.Transaction)),
-    __metadata("design:paramtypes", [typeorm_2.Repository])
+    __metadata("design:paramtypes", [firebase_service_1.FirebaseService])
 ], TransactionsService);
 //# sourceMappingURL=transactions.service.js.map

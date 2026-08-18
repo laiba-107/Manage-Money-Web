@@ -3,64 +3,93 @@ import {
   NotFoundException,
   ConflictException,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { FirebaseService } from '../../firebase/firebase.service';
 import { User } from './entities/user.entity';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class UsersService {
-  constructor(
-    @InjectRepository(User)
-    private userRepository: Repository<User>,
-  ) {}
+  constructor(private readonly firebase: FirebaseService) {}
+
+  private col() {
+    return this.firebase.collection('users');
+  }
+
+  private docToUser(id: string, data: FirebaseFirestore.DocumentData): User {
+    return {
+      id,
+      email: data.email,
+      password: data.password,
+      displayName: data.displayName,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      photoUrl: data.photoUrl,
+      refreshToken: data.refreshToken,
+      isActive: data.isActive ?? true,
+      isEmailVerified: data.isEmailVerified ?? false,
+      lastLoginAt: data.lastLoginAt?.toDate?.() ?? null,
+      timezone: data.timezone,
+      currency: data.currency ?? 'USD',
+      theme: data.theme ?? 'light',
+      biometricEnabled: data.biometricEnabled,
+      createdAt: data.createdAt?.toDate?.() ?? new Date(),
+      updatedAt: data.updatedAt?.toDate?.() ?? new Date(),
+    };
+  }
 
   async findById(id: string): Promise<User | null> {
-    return this.userRepository.findOne({ where: { id } });
+    const doc = await this.col().doc(id).get();
+    if (!doc.exists) return null;
+    return this.docToUser(doc.id, doc.data()!);
   }
 
   async findByEmail(email: string): Promise<User | null> {
-    return this.userRepository.findOne({ where: { email } });
+    const snap = await this.col()
+      .where('email', '==', email)
+      .limit(1)
+      .get();
+    if (snap.empty) return null;
+    const doc = snap.docs[0];
+    return this.docToUser(doc.id, doc.data());
   }
 
   async findByEmailWithPassword(email: string): Promise<User | null> {
-    return this.userRepository.findOne({
-      where: { email },
-      select: ['id', 'email', 'password', 'displayName', 'firstName', 'lastName', 'photoUrl', 'isActive', 'currency', 'theme'],
-    });
+    // Firestore doesn't have field-level visibility; we return the full user including password
+    return this.findByEmail(email);
   }
 
-  async createWithPassword(email: string, hashedPassword: string, displayName: string): Promise<User> {
+  async createWithPassword(
+    email: string,
+    hashedPassword: string,
+    displayName: string,
+  ): Promise<User> {
     const existing = await this.findByEmail(email);
     if (existing) {
       throw new ConflictException('An account with this email already exists.');
     }
-    const user = this.userRepository.create({
+
+    const id = uuidv4();
+    const now = new Date();
+    const user: User = {
+      id,
       email,
       password: hashedPassword,
       displayName,
       isEmailVerified: true,
+      isActive: true,
       currency: 'USD',
       theme: 'light',
-    });
-    return this.userRepository.save(user);
-  }
+      createdAt: now,
+      updatedAt: now,
+    };
 
-  async findOrCreateDemoUser(): Promise<User> {
-    const demoEmail = 'demo@managemoney.com';
-    let user = await this.findByEmail(demoEmail);
-    if (!user) {
-      user = this.userRepository.create({
-        email: demoEmail,
-        displayName: 'Demo User',
-        firstName: 'Demo',
-        lastName: 'User',
-        isEmailVerified: true,
-        currency: 'USD',
-        theme: 'light',
-      });
-      user = await this.userRepository.save(user);
-    }
+    await this.col().doc(id).set({
+      ...user,
+      createdAt: now,
+      updatedAt: now,
+    });
+
     return user;
   }
 
@@ -68,42 +97,40 @@ export class UsersService {
     const user = await this.findById(userId);
     if (!user) throw new NotFoundException('User not found');
 
-    Object.assign(user, dto);
-    return this.userRepository.save(user);
+    const updates = { ...dto, updatedAt: new Date() };
+    await this.col().doc(userId).update(updates);
+    return { ...user, ...updates };
   }
 
   async updateLastLogin(userId: string): Promise<void> {
-    await this.userRepository.update(userId, { lastLoginAt: new Date() });
+    await this.col().doc(userId).update({ lastLoginAt: new Date() });
   }
 
-  async updateRefreshToken(
-    userId: string,
-    token: string | null,
-  ): Promise<void> {
-    await this.userRepository.update(userId, { refreshToken: token });
+  async updateRefreshToken(userId: string, token: string | null): Promise<void> {
+    await this.col().doc(userId).update({ refreshToken: token });
   }
 
   async deactivate(userId: string): Promise<void> {
-    await this.userRepository.update(userId, { isActive: false });
+    await this.col().doc(userId).update({ isActive: false });
   }
 
   async delete(userId: string): Promise<void> {
     const user = await this.findById(userId);
     if (!user) throw new NotFoundException('User not found');
-    await this.userRepository.remove(user);
+    await this.col().doc(userId).delete();
   }
 
   async updateCurrency(userId: string, currency: string): Promise<User> {
     const user = await this.findById(userId);
     if (!user) throw new NotFoundException('User not found');
-    user.currency = currency;
-    return this.userRepository.save(user);
+    await this.col().doc(userId).update({ currency, updatedAt: new Date() });
+    return { ...user, currency };
   }
 
   async updateTheme(userId: string, theme: string): Promise<User> {
     const user = await this.findById(userId);
     if (!user) throw new NotFoundException('User not found');
-    user.theme = theme;
-    return this.userRepository.save(user);
+    await this.col().doc(userId).update({ theme, updatedAt: new Date() });
+    return { ...user, theme };
   }
 }

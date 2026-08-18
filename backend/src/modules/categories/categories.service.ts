@@ -1,7 +1,7 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
+import { FirebaseService } from '../../firebase/firebase.service';
 import { Category, CategoryType } from './entities/category.entity';
+import { v4 as uuidv4 } from 'uuid';
 
 const DEFAULT_CATEGORIES = [
   // Income categories
@@ -28,60 +28,93 @@ const DEFAULT_CATEGORIES = [
 ];
 
 @Injectable()
-export class CategoriesService implements OnModuleInit {
+export class CategoriesService implements OnApplicationBootstrap {
   private readonly logger = new Logger(CategoriesService.name);
 
-  constructor(
-    @InjectRepository(Category)
-    private categoryRepository: Repository<Category>,
-  ) {}
+  constructor(private readonly firebase: FirebaseService) {}
 
-  async onModuleInit() {
+  async onApplicationBootstrap() {
     await this.seedDefaultCategories();
   }
 
-  async findAll(userId?: string): Promise<Category[]> {
-    const query = this.categoryRepository
-      .createQueryBuilder('c')
-      .where('c.isDefault = true')
-      .orWhere('c.userId = :userId', { userId: userId || '' })
-      .orderBy('c.type', 'ASC')
-      .addOrderBy('c.name', 'ASC');
+  private col() {
+    return this.firebase.collection('categories');
+  }
 
-    return query.getMany();
+  private docToCategory(id: string, data: FirebaseFirestore.DocumentData): Category {
+    return {
+      id,
+      name: data.name,
+      icon: data.icon,
+      color: data.color,
+      type: data.type ?? CategoryType.EXPENSE,
+      isDefault: data.isDefault ?? false,
+      userId: data.userId ?? null,
+      createdAt: data.createdAt?.toDate?.() ?? new Date(),
+      updatedAt: data.updatedAt?.toDate?.() ?? new Date(),
+    };
+  }
+
+  async findAll(userId?: string): Promise<Category[]> {
+    const snap = await this.col().get();
+    return snap.docs
+      .map((d) => this.docToCategory(d.id, d.data()))
+      .filter((c) => c.isDefault || (userId && c.userId === userId))
+      .sort((a, b) => {
+        if (a.type < b.type) return -1;
+        if (a.type > b.type) return 1;
+        return a.name.localeCompare(b.name);
+      });
   }
 
   async findByType(type: CategoryType, userId?: string): Promise<Category[]> {
-    return this.categoryRepository
-      .createQueryBuilder('c')
-      .where('c.type IN (:...types)', { types: [type, CategoryType.BOTH] })
-      .andWhere('(c.isDefault = true OR c.userId = :userId)', {
-        userId: userId || '',
-      })
-      .orderBy('c.name', 'ASC')
-      .getMany();
+    const snap = await this.col().get();
+    return snap.docs
+      .map((d) => this.docToCategory(d.id, d.data()))
+      .filter(
+        (c) =>
+          (c.type === type || c.type === CategoryType.BOTH) &&
+          (c.isDefault || (userId && c.userId === userId)),
+      )
+      .sort((a, b) => a.name.localeCompare(b.name));
   }
 
   async createCustom(userId: string, data: Partial<Category>): Promise<Category> {
-    const category = this.categoryRepository.create({
-      ...data,
-      userId,
+    const id = uuidv4();
+    const now = new Date();
+    const category: Category = {
+      id,
+      name: data.name!,
+      icon: data.icon!,
+      color: data.color!,
+      type: data.type ?? CategoryType.EXPENSE,
       isDefault: false,
-    });
-    return this.categoryRepository.save(category);
+      userId,
+      createdAt: now,
+      updatedAt: now,
+    };
+    await this.col().doc(id).set(category);
+    return category;
   }
 
   private async seedDefaultCategories(): Promise<void> {
     try {
-      const count = await this.categoryRepository.count({ where: { isDefault: true } as any });
-      if (count > 0) return;
+      const snap = await this.col().where('isDefault', '==', true).limit(1).get();
+      if (!snap.empty) return;
 
-      const categories = DEFAULT_CATEGORIES.map((c) =>
-        this.categoryRepository.create({ ...c, isDefault: true }),
-      );
-      await this.categoryRepository.save(categories);
+      const batch = this.firebase.firestore().batch();
+      const now = new Date();
+
+      DEFAULT_CATEGORIES.forEach((c) => {
+        const id = uuidv4();
+        const ref = this.col().doc(id);
+        batch.set(ref, { id, ...c, isDefault: true, userId: null, createdAt: now, updatedAt: now });
+      });
+
+      await batch.commit();
+      this.logger.log('Default categories seeded to Firestore');
     } catch (error) {
-      this.logger?.warn?.(`Skipping default category seed: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.warn(`Skipping default category seed: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 }

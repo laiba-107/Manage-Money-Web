@@ -8,53 +8,79 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-var __param = (this && this.__param) || function (paramIndex, decorator) {
-    return function (target, key) { decorator(target, key, paramIndex); }
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.NotificationsService = void 0;
 const common_1 = require("@nestjs/common");
-const typeorm_1 = require("@nestjs/typeorm");
-const typeorm_2 = require("typeorm");
-const notification_entity_1 = require("./entities/notification.entity");
+const firebase_service_1 = require("../../firebase/firebase.service");
+const uuid_1 = require("uuid");
 let NotificationsService = class NotificationsService {
-    constructor(notificationRepository) {
-        this.notificationRepository = notificationRepository;
+    constructor(firebase) {
+        this.firebase = firebase;
+    }
+    col() {
+        return this.firebase.collection('notifications');
+    }
+    docToNotification(id, data) {
+        return {
+            id,
+            userId: data.userId,
+            title: data.title,
+            body: data.body,
+            type: data.type,
+            data: data.data,
+            isRead: data.isRead ?? false,
+            createdAt: data.createdAt?.toDate?.() ?? new Date(),
+        };
     }
     async create(userId, title, body, type, data) {
-        const notification = this.notificationRepository.create({
-            userId, title, body, type, data,
-        });
-        return this.notificationRepository.save(notification);
+        const id = (0, uuid_1.v4)();
+        const now = new Date();
+        const notification = { id, userId, title, body, type, data, isRead: false, createdAt: now };
+        await this.col().doc(id).set(notification);
+        return notification;
     }
     async findAll(userId, unreadOnly = false) {
-        const query = this.notificationRepository
-            .createQueryBuilder('n')
-            .where('n.userId = :userId', { userId })
-            .orderBy('n.createdAt', 'DESC')
-            .take(50);
+        let q = this.col().where('userId', '==', userId);
         if (unreadOnly)
-            query.andWhere('n.isRead = false');
-        const [data, total] = await query.getManyAndCount();
-        const unreadCount = await this.notificationRepository.count({
-            where: { userId, isRead: false },
-        });
-        return { data, total, unreadCount };
+            q = q.where('isRead', '==', false);
+        const snap = await q.get();
+        const data = snap.docs
+            .map((d) => this.docToNotification(d.id, d.data()))
+            .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+            .slice(0, 50);
+        const unreadSnap = await this.col()
+            .where('userId', '==', userId)
+            .where('isRead', '==', false)
+            .get();
+        return { data, total: data.length, unreadCount: unreadSnap.size };
     }
     async markAsRead(userId, id) {
-        await this.notificationRepository.update({ id, userId }, { isRead: true });
+        const doc = await this.col().doc(id).get();
+        if (doc.exists && doc.data().userId === userId) {
+            await this.col().doc(id).update({ isRead: true });
+        }
     }
     async markAllAsRead(userId) {
-        await this.notificationRepository.update({ userId, isRead: false }, { isRead: true });
+        const snap = await this.col()
+            .where('userId', '==', userId)
+            .where('isRead', '==', false)
+            .get();
+        if (snap.empty)
+            return;
+        const batch = this.firebase.firestore().batch();
+        snap.docs.forEach((d) => batch.update(d.ref, { isRead: true }));
+        await batch.commit();
     }
     async delete(userId, id) {
-        await this.notificationRepository.delete({ id, userId });
+        const doc = await this.col().doc(id).get();
+        if (doc.exists && doc.data().userId === userId) {
+            await this.col().doc(id).delete();
+        }
     }
 };
 exports.NotificationsService = NotificationsService;
 exports.NotificationsService = NotificationsService = __decorate([
     (0, common_1.Injectable)(),
-    __param(0, (0, typeorm_1.InjectRepository)(notification_entity_1.Notification)),
-    __metadata("design:paramtypes", [typeorm_2.Repository])
+    __metadata("design:paramtypes", [firebase_service_1.FirebaseService])
 ], NotificationsService);
 //# sourceMappingURL=notifications.service.js.map

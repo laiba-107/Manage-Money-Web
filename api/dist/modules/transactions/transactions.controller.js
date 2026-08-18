@@ -20,7 +20,6 @@ const create_transaction_dto_1 = require("./dto/create-transaction.dto");
 const query_transaction_dto_1 = require("./dto/query-transaction.dto");
 const jwt_auth_guard_1 = require("../../common/guards/jwt-auth.guard");
 const current_user_decorator_1 = require("../../common/decorators/current-user.decorator");
-const user_entity_1 = require("../users/entities/user.entity");
 let TransactionsController = class TransactionsController {
     constructor(transactionsService) {
         this.transactionsService = transactionsService;
@@ -58,7 +57,7 @@ __decorate([
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [user_entity_1.User, create_transaction_dto_1.CreateTransactionDto]),
+    __metadata("design:paramtypes", [Object, create_transaction_dto_1.CreateTransactionDto]),
     __metadata("design:returntype", Promise)
 ], TransactionsController.prototype, "create", null);
 __decorate([
@@ -67,7 +66,7 @@ __decorate([
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __param(1, (0, common_1.Query)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [user_entity_1.User, query_transaction_dto_1.QueryTransactionDto]),
+    __metadata("design:paramtypes", [Object, query_transaction_dto_1.QueryTransactionDto]),
     __metadata("design:returntype", Promise)
 ], TransactionsController.prototype, "findAll", null);
 __decorate([
@@ -77,7 +76,7 @@ __decorate([
     __param(1, (0, common_1.Query)('startDate')),
     __param(2, (0, common_1.Query)('endDate')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [user_entity_1.User, String, String]),
+    __metadata("design:paramtypes", [Object, String, String]),
     __metadata("design:returntype", Promise)
 ], TransactionsController.prototype, "getSummary", null);
 __decorate([
@@ -86,7 +85,7 @@ __decorate([
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __param(1, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [user_entity_1.User, String]),
+    __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", Promise)
 ], TransactionsController.prototype, "findOne", null);
 __decorate([
@@ -96,7 +95,7 @@ __decorate([
     __param(1, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
     __param(2, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [user_entity_1.User, String, create_transaction_dto_1.UpdateTransactionDto]),
+    __metadata("design:paramtypes", [Object, String, create_transaction_dto_1.UpdateTransactionDto]),
     __metadata("design:returntype", Promise)
 ], TransactionsController.prototype, "update", null);
 __decorate([
@@ -106,7 +105,7 @@ __decorate([
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __param(1, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [user_entity_1.User, String]),
+    __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", Promise)
 ], TransactionsController.prototype, "remove", null);
 exports.TransactionsController = TransactionsController = __decorate([

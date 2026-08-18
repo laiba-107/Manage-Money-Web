@@ -1,8 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Setting } from './entities/setting.entity';
+import { FirebaseService } from '../../firebase/firebase.service';
 import { UsersService } from '../users/users.service';
+import { v4 as uuidv4 } from 'uuid';
 
 const DEFAULT_SETTINGS = {
   currency: 'USD',
@@ -25,19 +24,21 @@ const DEFAULT_SETTINGS = {
 @Injectable()
 export class SettingsService {
   constructor(
-    @InjectRepository(Setting)
-    private settingRepository: Repository<Setting>,
+    private readonly firebase: FirebaseService,
     private usersService: UsersService,
   ) {}
 
-  async getAll(userId: string): Promise<Record<string, any>> {
-    const settings = await this.settingRepository.find({
-      where: { userId },
-    });
+  private col() {
+    return this.firebase.collection('settings');
+  }
 
-    const result = { ...DEFAULT_SETTINGS };
-    settings.forEach((s) => {
-      result[s.key] = s.value;
+  async getAll(userId: string): Promise<Record<string, any>> {
+    const snap = await this.col().where('userId', '==', userId).get();
+    const result: Record<string, any> = { ...DEFAULT_SETTINGS };
+
+    snap.docs.forEach((d) => {
+      const data = d.data();
+      result[data.key] = data.value;
     });
 
     const user = await this.usersService.findById(userId);
@@ -50,19 +51,20 @@ export class SettingsService {
   }
 
   async update(userId: string, key: string, value: any): Promise<void> {
-    const existing = await this.settingRepository.findOne({
-      where: { userId, key },
-    });
+    const snap = await this.col()
+      .where('userId', '==', userId)
+      .where('key', '==', key)
+      .limit(1)
+      .get();
 
-    if (existing) {
-      existing.value = value;
-      await this.settingRepository.save(existing);
+    const now = new Date();
+    if (!snap.empty) {
+      await snap.docs[0].ref.update({ value, updatedAt: now });
     } else {
-      const setting = this.settingRepository.create({ userId, key, value });
-      await this.settingRepository.save(setting);
+      const id = uuidv4();
+      await this.col().doc(id).set({ id, userId, key, value, createdAt: now, updatedAt: now });
     }
 
-    // Sync user entity for common settings
     if (key === 'currency') {
       await this.usersService.updateCurrency(userId, value);
     } else if (key === 'theme') {
@@ -72,9 +74,7 @@ export class SettingsService {
 
   async updateMany(userId: string, updates: Record<string, any>): Promise<void> {
     await Promise.all(
-      Object.entries(updates).map(([key, value]) =>
-        this.update(userId, key, value),
-      ),
+      Object.entries(updates).map(([key, value]) => this.update(userId, key, value)),
     );
   }
 }

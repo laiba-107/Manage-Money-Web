@@ -1,11 +1,8 @@
-import { Repository } from 'typeorm';
-import { Transaction } from '../transactions/entities/transaction.entity';
 import { TransactionsService } from '../transactions/transactions.service';
 export type ReportPeriod = 'daily' | 'weekly' | 'monthly' | 'yearly';
 export declare class AnalyticsService {
-    private transactionRepository;
     private transactionsService;
-    constructor(transactionRepository: Repository<Transaction>, transactionsService: TransactionsService);
+    constructor(transactionsService: TransactionsService);
     getDashboardData(userId: string): Promise<{
         totalBalance: number;
         currentMonth: {
@@ -20,7 +17,7 @@ export declare class AnalyticsService {
         };
         incomeChange: number;
         expenseChange: number;
-        recentTransactions: Transaction[];
+        recentTransactions: import("../transactions/entities/transaction.entity").Transaction[];
         categorySpending: any[];
         savingsRate: number;
     }>;

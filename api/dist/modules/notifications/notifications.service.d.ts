@@ -1,8 +1,10 @@
-import { Repository } from 'typeorm';
 import { Notification, NotificationType } from './entities/notification.entity';
+import { FirebaseService } from '../../firebase/firebase.service';
 export declare class NotificationsService {
-    private notificationRepository;
-    constructor(notificationRepository: Repository<Notification>);
+    private readonly firebase;
+    constructor(firebase: FirebaseService);
+    private col;
+    private docToNotification;
     create(userId: string, title: string, body: string, type: NotificationType, data?: any): Promise<Notification>;
     findAll(userId: string, unreadOnly?: boolean): Promise<{
         data: Notification[];

@@ -19,7 +19,6 @@ const budgets_service_1 = require("./budgets.service");
 const create_budget_dto_1 = require("./dto/create-budget.dto");
 const jwt_auth_guard_1 = require("../../common/guards/jwt-auth.guard");
 const current_user_decorator_1 = require("../../common/decorators/current-user.decorator");
-const user_entity_1 = require("../users/entities/user.entity");
 let BudgetsController = class BudgetsController {
     constructor(budgetsService) {
         this.budgetsService = budgetsService;
@@ -55,7 +54,7 @@ __decorate([
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [user_entity_1.User, create_budget_dto_1.CreateBudgetDto]),
+    __metadata("design:paramtypes", [Object, create_budget_dto_1.CreateBudgetDto]),
     __metadata("design:returntype", Promise)
 ], BudgetsController.prototype, "create", null);
 __decorate([
@@ -63,7 +62,7 @@ __decorate([
     (0, swagger_1.ApiOperation)({ summary: 'Get all active budgets with usage' }),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [user_entity_1.User]),
+    __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], BudgetsController.prototype, "findAll", null);
 __decorate([
@@ -73,7 +72,7 @@ __decorate([
     __param(1, (0, common_1.Query)('month')),
     __param(2, (0, common_1.Query)('year')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [user_entity_1.User, Number, Number]),
+    __metadata("design:paramtypes", [Object, Number, Number]),
     __metadata("design:returntype", Promise)
 ], BudgetsController.prototype, "getMonthlyStatus", null);
 __decorate([
@@ -82,7 +81,7 @@ __decorate([
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __param(1, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [user_entity_1.User, String]),
+    __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", Promise)
 ], BudgetsController.prototype, "findOne", null);
 __decorate([
@@ -92,7 +91,7 @@ __decorate([
     __param(1, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
     __param(2, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [user_entity_1.User, String, create_budget_dto_1.UpdateBudgetDto]),
+    __metadata("design:paramtypes", [Object, String, create_budget_dto_1.UpdateBudgetDto]),
     __metadata("design:returntype", Promise)
 ], BudgetsController.prototype, "update", null);
 __decorate([
@@ -102,7 +101,7 @@ __decorate([
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __param(1, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [user_entity_1.User, String]),
+    __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", Promise)
 ], BudgetsController.prototype, "remove", null);
 exports.BudgetsController = BudgetsController = __decorate([
