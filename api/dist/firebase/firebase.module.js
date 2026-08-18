@@ -57,16 +57,27 @@ exports.FirebaseModule = FirebaseModule = __decorate([
                     if (admin.apps.length > 0) {
                         return admin.app();
                     }
-                    const privateKey = configService
-                        .get('FIREBASE_PRIVATE_KEY', '')
-                        .replace(/\\n/g, '\n');
-                    return admin.initializeApp({
-                        credential: admin.credential.cert({
-                            projectId: configService.get('FIREBASE_PROJECT_ID'),
-                            clientEmail: configService.get('FIREBASE_CLIENT_EMAIL'),
-                            privateKey,
-                        }),
-                    });
+                    let privateKey = configService.get('FIREBASE_PRIVATE_KEY', '') || '';
+                    if ((privateKey.startsWith('"') && privateKey.endsWith('"')) ||
+                        (privateKey.startsWith("'") && privateKey.endsWith("'"))) {
+                        privateKey = privateKey.slice(1, -1);
+                    }
+                    privateKey = privateKey.replace(/\\n/g, '\n');
+                    const projectId = configService.get('FIREBASE_PROJECT_ID');
+                    const clientEmail = configService.get('FIREBASE_CLIENT_EMAIL');
+                    try {
+                        return admin.initializeApp({
+                            credential: admin.credential.cert({
+                                projectId,
+                                clientEmail,
+                                privateKey,
+                            }),
+                        });
+                    }
+                    catch (err) {
+                        console.error('Firebase Admin Initialization Error:', err?.message || err);
+                        throw err;
+                    }
                 },
                 inject: [config_1.ConfigService],
             },

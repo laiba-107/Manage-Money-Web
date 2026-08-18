@@ -36,11 +36,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+require("reflect-metadata");
 const core_1 = require("@nestjs/core");
 const common_1 = require("@nestjs/common");
 const swagger_1 = require("@nestjs/swagger");
 const config_1 = require("@nestjs/config");
-const platform_express_1 = require("@nestjs/platform-express");
 const compression_1 = __importDefault(require("compression"));
 const helmet_1 = __importDefault(require("helmet"));
 const express_1 = __importDefault(require("express"));
@@ -50,11 +50,10 @@ const app_module_1 = require("./app.module");
 const http_exception_filter_1 = require("./common/filters/http-exception.filter");
 const response_transform_interceptor_1 = require("./common/interceptors/response-transform.interceptor");
 const logging_interceptor_1 = require("./common/interceptors/logging.interceptor");
-const server = (0, express_1.default)();
 async function bootstrap() {
-    const app = await core_1.NestFactory.create(app_module_1.AppModule, new platform_express_1.ExpressAdapter(server), { bufferLogs: true });
+    const app = await core_1.NestFactory.create(app_module_1.AppModule, { bufferLogs: true });
     const configService = app.get(config_1.ConfigService);
-    const port = configService.get('PORT', 3000);
+    const port = process.env.PORT || configService.get('PORT', 3000);
     const nodeEnv = configService.get('NODE_ENV', 'development');
     const allowedOrigins = configService
         .get('ALLOWED_ORIGINS', 'http://localhost:3000,http://localhost:3001,http://localhost')
@@ -63,7 +62,10 @@ async function bootstrap() {
     app.use((0, compression_1.default)());
     app.enableCors({
         origin: (origin, callback) => {
-            if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
+            if (!origin ||
+                allowedOrigins.includes(origin) ||
+                origin.endsWith('.vercel.app') ||
+                origin.endsWith('.onrender.com')) {
                 callback(null, true);
             }
             else {
@@ -76,7 +78,9 @@ async function bootstrap() {
     });
     const publicPathInDist = (0, path_1.join)(__dirname, 'public');
     const publicPathParent = (0, path_1.join)(__dirname, '..', 'public');
-    const publicPath = fs.existsSync(publicPathInDist) ? publicPathInDist : publicPathParent;
+    const publicPath = fs.existsSync(publicPathInDist)
+        ? publicPathInDist
+        : publicPathParent;
     app.use(express_1.default.static(publicPath, { index: 'index.html' }));
     app.use((req, res, next) => {
         if (req.method === 'GET' && !req.path.startsWith('/api')) {
@@ -116,15 +120,9 @@ async function bootstrap() {
             swaggerOptions: { persistAuthorization: true },
         });
     }
-    if (process.env.VERCEL) {
-        await app.init();
-    }
-    else {
-        await app.listen(port, '0.0.0.0');
-        console.log(`\n🚀 Manage Money API running on port: ${port}`);
-        console.log(`📖 API Docs: http://localhost:${port}/api/docs\n`);
-    }
+    await app.listen(port, '0.0.0.0');
+    console.log(`\n🚀 Manage Money API running on port: ${port}`);
+    console.log(`📖 API Docs: http://localhost:${port}/api/docs\n`);
 }
 bootstrap();
-exports.default = server;
 //# sourceMappingURL=main.js.map

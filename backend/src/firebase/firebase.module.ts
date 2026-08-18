@@ -12,17 +12,35 @@ import { FirebaseService } from './firebase.service';
         if (admin.apps.length > 0) {
           return admin.app();
         }
-        const privateKey = configService
-          .get<string>('FIREBASE_PRIVATE_KEY', '')
-          .replace(/\\n/g, '\n');
+        let privateKey =
+          configService.get<string>('FIREBASE_PRIVATE_KEY', '') || '';
 
-        return admin.initializeApp({
-          credential: admin.credential.cert({
-            projectId: configService.get<string>('FIREBASE_PROJECT_ID'),
-            clientEmail: configService.get<string>('FIREBASE_CLIENT_EMAIL'),
-            privateKey,
-          }),
-        });
+        // Strip surrounding double/single quotes if pasted with quotes
+        if (
+          (privateKey.startsWith('"') && privateKey.endsWith('"')) ||
+          (privateKey.startsWith("'") && privateKey.endsWith("'"))
+        ) {
+          privateKey = privateKey.slice(1, -1);
+        }
+
+        // Convert literal \n escape sequences to real newlines
+        privateKey = privateKey.replace(/\\n/g, '\n');
+
+        const projectId = configService.get<string>('FIREBASE_PROJECT_ID');
+        const clientEmail = configService.get<string>('FIREBASE_CLIENT_EMAIL');
+
+        try {
+          return admin.initializeApp({
+            credential: admin.credential.cert({
+              projectId,
+              clientEmail,
+              privateKey,
+            }),
+          });
+        } catch (err: any) {
+          console.error('Firebase Admin Initialization Error:', err?.message || err);
+          throw err;
+        }
       },
       inject: [ConfigService],
     },

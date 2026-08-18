@@ -1,8 +1,8 @@
+import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
-import { ExpressAdapter } from '@nestjs/platform-express';
 import compression from 'compression';
 import helmet from 'helmet';
 import express from 'express';
@@ -13,31 +13,33 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { ResponseTransformInterceptor } from './common/interceptors/response-transform.interceptor';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 
-const server = express();
-
 async function bootstrap() {
-  const app = await NestFactory.create(
-    AppModule,
-    new ExpressAdapter(server),
-    { bufferLogs: true },
-  );
+  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+
   const configService = app.get(ConfigService);
-  const port = configService.get<number>('PORT', 3000);
+  const port = process.env.PORT || configService.get<number>('PORT', 3000);
   const nodeEnv = configService.get<string>('NODE_ENV', 'development');
   const allowedOrigins = configService
-    .get<string>('ALLOWED_ORIGINS', 'http://localhost:3000,http://localhost:3001,http://localhost')
+    .get<string>(
+      'ALLOWED_ORIGINS',
+      'http://localhost:3000,http://localhost:3001,http://localhost',
+    )
     .split(',');
 
-  // Security
+  // Security & Middleware
   app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
   app.use(compression());
   app.enableCors({
     origin: (origin, callback) => {
-      // Allow Vercel preview URLs and configured origins
-      if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
+      if (
+        !origin ||
+        allowedOrigins.includes(origin) ||
+        origin.endsWith('.vercel.app') ||
+        origin.endsWith('.onrender.com')
+      ) {
         callback(null, true);
       } else {
-        callback(null, true); // Allow requests in production
+        callback(null, true); // Allow all in production
       }
     },
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
@@ -48,11 +50,13 @@ async function bootstrap() {
   // Serve static files from public directory (frontend)
   const publicPathInDist = join(__dirname, 'public');
   const publicPathParent = join(__dirname, '..', 'public');
-  const publicPath = fs.existsSync(publicPathInDist) ? publicPathInDist : publicPathParent;
+  const publicPath = fs.existsSync(publicPathInDist)
+    ? publicPathInDist
+    : publicPathParent;
   app.use(express.static(publicPath, { index: 'index.html' }));
 
   // Fallback non-API GET requests to index.html for SPA routing
-  app.use((req, res, next) => {
+  app.use((req: any, res: any, next: any) => {
     if (req.method === 'GET' && !req.path.startsWith('/api')) {
       const indexPath = join(publicPath, 'index.html');
       if (fs.existsSync(indexPath)) {
@@ -106,17 +110,9 @@ async function bootstrap() {
     });
   }
 
-  if (process.env.VERCEL) {
-    await app.init();
-  } else {
-    await app.listen(port, '0.0.0.0');
-    console.log(
-      `\n🚀 Manage Money API running on port: ${port}`,
-    );
-    console.log(`📖 API Docs: http://localhost:${port}/api/docs\n`);
-  }
+  await app.listen(port, '0.0.0.0');
+  console.log(`\n🚀 Manage Money API running on port: ${port}`);
+  console.log(`📖 API Docs: http://localhost:${port}/api/docs\n`);
 }
 
 bootstrap();
-
-export default server;
