@@ -8,8 +8,9 @@
     "frontend"
   ],
   "scripts": {
-    "build": "cd backend && npm run build",
-    "start": "cd backend && npm run start"
+    "build": "cd backend && npm install && npm run build",
+    "start": "cd backend && npm run start:prod",
+    "start:prod": "cd backend && npm run start:prod"
   },
   "dependencies": {
     "@nestjs/cli": "^11.0.21",

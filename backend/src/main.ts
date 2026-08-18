@@ -109,9 +109,9 @@ async function bootstrap() {
   if (process.env.VERCEL) {
     await app.init();
   } else {
-    await app.listen(port);
+    await app.listen(port, '0.0.0.0');
     console.log(
-      `\n🚀 Manage Money API running on: http://localhost:${port}/api/v1`,
+      `\n🚀 Manage Money API running on port: ${port}`,
     );
     console.log(`📖 API Docs: http://localhost:${port}/api/docs\n`);
   }

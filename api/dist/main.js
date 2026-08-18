@@ -120,8 +120,8 @@ async function bootstrap() {
         await app.init();
     }
     else {
-        await app.listen(port);
-        console.log(`\n🚀 Manage Money API running on: http://localhost:${port}/api/v1`);
+        await app.listen(port, '0.0.0.0');
+        console.log(`\n🚀 Manage Money API running on port: ${port}`);
         console.log(`📖 API Docs: http://localhost:${port}/api/docs\n`);
     }
 }
