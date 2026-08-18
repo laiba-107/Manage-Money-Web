@@ -179,23 +179,161 @@ function showMessage(text, type = 'info') {
 /* Currency Engine & Exchange Rates                                        */
 /* ---------------------------------------------------------------------- */
 
-const CURRENCIES = {
-  USD: { symbol: '$', rate: 1.0, locale: 'en-US' },
-  EUR: { symbol: '€', rate: 0.92, locale: 'de-DE' },
-  GBP: { symbol: '£', rate: 0.79, locale: 'en-GB' },
-  PKR: { symbol: 'Rs ', rate: 278.5, locale: 'ur-PK' },
-  INR: { symbol: '₹', rate: 83.5, locale: 'hi-IN' },
-  AED: { symbol: 'AED ', rate: 3.67, locale: 'ar-AE' },
-  SAR: { symbol: 'SAR ', rate: 3.75, locale: 'ar-SA' },
-  CAD: { symbol: 'C$', rate: 1.36, locale: 'en-CA' },
-  AUD: { symbol: 'A$', rate: 1.52, locale: 'en-AU' },
-  JPY: { symbol: '¥', rate: 155.0, locale: 'ja-JP' },
-  CHF: { symbol: 'CHF ', rate: 0.90, locale: 'de-CH' },
-  CNY: { symbol: '¥', rate: 7.23, locale: 'zh-CN' },
-  KGS: { symbol: 'сом ', rate: 87.5, locale: 'ky-KG' },
-};
+const WORLD_CURRENCIES = [
+  // Popular / Major
+  { code: 'USD', name: 'US Dollar', symbol: '$', rate: 1.0, locale: 'en-US' },
+  { code: 'EUR', name: 'Euro', symbol: '€', rate: 0.92, locale: 'de-DE' },
+  { code: 'GBP', name: 'British Pound', symbol: '£', rate: 0.79, locale: 'en-GB' },
+  { code: 'PKR', name: 'Pakistani Rupee', symbol: 'Rs ', rate: 278.5, locale: 'ur-PK' },
+  { code: 'INR', name: 'Indian Rupee', symbol: '₹', rate: 83.5, locale: 'hi-IN' },
+  { code: 'AED', name: 'UAE Dirham', symbol: 'AED ', rate: 3.67, locale: 'ar-AE' },
+  { code: 'SAR', name: 'Saudi Riyal', symbol: 'SAR ', rate: 3.75, locale: 'ar-SA' },
+  { code: 'CAD', name: 'Canadian Dollar', symbol: 'C$', rate: 1.36, locale: 'en-CA' },
+  { code: 'AUD', name: 'Australian Dollar', symbol: 'A$', rate: 1.52, locale: 'en-AU' },
+  { code: 'JPY', name: 'Japanese Yen', symbol: '¥', rate: 155.0, locale: 'ja-JP' },
+  { code: 'CNY', name: 'Chinese Yuan', symbol: '¥', rate: 7.23, locale: 'zh-CN' },
+  { code: 'CHF', name: 'Swiss Franc', symbol: 'CHF ', rate: 0.90, locale: 'de-CH' },
+  { code: 'SGD', name: 'Singapore Dollar', symbol: 'S$', rate: 1.35, locale: 'en-SG' },
+  { code: 'NZD', name: 'New Zealand Dollar', symbol: 'NZ$', rate: 1.65, locale: 'en-NZ' },
+  { code: 'HKD', name: 'Hong Kong Dollar', symbol: 'HK$', rate: 7.82, locale: 'zh-HK' },
+  { code: 'MYR', name: 'Malaysian Ringgit', symbol: 'RM ', rate: 4.72, locale: 'ms-MY' },
+  { code: 'THB', name: 'Thai Baht', symbol: '฿', rate: 36.8, locale: 'th-TH' },
+  { code: 'IDR', name: 'Indonesian Rupiah', symbol: 'Rp ', rate: 16100, locale: 'id-ID' },
+  { code: 'PHP', name: 'Philippine Peso', symbol: '₱', rate: 57.5, locale: 'fil-PH' },
+  { code: 'BDT', name: 'Bangladeshi Taka', symbol: '৳', rate: 117.0, locale: 'bn-BD' },
+  { code: 'LKR', name: 'Sri Lankan Rupee', symbol: 'Rs ', rate: 302.0, locale: 'si-LK' },
+  { code: 'TRY', name: 'Turkish Lira', symbol: '₺', rate: 32.2, locale: 'tr-TR' },
+  { code: 'ZAR', name: 'South African Rand', symbol: 'R ', rate: 18.3, locale: 'en-ZA' },
+  { code: 'BRL', name: 'Brazilian Real', symbol: 'R$', rate: 5.15, locale: 'pt-BR' },
+  { code: 'MXN', name: 'Mexican Peso', symbol: 'Mex$', rate: 16.8, locale: 'es-MX' },
+  { code: 'QAR', name: 'Qatari Riyal', symbol: 'QR ', rate: 3.64, locale: 'ar-QA' },
+  { code: 'KWD', name: 'Kuwaiti Dinar', symbol: 'KD ', rate: 0.31, locale: 'ar-KW' },
+  { code: 'BHD', name: 'Bahraini Dinar', symbol: 'BD ', rate: 0.38, locale: 'ar-BH' },
+  { code: 'OMR', name: 'Omani Rial', symbol: 'OMR ', rate: 0.385, locale: 'ar-OM' },
+  { code: 'JOD', name: 'Jordanian Dinar', symbol: 'JD ', rate: 0.71, locale: 'ar-JO' },
+  { code: 'EGP', name: 'Egyptian Pound', symbol: 'E£ ', rate: 47.5, locale: 'ar-EG' },
+  { code: 'NGN', name: 'Nigerian Naira', symbol: '₦', rate: 1450, locale: 'en-NG' },
+  { code: 'KES', name: 'Kenyan Shilling', symbol: 'KSh ', rate: 132.0, locale: 'sw-KE' },
+  { code: 'GHS', name: 'Ghanaian Cedi', symbol: 'GH₵ ', rate: 14.5, locale: 'ak-GH' },
+  { code: 'KRW', name: 'South Korean Won', symbol: '₩', rate: 1370, locale: 'ko-KR' },
+  { code: 'TWD', name: 'New Taiwan Dollar', symbol: 'NT$', rate: 32.4, locale: 'zh-TW' },
+  { code: 'VND', name: 'Vietnamese Dong', symbol: '₫', rate: 25400, locale: 'vi-VN' },
+  { code: 'SEK', name: 'Swedish Krona', symbol: 'kr ', rate: 10.8, locale: 'sv-SE' },
+  { code: 'NOK', name: 'Norwegian Krone', symbol: 'kr ', rate: 10.7, locale: 'nb-NO' },
+  { code: 'DKK', name: 'Danish Krone', symbol: 'kr ', rate: 6.9, locale: 'da-DK' },
+  { code: 'PLN', name: 'Polish Zloty', symbol: 'zł ', rate: 3.95, locale: 'pl-PL' },
+  { code: 'CZK', name: 'Czech Koruna', symbol: 'Kč ', rate: 23.0, locale: 'cs-CZ' },
+  { code: 'HUF', name: 'Hungarian Forint', symbol: 'Ft ', rate: 360.0, locale: 'hu-HU' },
+  { code: 'RON', name: 'Romanian Leu', symbol: 'lei ', rate: 4.6, locale: 'ro-RO' },
+  { code: 'BGN', name: 'Bulgarian Lev', symbol: 'лв ', rate: 1.8, locale: 'bg-BG' },
+  { code: 'ILS', name: 'Israeli Shekel', symbol: '₪', rate: 3.7, locale: 'he-IL' },
+  { code: 'RUB', name: 'Russian Ruble', symbol: '₽', rate: 91.0, locale: 'ru-RU' },
+  { code: 'UAH', name: 'Ukrainian Hryvnia', symbol: '₴', rate: 39.8, locale: 'uk-UA' },
+  { code: 'KZT', name: 'Kazakhstani Tenge', symbol: '₸', rate: 445.0, locale: 'kk-KZ' },
+  { code: 'UZS', name: 'Uzbekistani Som', symbol: "so'm ", rate: 12700, locale: 'uz-UZ' },
+  { code: 'KGS', name: 'Kyrgyzstani Som', symbol: 'сом ', rate: 87.5, locale: 'ky-KG' },
+  { code: 'MAD', name: 'Moroccan Dirham', symbol: 'MAD ', rate: 10.0, locale: 'ar-MA' },
+  { code: 'DZD', name: 'Algerian Dinar', symbol: 'DA ', rate: 134.0, locale: 'ar-DZ' },
+  { code: 'TND', name: 'Tunisian Dinar', symbol: 'DT ', rate: 3.12, locale: 'ar-TN' },
+  { code: 'IQD', name: 'Iraqi Dinar', symbol: 'IQD ', rate: 1310, locale: 'ar-IQ' },
+  { code: 'LBP', name: 'Lebanese Pound', symbol: 'L£ ', rate: 89500, locale: 'ar-LB' },
+  { code: 'NPR', name: 'Nepalese Rupee', symbol: 'Rs ', rate: 133.5, locale: 'ne-NP' },
+  { code: 'AFN', name: 'Afghan Afghani', symbol: '؋', rate: 71.0, locale: 'ps-AF' },
+  { code: 'MMK', name: 'Myanmar Kyat', symbol: 'K ', rate: 2100, locale: 'my-MM' },
+  { code: 'KHR', name: 'Cambodian Riel', symbol: '៛', rate: 4100, locale: 'km-KH' },
+  { code: 'LAK', name: 'Lao Kip', symbol: '₭', rate: 21500, locale: 'lo-LA' },
+  { code: 'ISK', name: 'Icelandic Krona', symbol: 'kr ', rate: 139.0, locale: 'is-IS' },
+  { code: 'RSD', name: 'Serbian Dinar', symbol: 'din. ', rate: 108.0, locale: 'sr-RS' },
+  { code: 'GEL', name: 'Georgian Lari', symbol: '₾', rate: 2.7, locale: 'ka-GE' },
+  { code: 'AZN', name: 'Azerbaijani Manat', symbol: '₼', rate: 1.7, locale: 'az-AZ' },
+  { code: 'AMD', name: 'Armenian Dram', symbol: '֏', rate: 388.0, locale: 'hy-AM' },
+  { code: 'BYN', name: 'Belarusian Ruble', symbol: 'Br ', rate: 3.27, locale: 'be-BY' },
+  { code: 'ARS', name: 'Argentine Peso', symbol: '$', rate: 885.0, locale: 'es-AR' },
+  { code: 'COP', name: 'Colombian Peso', symbol: '$', rate: 3850, locale: 'es-CO' },
+  { code: 'CLP', name: 'Chilean Peso', symbol: '$', rate: 935.0, locale: 'es-CL' },
+  { code: 'PEN', name: 'Peruvian Sol', symbol: 'S/. ', rate: 3.73, locale: 'es-PE' },
+  { code: 'CRC', name: 'Costa Rican Colon', symbol: '₡', rate: 515.0, locale: 'es-CR' },
+  { code: 'DOP', name: 'Dominican Peso', symbol: 'RD$ ', rate: 59.0, locale: 'es-DO' },
+  { code: 'GTQ', name: 'Guatemalan Quetzal', symbol: 'Q ', rate: 7.78, locale: 'es-GT' },
+  { code: 'HNL', name: 'Honduran Lempira', symbol: 'L ', rate: 24.7, locale: 'es-HN' },
+  { code: 'NIO', name: 'Nicaraguan Cordoba', symbol: 'C$ ', rate: 36.8, locale: 'es-NI' },
+  { code: 'PAB', name: 'Panamanian Balboa', symbol: 'B/. ', rate: 1.0, locale: 'es-PA' },
+  { code: 'PYG', name: 'Paraguayan Guarani', symbol: '₲', rate: 7500, locale: 'es-PY' },
+  { code: 'UYU', name: 'Uruguayan Peso', symbol: '$U ', rate: 38.6, locale: 'es-UY' },
+  { code: 'BOB', name: 'Bolivian Boliviano', symbol: 'Bs. ', rate: 6.91, locale: 'es-BO' },
+  { code: 'JMD', name: 'Jamaican Dollar', symbol: 'J$ ', rate: 156.0, locale: 'en-JM' },
+  { code: 'TTD', name: 'Trinidad & Tobago Dollar', symbol: 'TT$ ', rate: 6.78, locale: 'en-TT' },
+  { code: 'BBD', name: 'Barbadian Dollar', symbol: 'Bds$ ', rate: 2.0, locale: 'en-BB' },
+  { code: 'BSD', name: 'Bahamian Dollar', symbol: 'B$ ', rate: 1.0, locale: 'en-BS' },
+  { code: 'BZD', name: 'Belize Dollar', symbol: 'BZ$ ', rate: 2.0, locale: 'en-BZ' },
+  { code: 'XOF', name: 'West African CFA Franc', symbol: 'CFA ', rate: 605.0, locale: 'fr-SN' },
+  { code: 'XAF', name: 'Central African CFA Franc', symbol: 'FCFA ', rate: 605.0, locale: 'fr-CM' },
+  { code: 'TZS', name: 'Tanzanian Shilling', symbol: 'TSh ', rate: 2600, locale: 'sw-TZ' },
+  { code: 'UGX', name: 'Ugandan Shilling', symbol: 'USh ', rate: 3800, locale: 'en-UG' },
+  { code: 'RWF', name: 'Rwandan Franc', symbol: 'RF ', rate: 1300, locale: 'rw-RW' },
+  { code: 'ETB', name: 'Ethiopian Birr', symbol: 'Br ', rate: 57.5, locale: 'am-ET' },
+  { code: 'MZN', name: 'Mozambican Metical', symbol: 'MT ', rate: 63.9, locale: 'pt-MZ' },
+  { code: 'AOA', name: 'Angolan Kwanza', symbol: 'Kz ', rate: 855.0, locale: 'pt-AO' },
+  { code: 'ZMW', name: 'Zambian Kwacha', symbol: 'ZK ', rate: 26.5, locale: 'en-ZM' },
+  { code: 'BWP', name: 'Botswana Pula', symbol: 'P ', rate: 13.7, locale: 'en-BW' },
+  { code: 'NAD', name: 'Namibian Dollar', symbol: 'N$ ', rate: 18.3, locale: 'en-NA' },
+  { code: 'MUR', name: 'Mauritian Rupee', symbol: 'Rs ', rate: 46.2, locale: 'en-MU' },
+  { code: 'FJD', name: 'Fijian Dollar', symbol: 'FJ$ ', rate: 2.26, locale: 'en-FJ' },
+];
+
+const CURRENCIES = {};
+WORLD_CURRENCIES.forEach((c) => {
+  CURRENCIES[c.code] = {
+    symbol: c.symbol,
+    rate: c.rate,
+    locale: c.locale || 'en-US',
+    name: c.name,
+  };
+});
 
 let currentBaseCurrency = localStorage.getItem('user_base_currency') || 'USD';
+
+function populateCurrencyDropdown(selectEl, selectedValue = currentBaseCurrency) {
+  if (!selectEl) return;
+  const currentVal = selectedValue || selectEl.value || currentBaseCurrency;
+  selectEl.innerHTML = '';
+
+  const popularGroup = document.createElement('optgroup');
+  popularGroup.label = '⭐ Popular Currencies';
+
+  const popularCodes = ['USD', 'EUR', 'GBP', 'PKR', 'INR', 'AED', 'SAR', 'CAD', 'AUD', 'JPY', 'CNY', 'CHF', 'TRY', 'BRL', 'SGD', 'MYR'];
+  popularCodes.forEach((code) => {
+    const c = CURRENCIES[code];
+    if (c) {
+      const opt = document.createElement('option');
+      opt.value = code;
+      opt.textContent = `${code} — ${c.name} (${c.symbol.trim()})`;
+      popularGroup.appendChild(opt);
+    }
+  });
+
+  const allGroup = document.createElement('optgroup');
+  allGroup.label = '🌐 All World Currencies (A-Z)';
+  const sorted = [...WORLD_CURRENCIES].sort((a, b) => a.code.localeCompare(b.code));
+  sorted.forEach((c) => {
+    const opt = document.createElement('option');
+    opt.value = c.code;
+    opt.textContent = `${c.code} — ${c.name} (${c.symbol.trim()})`;
+    allGroup.appendChild(opt);
+  });
+
+  selectEl.appendChild(popularGroup);
+  selectEl.appendChild(allGroup);
+  selectEl.value = CURRENCIES[currentVal] ? currentVal : 'USD';
+}
+
+function populateAllCurrencySelects() {
+  const ids = ['userBaseCurrency', 'incomeCurrency', 'expenseCurrency', 'groupBaseCurrency', 'planCurrency'];
+  ids.forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) populateCurrencyDropdown(el);
+  });
+}
 
 async function fetchLiveExchangeRates() {
   try {
@@ -209,7 +347,7 @@ async function fetchLiveExchangeRates() {
       });
     }
   } catch (_) {
-    // Keep fallback offline exchange rates
+    // Keep fallback exchange rates
   }
 }
 
@@ -511,6 +649,13 @@ registerForm?.addEventListener('submit', async (e) => {
 /* ---------------------------------------------------------------------- */
 
 function switchPage(pageName) {
+  const token = getAccessToken();
+
+  // If user is logged in, any attempt to visit home or guest features goes straight to dashboard
+  if (token && (pageName === 'home' || pageName === 'features')) {
+    pageName = 'dashboard';
+  }
+
   if (pageName === 'features') {
     const featuresSection = document.getElementById('featuresSection');
     if (featuresSection) {
@@ -539,20 +684,39 @@ document.getElementById('navbarAdvanced')?.addEventListener('click', (e) => {
   }
 });
 
+// Brand Logo navigation listener
+document.getElementById('navLogo')?.addEventListener('click', (e) => {
+  e.preventDefault();
+  const token = getAccessToken();
+  switchPage(token ? 'dashboard' : 'home');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
 // Footer navigation links
 document.getElementById('footerLinkHome')?.addEventListener('click', (e) => {
   e.preventDefault();
-  switchPage('home');
+  const token = getAccessToken();
+  switchPage(token ? 'dashboard' : 'home');
   window.scrollTo({ top: 0, behavior: 'smooth' });
 });
 
 document.getElementById('footerLinkFeatures')?.addEventListener('click', (e) => {
   e.preventDefault();
-  document.getElementById('featuresSection')?.scrollIntoView({ behavior: 'smooth' });
+  const token = getAccessToken();
+  if (token) {
+    switchPage('dashboard');
+  } else {
+    document.getElementById('featuresSection')?.scrollIntoView({ behavior: 'smooth' });
+  }
 });
 
 document.getElementById('footerLinkSignIn')?.addEventListener('click', (e) => {
   e.preventDefault();
+  const token = getAccessToken();
+  if (token) {
+    switchPage('dashboard');
+    return;
+  }
   const container = document.getElementById('homeAuthContainer');
   if (container) {
     container.scrollIntoView({ behavior: 'smooth' });
@@ -690,6 +854,8 @@ async function loadAllData() {
 }
 
 async function loadApp() {
+  populateAllCurrencySelects();
+
   emailAuthButton?.addEventListener('click', () => openAuthModal('login'));
   const userBaseCurrencySelect = document.getElementById('userBaseCurrency');
   if (userBaseCurrencySelect) {
@@ -713,19 +879,33 @@ async function loadApp() {
   const token = getAccessToken();
   const guestNavLinks = document.querySelectorAll('#navMenu .guest-nav-only');
   const appNavLinks = document.querySelectorAll('#navMenu .app-nav-only');
+  const homeAuthContainer = document.getElementById('homeAuthContainer');
+  const pageHome = document.getElementById('page-home');
+  const navLogo = document.getElementById('navLogo');
+  const appShell = document.getElementById('appShell');
 
   if (!token) {
+    appShell?.classList.remove('is-logged-in');
     emailAuthButton?.classList.remove('hidden');
     authButton?.classList.add('hidden');
     userInfo?.classList.add('hidden');
     guestNavLinks.forEach((el) => el.classList.remove('hidden'));
     appNavLinks.forEach((el) => el.classList.add('hidden'));
+    if (homeAuthContainer) homeAuthContainer.classList.remove('hidden');
+    if (pageHome) pageHome.classList.remove('hidden');
+    if (navLogo) navLogo.dataset.page = 'home';
 
     switchPage('home');
     return;
   }
 
+  // User is Logged In:
+  appShell?.classList.add('is-logged-in');
   emailAuthButton?.classList.add('hidden');
+  if (homeAuthContainer) homeAuthContainer.classList.add('hidden');
+  if (pageHome) pageHome.classList.add('hidden');
+  if (navLogo) navLogo.dataset.page = 'dashboard';
+
   if (authButton) {
     authButton.textContent = 'Sign out';
     authButton.onclick = handleLogout;
