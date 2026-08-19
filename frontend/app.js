@@ -52,17 +52,17 @@ const PAYMENT_METHOD_FROM_API = {
 /* ---------------------------------------------------------------------- */
 
 const EXPENSE_CATEGORIES = {
-  Food: { label: '🍔 Food & Dining', color: '#f97316' },
-  Transport: { label: '🚗 Transport', color: '#0ea5e9' },
-  Bills: { label: '📄 Bills & Utilities', color: '#64748b' },
-  Shopping: { label: '🛍️ Shopping', color: '#ec4899' },
-  Rent: { label: '🏠 Rent', color: '#8b5cf6' },
-  Entertainment: { label: '🎬 Entertainment', color: '#f59e0b' },
-  Healthcare: { label: '🏥 Healthcare', color: '#ef4444' },
-  Education: { label: '🎓 Education', color: '#22c55e' },
-  Travel: { label: '✈️ Travel', color: '#06b6d4' },
-  Return: { label: '🔄 Return / Refund', color: '#14b8a6' },
-  Other: { label: '📌 Other', color: '#94a3b8' },
+  Food: { label: '🍔 Food & Dining', color: '#b57e4c' },
+  Transport: { label: '🚗 Transport', color: '#556b2f' },
+  Bills: { label: '📄 Bills & Utilities', color: '#6b705c' },
+  Shopping: { label: '🛍️ Shopping', color: '#c27d53' },
+  Rent: { label: '🏠 Rent', color: '#4a3525' },
+  Entertainment: { label: '🎬 Entertainment', color: '#c88d2d' },
+  Healthcare: { label: '🏥 Healthcare', color: '#b24434' },
+  Education: { label: '🎓 Education', color: '#3d6330' },
+  Travel: { label: '✈️ Travel', color: '#8a572c' },
+  Return: { label: '🔄 Return / Refund', color: '#5d8c47' },
+  Other: { label: '📌 Other', color: '#8c7e6d' },
 };
 
 const INCOME_SOURCES = {
@@ -653,6 +653,12 @@ registerForm?.addEventListener('submit', async (e) => {
 /* Page / nav switching & Landing logic                                   */
 /* ---------------------------------------------------------------------- */
 
+function closeMobileNav() {
+  document.getElementById('navMenu')?.classList.remove('mobile-open');
+  document.getElementById('mobileNavToggle')?.classList.remove('active');
+  document.getElementById('mobileNavOverlay')?.classList.remove('active');
+}
+
 function switchPage(pageName) {
   const token = getAccessToken();
 
@@ -666,6 +672,7 @@ function switchPage(pageName) {
     if (featuresSection) {
       featuresSection.scrollIntoView({ behavior: 'smooth' });
     }
+    closeMobileNav();
     return;
   }
 
@@ -676,6 +683,8 @@ function switchPage(pageName) {
   document.querySelectorAll('#navMenu .nav-link').forEach((btn) => {
     btn.classList.toggle('active', btn.dataset.page === pageName);
   });
+
+  closeMobileNav();
 }
 
 // Advanced Navbar delegated listener
@@ -685,7 +694,6 @@ document.getElementById('navbarAdvanced')?.addEventListener('click', (e) => {
   const page = btn.dataset.page;
   if (page) {
     switchPage(page);
-    document.getElementById('navMenu')?.classList.remove('mobile-open');
   }
 });
 
@@ -807,20 +815,32 @@ document.getElementById('heroExploreFeaturesBtn')?.addEventListener('click', () 
 
 // Mobile menu toggle
 const mobileNavToggle = document.getElementById('mobileNavToggle');
+const mobileNavOverlay = document.getElementById('mobileNavOverlay');
 const navMenu = document.getElementById('navMenu');
 
 mobileNavToggle?.addEventListener('click', (e) => {
   e.preventDefault();
   e.stopPropagation();
-  navMenu?.classList.toggle('mobile-open');
-  mobileNavToggle?.classList.toggle('active');
+  const isOpen = navMenu?.classList.toggle('mobile-open');
+  mobileNavToggle?.classList.toggle('active', isOpen);
+  mobileNavOverlay?.classList.toggle('active', isOpen);
+});
+
+mobileNavOverlay?.addEventListener('click', () => {
+  closeMobileNav();
 });
 
 // Close mobile menu when clicking outside
 document.addEventListener('click', (e) => {
-  if (!e.target.closest('#navbarAdvanced')) {
-    navMenu?.classList.remove('mobile-open');
-    mobileNavToggle?.classList.remove('active');
+  if (!e.target.closest('#navbarAdvanced') && !e.target.closest('#mobileNavOverlay')) {
+    closeMobileNav();
+  }
+});
+
+// Close mobile menu on resize to larger viewport
+window.addEventListener('resize', () => {
+  if (window.innerWidth > 960) {
+    closeMobileNav();
   }
 });
 
@@ -1191,8 +1211,8 @@ function renderIncomeExpenseChart() {
     data: {
       labels: months.map(monthLabel),
       datasets: [
-        { label: 'Income', data: months.map((m) => incomeByMonth[m] || 0), backgroundColor: '#4f46e5', borderRadius: 6 },
-        { label: 'Expenses', data: months.map((m) => expenseByMonth[m] || 0), backgroundColor: '#f43f5e', borderRadius: 6 },
+        { label: 'Income', data: months.map((m) => incomeByMonth[m] || 0), backgroundColor: '#556b2f', borderRadius: 6 },
+        { label: 'Expenses', data: months.map((m) => expenseByMonth[m] || 0), backgroundColor: '#b24434', borderRadius: 6 },
       ],
     },
     options: {
@@ -1614,36 +1634,46 @@ function renderGroupItemRows() {
     total += itemConverted;
 
     return `
-      <div class="form-row" style="display:flex;gap:8px;align-items:center;margin-bottom:8px;background:#fff;padding:8px;border-radius:8px;border:1px solid var(--border);">
-        <select data-item-idx="${idx}" data-field="category" style="width:130px;padding:6px;font-size:0.82rem;">
-          <option value="Food" ${item.category === 'Food' ? 'selected' : ''}>🍔 Food</option>
-          <option value="Transport" ${item.category === 'Transport' ? 'selected' : ''}>🚗 Transport</option>
-          <option value="Bills" ${item.category === 'Bills' ? 'selected' : ''}>📄 Bills</option>
-          <option value="Shopping" ${item.category === 'Shopping' ? 'selected' : ''}>🛍️ Shopping</option>
-          <option value="Rent" ${item.category === 'Rent' ? 'selected' : ''}>🏠 Rent</option>
-          <option value="Entertainment" ${item.category === 'Entertainment' ? 'selected' : ''}>🎬 Entertainment</option>
-          <option value="Healthcare" ${item.category === 'Healthcare' ? 'selected' : ''}>🏥 Healthcare</option>
-          <option value="Education" ${item.category === 'Education' ? 'selected' : ''}>🎓 Education</option>
-          <option value="Travel" ${item.category === 'Travel' ? 'selected' : ''}>✈️ Travel</option>
-          <option value="Return" ${item.category === 'Return' ? 'selected' : ''}>🔄 Return</option>
-          <option value="Other" ${!item.category || item.category === 'Other' ? 'selected' : ''}>📌 Other</option>
-        </select>
-        <input type="text" data-item-idx="${idx}" data-field="title" placeholder="Item description" value="${item.title || ''}" style="flex:2;padding:6px;font-size:0.82rem;" required />
-        <input type="number" data-item-idx="${idx}" data-field="amount" placeholder="0.00" step="0.01" value="${item.amount ?? ''}" style="width:90px;padding:6px;font-size:0.82rem;" required />
-        <select data-item-idx="${idx}" data-field="currency" style="width:85px;padding:6px;font-size:0.82rem;">
-          <option value="USD" ${item.currency === 'USD' ? 'selected' : ''}>USD</option>
-          <option value="EUR" ${item.currency === 'EUR' ? 'selected' : ''}>EUR</option>
-          <option value="GBP" ${item.currency === 'GBP' ? 'selected' : ''}>GBP</option>
-          <option value="PKR" ${item.currency === 'PKR' ? 'selected' : ''}>PKR</option>
-          <option value="INR" ${item.currency === 'INR' ? 'selected' : ''}>INR</option>
-          <option value="AED" ${item.currency === 'AED' ? 'selected' : ''}>AED</option>
-          <option value="SAR" ${item.currency === 'SAR' ? 'selected' : ''}>SAR</option>
-          <option value="CAD" ${item.currency === 'CAD' ? 'selected' : ''}>CAD</option>
-          <option value="AUD" ${item.currency === 'AUD' ? 'selected' : ''}>AUD</option>
-          <option value="JPY" ${item.currency === 'JPY' ? 'selected' : ''}>JPY</option>
-          <option value="KGS" ${item.currency === 'KGS' ? 'selected' : ''}>KGS</option>
-        </select>
-        <button type="button" class="button button-small button-danger" data-remove-group-item="${idx}" style="padding:4px 8px;">✕</button>
+      <div class="line-item-row">
+        <div class="line-item-field line-item-cat">
+          <select data-item-idx="${idx}" data-field="category" class="line-item-select">
+            <option value="Food" ${item.category === 'Food' ? 'selected' : ''}>🍔 Food</option>
+            <option value="Transport" ${item.category === 'Transport' ? 'selected' : ''}>🚗 Transport</option>
+            <option value="Bills" ${item.category === 'Bills' ? 'selected' : ''}>📄 Bills</option>
+            <option value="Shopping" ${item.category === 'Shopping' ? 'selected' : ''}>🛍️ Shopping</option>
+            <option value="Rent" ${item.category === 'Rent' ? 'selected' : ''}>🏠 Rent</option>
+            <option value="Entertainment" ${item.category === 'Entertainment' ? 'selected' : ''}>🎬 Entertainment</option>
+            <option value="Healthcare" ${item.category === 'Healthcare' ? 'selected' : ''}>🏥 Healthcare</option>
+            <option value="Education" ${item.category === 'Education' ? 'selected' : ''}>🎓 Education</option>
+            <option value="Travel" ${item.category === 'Travel' ? 'selected' : ''}>✈️ Travel</option>
+            <option value="Return" ${item.category === 'Return' ? 'selected' : ''}>🔄 Return</option>
+            <option value="Other" ${!item.category || item.category === 'Other' ? 'selected' : ''}>📌 Other</option>
+          </select>
+        </div>
+        <div class="line-item-field line-item-desc">
+          <input type="text" data-item-idx="${idx}" data-field="title" placeholder="Item description" value="${item.title || ''}" required />
+        </div>
+        <div class="line-item-field line-item-amt">
+          <input type="number" data-item-idx="${idx}" data-field="amount" placeholder="0.00" step="0.01" value="${item.amount ?? ''}" required />
+        </div>
+        <div class="line-item-field line-item-curr">
+          <select data-item-idx="${idx}" data-field="currency" class="currency-select line-item-select">
+            <option value="USD" ${item.currency === 'USD' ? 'selected' : ''}>USD</option>
+            <option value="EUR" ${item.currency === 'EUR' ? 'selected' : ''}>EUR</option>
+            <option value="GBP" ${item.currency === 'GBP' ? 'selected' : ''}>GBP</option>
+            <option value="PKR" ${item.currency === 'PKR' ? 'selected' : ''}>PKR</option>
+            <option value="INR" ${item.currency === 'INR' ? 'selected' : ''}>INR</option>
+            <option value="AED" ${item.currency === 'AED' ? 'selected' : ''}>AED</option>
+            <option value="SAR" ${item.currency === 'SAR' ? 'selected' : ''}>SAR</option>
+            <option value="CAD" ${item.currency === 'CAD' ? 'selected' : ''}>CAD</option>
+            <option value="AUD" ${item.currency === 'AUD' ? 'selected' : ''}>AUD</option>
+            <option value="JPY" ${item.currency === 'JPY' ? 'selected' : ''}>JPY</option>
+            <option value="KGS" ${item.currency === 'KGS' ? 'selected' : ''}>KGS</option>
+          </select>
+        </div>
+        <div class="line-item-actions">
+          <button type="button" class="button button-small button-danger line-item-del-btn" data-remove-group-item="${idx}">✕</button>
+        </div>
       </div>`;
   }).join('');
 
@@ -1744,7 +1774,7 @@ expenseGroupForm?.addEventListener('submit', async (e) => {
 function renderExpenseGroupsList() {
   if (!expenseGroupsListEl) return;
   if (!state.expenseGroups.length) {
-    expenseGroupsListEl.innerHTML = '<p class="placeholder">No expense groups yet. Click "+ Create Expense Group" to bundle expenses for trips or events!</p>';
+    expenseGroupsListEl.innerHTML = '<p class="placeholder">No expense groups yet. Click "+ Create Expense Group / Trip" to bundle expenses for trips or events!</p>';
     return;
   }
 
@@ -1754,23 +1784,23 @@ function renderExpenseGroupsList() {
     const badgeText = typeBadges[g.type] || '📦 Group';
 
     const itemsHtml = (g.items || []).map((item) => `
-      <tr style="border-bottom:1px solid #f1f5f9;">
-        <td style="padding:6px;font-size:0.82rem;">${EXPENSE_CATEGORIES[item.category]?.label || item.category}</td>
-        <td style="padding:6px;font-size:0.82rem;font-weight:600;">${item.title || 'Item'}</td>
-        <td style="padding:6px;font-size:0.82rem;text-align:right;font-weight:600;">
+      <tr>
+        <td style="padding:8px 6px;font-size:0.82rem;">${EXPENSE_CATEGORIES[item.category]?.label || item.category}</td>
+        <td style="padding:8px 6px;font-size:0.82rem;font-weight:600;">${item.title || 'Item'}</td>
+        <td style="padding:8px 6px;font-size:0.82rem;text-align:right;font-weight:600;">
           ${formatCurrency(convertAmount(item.amount, item.currency || 'USD', currentBaseCurrency))}
           ${item.currency && item.currency !== currentBaseCurrency ? `<small style="opacity:0.7;display:block;">${item.amount} ${item.currency}</small>` : ''}
         </td>
       </tr>`).join('');
 
     return `
-      <div class="card" style="margin-bottom:16px;">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+      <div class="card budget-card-item" style="margin-bottom:16px;">
+        <div class="card-top-flex">
           <div>
             <h3 style="margin:0 0 4px 0;">${g.name} <span class="badge" style="background:#e0f2fe;color:#0369a1;margin-left:6px;">${badgeText}</span></h3>
             <small style="color:var(--muted);">${formatDate(g.startDate)} ${g.startDate !== g.endDate ? `— ${formatDate(g.endDate)}` : ''}</small>
           </div>
-          <div style="text-align:right;">
+          <div class="card-total-badge">
             <span style="font-size:1.25rem;font-weight:700;color:var(--danger);">${formatCurrency(total)}</span>
             <small style="display:block;color:var(--muted);">${(g.items || []).length} line items</small>
           </div>
@@ -1778,19 +1808,21 @@ function renderExpenseGroupsList() {
 
         ${g.notes ? `<p style="font-size:0.85rem;color:var(--muted);margin:8px 0;">${g.notes}</p>` : ''}
 
-        <details style="margin-top:10px;background:#f8fafc;padding:8px 12px;border-radius:8px;border:1px solid var(--border);">
+        <details style="margin-top:10px;background:#f8fafc;padding:8px 12px;border-radius:12px;border:1px solid var(--border);">
           <summary style="font-size:0.85rem;font-weight:600;cursor:pointer;">View Line-Item Breakdown (${(g.items || []).length})</summary>
-          <table style="width:100%;margin-top:8px;border-collapse:collapse;">
-            <thead>
-              <tr style="border-bottom:1px solid #cbd5e1;text-align:left;font-size:0.75rem;color:var(--muted);">
-                <th>Category</th><th>Item</th><th style="text-align:right;">Amount</th>
-              </tr>
-            </thead>
-            <tbody>${itemsHtml || '<tr><td colspan="3" style="padding:6px;font-size:0.8rem;">No items</td></tr>'}</tbody>
-          </table>
+          <div class="table-responsive" style="margin-top:8px;">
+            <table style="width:100%;border-collapse:collapse;">
+              <thead>
+                <tr style="border-bottom:1px solid #cbd5e1;text-align:left;font-size:0.75rem;color:var(--muted);">
+                  <th>Category</th><th>Item</th><th style="text-align:right;">Amount</th>
+                </tr>
+              </thead>
+              <tbody>${itemsHtml || '<tr><td colspan="3" style="padding:8px 6px;font-size:0.8rem;">No items</td></tr>'}</tbody>
+            </table>
+          </div>
         </details>
 
-        <div class="tx-actions" style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end;">
+        <div class="tx-actions" style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;">
           <button class="button button-small button-outline" data-add-item-group="${g.id}">+ Add Item</button>
           <button class="button button-small button-ghost" data-edit-group="${g.id}">Edit</button>
           <button class="button button-small button-danger" data-delete-group="${g.id}">Delete</button>
@@ -1900,28 +1932,38 @@ function renderPlanItemRows() {
     total += itemConverted;
 
     return `
-      <div class="form-row" style="display:flex;gap:8px;align-items:center;margin-bottom:8px;background:#fff;padding:8px;border-radius:8px;border:1px solid var(--border);">
-        <select data-plan-idx="${idx}" data-field="category" style="width:130px;padding:6px;font-size:0.82rem;">
-          <option value="Education" ${item.category === 'Education' ? 'selected' : ''}>🎓 Education</option>
-          <option value="Travel" ${item.category === 'Travel' ? 'selected' : ''}>✈️ Travel</option>
-          <option value="Shopping" ${item.category === 'Shopping' ? 'selected' : ''}>🛍️ Shopping</option>
-          <option value="Rent" ${item.category === 'Rent' ? 'selected' : ''}>🏠 Rent / Housing</option>
-          <option value="Bills" ${item.category === 'Bills' ? 'selected' : ''}>📄 Bills & Setup</option>
-          <option value="Other" ${!item.category || item.category === 'Other' ? 'selected' : ''}>📌 Other</option>
-        </select>
-        <input type="text" data-plan-idx="${idx}" data-field="title" placeholder="Estimated cost description" value="${item.title || ''}" style="flex:2;padding:6px;font-size:0.82rem;" required />
-        <input type="number" data-plan-idx="${idx}" data-field="amount" placeholder="0.00" step="0.01" value="${item.amount ?? ''}" style="width:95px;padding:6px;font-size:0.82rem;" required />
-        <select data-plan-idx="${idx}" data-field="currency" style="width:85px;padding:6px;font-size:0.82rem;">
-          <option value="USD" ${item.currency === 'USD' ? 'selected' : ''}>USD</option>
-          <option value="EUR" ${item.currency === 'EUR' ? 'selected' : ''}>EUR</option>
-          <option value="GBP" ${item.currency === 'GBP' ? 'selected' : ''}>GBP</option>
-          <option value="PKR" ${item.currency === 'PKR' ? 'selected' : ''}>PKR</option>
-          <option value="INR" ${item.currency === 'INR' ? 'selected' : ''}>INR</option>
-          <option value="AED" ${item.currency === 'AED' ? 'selected' : ''}>AED</option>
-          <option value="SAR" ${item.currency === 'SAR' ? 'selected' : ''}>SAR</option>
-          <option value="KGS" ${item.currency === 'KGS' ? 'selected' : ''}>KGS</option>
-        </select>
-        <button type="button" class="button button-small button-danger" data-remove-plan-item="${idx}" style="padding:4px 8px;">✕</button>
+      <div class="line-item-row">
+        <div class="line-item-field line-item-cat">
+          <select data-plan-idx="${idx}" data-field="category" class="line-item-select">
+            <option value="Education" ${item.category === 'Education' ? 'selected' : ''}>🎓 Education</option>
+            <option value="Travel" ${item.category === 'Travel' ? 'selected' : ''}>✈️ Travel</option>
+            <option value="Shopping" ${item.category === 'Shopping' ? 'selected' : ''}>🛍️ Shopping</option>
+            <option value="Rent" ${item.category === 'Rent' ? 'selected' : ''}>🏠 Rent / Housing</option>
+            <option value="Bills" ${item.category === 'Bills' ? 'selected' : ''}>📄 Bills & Setup</option>
+            <option value="Other" ${!item.category || item.category === 'Other' ? 'selected' : ''}>📌 Other</option>
+          </select>
+        </div>
+        <div class="line-item-field line-item-desc">
+          <input type="text" data-plan-idx="${idx}" data-field="title" placeholder="Estimated cost description" value="${item.title || ''}" required />
+        </div>
+        <div class="line-item-field line-item-amt">
+          <input type="number" data-plan-idx="${idx}" data-field="amount" placeholder="0.00" step="0.01" value="${item.amount ?? ''}" required />
+        </div>
+        <div class="line-item-field line-item-curr">
+          <select data-plan-idx="${idx}" data-field="currency" class="currency-select line-item-select">
+            <option value="USD" ${item.currency === 'USD' ? 'selected' : ''}>USD</option>
+            <option value="EUR" ${item.currency === 'EUR' ? 'selected' : ''}>EUR</option>
+            <option value="GBP" ${item.currency === 'GBP' ? 'selected' : ''}>GBP</option>
+            <option value="PKR" ${item.currency === 'PKR' ? 'selected' : ''}>PKR</option>
+            <option value="INR" ${item.currency === 'INR' ? 'selected' : ''}>INR</option>
+            <option value="AED" ${item.currency === 'AED' ? 'selected' : ''}>AED</option>
+            <option value="SAR" ${item.currency === 'SAR' ? 'selected' : ''}>SAR</option>
+            <option value="KGS" ${item.currency === 'KGS' ? 'selected' : ''}>KGS</option>
+          </select>
+        </div>
+        <div class="line-item-actions">
+          <button type="button" class="button button-small button-danger line-item-del-btn" data-remove-plan-item="${idx}">✕</button>
+        </div>
       </div>`;
   }).join('');
 
@@ -2017,22 +2059,22 @@ function renderPlansList() {
   plansListEl.innerHTML = state.plans.map((p) => {
     const total = computePlanTotal(p);
     const itemsHtml = (p.items || []).map((item) => `
-      <tr style="border-bottom:1px solid #f1f5f9;">
-        <td style="padding:6px;font-size:0.82rem;">${EXPENSE_CATEGORIES[item.category]?.label || item.category}</td>
-        <td style="padding:6px;font-size:0.82rem;font-weight:600;">${item.title || 'Item'}</td>
-        <td style="padding:6px;font-size:0.82rem;text-align:right;font-weight:600;color:var(--success);">
+      <tr>
+        <td style="padding:8px 6px;font-size:0.82rem;">${EXPENSE_CATEGORIES[item.category]?.label || item.category}</td>
+        <td style="padding:8px 6px;font-size:0.82rem;font-weight:600;">${item.title || 'Item'}</td>
+        <td style="padding:8px 6px;font-size:0.82rem;text-align:right;font-weight:600;color:var(--success);">
           ${formatCurrency(convertAmount(item.amount, item.currency || 'USD', currentBaseCurrency))}
         </td>
       </tr>`).join('');
 
     return `
-      <div class="card" style="margin-bottom:16px;border-left:4px solid var(--success);">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+      <div class="card budget-card-item" style="margin-bottom:16px;border-left:4px solid var(--success);">
+        <div class="card-top-flex">
           <div>
             <h3 style="margin:0 0 4px 0;">🚀 ${p.name}</h3>
             <small style="color:var(--muted);">Target Date: ${formatDate(p.targetDate)}</small>
           </div>
-          <div style="text-align:right;">
+          <div class="card-total-badge">
             <span style="font-size:1.25rem;font-weight:700;color:var(--success);">${formatCurrency(total)}</span>
             <small style="display:block;color:var(--muted);">Estimated Plan Cost</small>
           </div>
@@ -2040,19 +2082,21 @@ function renderPlansList() {
 
         ${p.notes ? `<p style="font-size:0.85rem;color:var(--muted);margin:8px 0;">${p.notes}</p>` : ''}
 
-        <details style="margin-top:10px;background:#f8fafc;padding:8px 12px;border-radius:8px;border:1px solid var(--border);" open>
+        <details style="margin-top:10px;background:#f8fafc;padding:8px 12px;border-radius:12px;border:1px solid var(--border);" open>
           <summary style="font-size:0.85rem;font-weight:600;cursor:pointer;">Estimated Line-Item Costs (${(p.items || []).length})</summary>
-          <table style="width:100%;margin-top:8px;border-collapse:collapse;">
-            <thead>
-              <tr style="border-bottom:1px solid #cbd5e1;text-align:left;font-size:0.75rem;color:var(--muted);">
-                <th>Category</th><th>Item Description</th><th style="text-align:right;">Estimated Cost</th>
-              </tr>
-            </thead>
-            <tbody>${itemsHtml || '<tr><td colspan="3" style="padding:6px;font-size:0.8rem;">No items added</td></tr>'}</tbody>
-          </table>
+          <div class="table-responsive" style="margin-top:8px;">
+            <table style="width:100%;border-collapse:collapse;">
+              <thead>
+                <tr style="border-bottom:1px solid #cbd5e1;text-align:left;font-size:0.75rem;color:var(--muted);">
+                  <th>Category</th><th>Item Description</th><th style="text-align:right;">Estimated Cost</th>
+                </tr>
+              </thead>
+              <tbody>${itemsHtml || '<tr><td colspan="3" style="padding:8px 6px;font-size:0.8rem;">No items added</td></tr>'}</tbody>
+            </table>
+          </div>
         </details>
 
-        <div class="tx-actions" style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end;">
+        <div class="tx-actions" style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;">
           <button class="button button-small button-ghost" data-edit-plan="${p.id}">Edit Plan</button>
           <button class="button button-small button-danger" data-delete-plan="${p.id}">Delete</button>
         </div>
