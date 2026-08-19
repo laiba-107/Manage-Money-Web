@@ -142,7 +142,7 @@ button {
 .mobile-nav-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(30, 21, 15, 0.5);
+  background: rgba(30, 21, 15, 0.55);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   z-index: 45;
@@ -182,10 +182,10 @@ button {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   padding: 10px 16px;
   border-radius: 20px;
-  background: rgba(255, 253, 250, 0.94);
+  background: rgba(255, 253, 250, 0.95);
   box-shadow: 0 10px 25px -5px rgba(46, 33, 24, 0.08), 0 0 0 1px rgba(255, 255, 255, 0.9) inset;
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
@@ -201,7 +201,8 @@ button {
   display: flex;
   align-items: center;
   gap: 8px;
-  flex-shrink: 0;
+  flex-shrink: 1;
+  min-width: 0;
 }
 
 .brand {
@@ -210,6 +211,7 @@ button {
   gap: 8px;
   text-decoration: none;
   cursor: pointer;
+  min-width: 0;
 }
 
 .brand-mark {
@@ -233,6 +235,7 @@ button {
 .brand-text {
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .brand strong {
@@ -300,7 +303,7 @@ button {
 .nav-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   flex-shrink: 0;
 }
 
@@ -341,7 +344,7 @@ button {
   font-size: 0.80rem;
   color: #1e150f;
   white-space: nowrap;
-  max-width: 90px;
+  max-width: 80px;
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -364,6 +367,7 @@ button {
   border: 1px solid var(--border);
   width: 38px;
   height: 38px;
+  min-width: 38px;
   padding: 8px 7px;
   border-radius: 11px;
   cursor: pointer;
@@ -1099,7 +1103,7 @@ button {
 /* Toast Notifications */
 .toast {
   position: fixed;
-  bottom: 28px;
+  bottom: 80px;
   left: 50%;
   transform: translateX(-50%);
   padding: 14px 24px;
@@ -1387,6 +1391,73 @@ button {
 }
 
 /* ---------------------------------------------------------------------- */
+/* Mobile Bottom Navigation Bar                                           */
+/* ---------------------------------------------------------------------- */
+
+.mobile-bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  height: calc(60px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  background: rgba(255, 253, 250, 0.96);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid var(--border);
+  display: none;
+  justify-content: space-around;
+  align-items: center;
+  z-index: 90;
+  box-shadow: 0 -4px 20px rgba(46, 33, 24, 0.08);
+  box-sizing: border-box;
+}
+
+.bottom-nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  background: transparent;
+  border: none;
+  padding: 6px 2px;
+  color: #736757;
+  font-size: 0.70rem;
+  font-weight: 700;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+  height: 100%;
+  cursor: pointer;
+}
+
+.bottom-nav-icon {
+  font-size: 1.25rem;
+  line-height: 1;
+  transition: transform 0.2s ease;
+}
+
+.bottom-nav-label {
+  letter-spacing: -0.01em;
+}
+
+.bottom-nav-item:hover {
+  color: var(--primary);
+}
+
+.bottom-nav-item.active {
+  color: var(--primary);
+  font-weight: 800;
+}
+
+.bottom-nav-item.active .bottom-nav-icon {
+  transform: scale(1.15) translateY(-1px);
+}
+
+/* ---------------------------------------------------------------------- */
 /* Comprehensive Multi-Resolution Breakpoints (Mobile First to Desktop)   */
 /* ---------------------------------------------------------------------- */
 
@@ -1402,6 +1473,14 @@ button {
 
 /* Tablets & Mobile Navigation Transition (<= 960px) */
 @media (max-width: 960px) {
+  .app-shell.is-logged-in {
+    padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  .mobile-bottom-nav:not(.hidden) {
+    display: flex;
+  }
+
   .navbar-advanced {
     padding: 8px 12px;
   }
@@ -1453,7 +1532,8 @@ button {
   }
 
   .mobile-toggle {
-    display: flex;
+    display: flex !important;
+    flex-shrink: 0 !important;
   }
 
   .hero-grid {
@@ -1498,9 +1578,10 @@ button {
   }
 
   .navbar-advanced {
-    padding: 8px 10px;
+    padding: 6px 10px;
     border-radius: 16px;
     top: 6px;
+    gap: 6px;
   }
 
   .page-header {
@@ -1574,36 +1655,44 @@ button {
   }
 }
 
-/* Standard & Small Mobiles (<= 480px) */
+/* Standard & Small Mobiles (<= 480px - e.g. Galaxy A13, iPhone 13/14) */
 @media (max-width: 480px) {
   .brand-mark {
-    width: 34px;
-    height: 34px;
-    font-size: 16px;
+    width: 32px;
+    height: 32px;
+    font-size: 15px;
     border-radius: 10px;
   }
 
   .brand strong {
-    font-size: 0.94rem;
+    font-size: 0.88rem;
+    max-width: 105px;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .brand small {
     display: none;
   }
 
+  .nav-actions {
+    gap: 4px;
+  }
+
   .currency-picker-container {
-    padding: 3px 4px 3px 6px;
+    padding: 2px 4px 2px 6px;
+    gap: 2px;
   }
 
   .currency-picker-container .currency-select {
-    font-size: 0.78rem;
-    max-width: 58px;
+    font-size: 0.76rem;
+    max-width: 52px;
   }
 
   .button-small {
-    padding: 6px 10px;
-    font-size: 0.80rem;
-    min-height: 34px;
+    padding: 5px 8px;
+    font-size: 0.78rem;
+    min-height: 32px;
   }
 
   .user-details {
@@ -1611,14 +1700,31 @@ button {
   }
 
   .user-profile-badge {
-    padding: 3px 6px;
-    gap: 4px;
+    padding: 2px 4px;
+    gap: 3px;
+    border-radius: 10px;
+  }
+
+  .user-profile-badge .button-ghost {
+    padding: 4px 6px;
+    font-size: 0.72rem;
+    min-height: 26px;
   }
 
   .user-avatar {
-    width: 26px;
-    height: 26px;
-    font-size: 0.75rem;
+    width: 24px;
+    height: 24px;
+    font-size: 0.72rem;
+    border-radius: 6px;
+  }
+
+  .mobile-toggle {
+    display: flex !important;
+    flex-shrink: 0 !important;
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+    padding: 6px 5px !important;
   }
 
   .cards-grid {
@@ -1660,28 +1766,26 @@ button {
   }
 }
 
-/* Ultra-Compact Screens (<= 360px - e.g. iPhone SE 1st gen, Galaxy Fold outer display) */
+/* Ultra-Compact Screens (<= 360px - e.g. Galaxy A13 narrow port, iPhone SE) */
 @media (max-width: 360px) {
   .cards-grid {
     grid-template-columns: 1fr;
   }
 
   .brand strong {
-    font-size: 0.86rem;
+    display: none;
   }
 
   .navbar-advanced {
     padding: 6px 8px;
-    gap: 6px;
-  }
-
-  .nav-actions {
     gap: 4px;
   }
 
-  .mobile-toggle {
-    width: 34px;
-    height: 34px;
-    padding: 6px 5px;
+  .currency-picker-container span {
+    display: none;
+  }
+
+  .user-profile-badge .button-ghost {
+    display: none;
   }
 }

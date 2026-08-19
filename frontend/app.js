@@ -684,6 +684,10 @@ function switchPage(pageName) {
     btn.classList.toggle('active', btn.dataset.page === pageName);
   });
 
+  document.querySelectorAll('#mobileBottomNav .bottom-nav-item').forEach((btn) => {
+    btn.classList.toggle('active', btn.dataset.page === pageName);
+  });
+
   closeMobileNav();
 }
 
@@ -694,6 +698,17 @@ document.getElementById('navbarAdvanced')?.addEventListener('click', (e) => {
   const page = btn.dataset.page;
   if (page) {
     switchPage(page);
+  }
+});
+
+// Mobile Bottom Navigation delegated listener
+document.getElementById('mobileBottomNav')?.addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-page]');
+  if (!btn) return;
+  const page = btn.dataset.page;
+  if (page) {
+    switchPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 });
 
@@ -923,6 +938,7 @@ async function loadApp() {
 
   if (!token) {
     appShell?.classList.remove('is-logged-in');
+    document.getElementById('mobileBottomNav')?.classList.add('hidden');
     emailAuthButton?.classList.remove('hidden');
     authButton?.classList.add('hidden');
     userInfo?.classList.add('hidden');
@@ -938,6 +954,7 @@ async function loadApp() {
 
   // User is Logged In:
   appShell?.classList.add('is-logged-in');
+  document.getElementById('mobileBottomNav')?.classList.remove('hidden');
   emailAuthButton?.classList.add('hidden');
   if (homeAuthContainer) homeAuthContainer.classList.add('hidden');
   if (pageHome) pageHome.classList.add('hidden');

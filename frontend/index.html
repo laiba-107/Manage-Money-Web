@@ -712,6 +712,34 @@
 
     <!-- Message Toast -->
     <div id="message" class="toast hidden"></div>
+
+    <!-- Native Mobile Bottom Navigation Bar (Hidden on Desktop, Active on Mobile when Authenticated) -->
+    <nav class="mobile-bottom-nav hidden" id="mobileBottomNav">
+      <button class="bottom-nav-item active" data-page="dashboard">
+        <span class="bottom-nav-icon">📊</span>
+        <span class="bottom-nav-label">Overview</span>
+      </button>
+      <button class="bottom-nav-item" data-page="income">
+        <span class="bottom-nav-icon">📈</span>
+        <span class="bottom-nav-label">Income</span>
+      </button>
+      <button class="bottom-nav-item" data-page="expenses">
+        <span class="bottom-nav-icon">📉</span>
+        <span class="bottom-nav-label">Expenses</span>
+      </button>
+      <button class="bottom-nav-item" data-page="budgets">
+        <span class="bottom-nav-icon">🎯</span>
+        <span class="bottom-nav-label">Budgets</span>
+      </button>
+      <button class="bottom-nav-item" data-page="plans">
+        <span class="bottom-nav-icon">🚀</span>
+        <span class="bottom-nav-label">Plans</span>
+      </button>
+      <button class="bottom-nav-item" data-page="transactions">
+        <span class="bottom-nav-icon">📝</span>
+        <span class="bottom-nav-label">All</span>
+      </button>
+    </nav>
   </div>
 
   <script src="app.js"></script>
