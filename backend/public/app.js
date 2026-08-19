@@ -653,12 +653,6 @@ registerForm?.addEventListener('submit', async (e) => {
 /* Page / nav switching & Landing logic                                   */
 /* ---------------------------------------------------------------------- */
 
-function closeMobileNav() {
-  document.getElementById('navMenu')?.classList.remove('mobile-open');
-  document.getElementById('mobileNavToggle')?.classList.remove('active');
-  document.getElementById('mobileNavOverlay')?.classList.remove('active');
-}
-
 function switchPage(pageName) {
   const token = getAccessToken();
 
@@ -672,7 +666,6 @@ function switchPage(pageName) {
     if (featuresSection) {
       featuresSection.scrollIntoView({ behavior: 'smooth' });
     }
-    closeMobileNav();
     return;
   }
 
@@ -687,8 +680,6 @@ function switchPage(pageName) {
   document.querySelectorAll('#mobileBottomNav .bottom-nav-item').forEach((btn) => {
     btn.classList.toggle('active', btn.dataset.page === pageName);
   });
-
-  closeMobileNav();
 }
 
 // Advanced Navbar delegated listener
@@ -828,36 +819,7 @@ document.getElementById('heroExploreFeaturesBtn')?.addEventListener('click', () 
   document.getElementById('featuresSection')?.scrollIntoView({ behavior: 'smooth' });
 });
 
-// Mobile menu toggle
-const mobileNavToggle = document.getElementById('mobileNavToggle');
-const mobileNavOverlay = document.getElementById('mobileNavOverlay');
-const navMenu = document.getElementById('navMenu');
 
-mobileNavToggle?.addEventListener('click', (e) => {
-  e.preventDefault();
-  e.stopPropagation();
-  const isOpen = navMenu?.classList.toggle('mobile-open');
-  mobileNavToggle?.classList.toggle('active', isOpen);
-  mobileNavOverlay?.classList.toggle('active', isOpen);
-});
-
-mobileNavOverlay?.addEventListener('click', () => {
-  closeMobileNav();
-});
-
-// Close mobile menu when clicking outside
-document.addEventListener('click', (e) => {
-  if (!e.target.closest('#navbarAdvanced') && !e.target.closest('#mobileNavOverlay')) {
-    closeMobileNav();
-  }
-});
-
-// Close mobile menu on resize to larger viewport
-window.addEventListener('resize', () => {
-  if (window.innerWidth > 960) {
-    closeMobileNav();
-  }
-});
 
 /* ---------------------------------------------------------------------- */
 /* Data loading                                                           */
