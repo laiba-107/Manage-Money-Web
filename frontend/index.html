@@ -48,7 +48,6 @@
         <button class="nav-link app-nav-only hidden" data-page="dashboard"><span class="nav-icon">📊</span> Dashboard</button>
         <button class="nav-link app-nav-only hidden" data-page="income"><span class="nav-icon">📈</span> Income</button>
         <button class="nav-link app-nav-only hidden" data-page="expenses"><span class="nav-icon">📉</span> Expenses</button>
-        <button class="nav-link app-nav-only hidden" data-page="budgets"><span class="nav-icon">🎯</span> Budgets</button>
         <button class="nav-link app-nav-only hidden" data-page="plans"><span class="nav-icon">🚀</span> Plans</button>
         <button class="nav-link app-nav-only hidden" data-page="transactions"><span class="nav-icon">📝</span> All Transactions</button>
       </nav>
@@ -210,51 +209,87 @@
       <!-- Dashboard Page -->
       <section id="page-dashboard" class="page">
         <div class="page-header">
-          <h1>Dashboard</h1>
-          <p>Welcome back! Here's your financial overview.</p>
+          <div class="page-header-text">
+            <h1>Dashboard</h1>
+            <p>Welcome back! Here's your real-time financial overview.</p>
+          </div>
+          <div class="page-header-actions">
+            <div class="month-selector-group">
+              <label for="dashboardMonthSelect" class="month-select-label">📅 Period:</label>
+              <select id="dashboardMonthSelect" class="month-select-dropdown">
+                <!-- Dynamically populated with all months -->
+              </select>
+            </div>
+          </div>
         </div>
 
         <!-- Financial Summary Cards -->
         <div class="cards-grid">
           <div class="card card-primary">
-            <div class="card-label">Total Balance</div>
+            <div class="card-label" id="totalBalanceLabel">Total Balance</div>
             <div class="card-value" id="totalBalance">$0.00</div>
-            <div class="card-change positive">↑ +12.5% this month</div>
+            <div class="card-change" id="totalBalanceSub">Cumulative balance</div>
           </div>
           <div class="card card-success">
-            <div class="card-label">Monthly Income</div>
+            <div class="card-label" id="monthlyIncomeLabel">Monthly Income</div>
             <div class="card-value" id="monthlyIncome">$0.00</div>
-            <div class="card-change">From all sources</div>
+            <div class="card-change positive" id="monthlyIncomeSub">From all sources</div>
           </div>
           <div class="card card-danger">
-            <div class="card-label">Monthly Expenses</div>
+            <div class="card-label" id="monthlyExpensesLabel">Monthly Expenses</div>
             <div class="card-value" id="monthlyExpenses">$0.00</div>
-            <div class="card-change">Spending this month</div>
+            <div class="card-change negative" id="monthlyExpensesSub">Spending this month</div>
           </div>
           <div class="card card-info">
-            <div class="card-label">Savings</div>
+            <div class="card-label" id="monthlySavingsLabel">Monthly Savings</div>
             <div class="card-value" id="monthlySavings">$0.00</div>
-            <div class="card-change">Income - Expenses</div>
+            <div class="card-change" id="monthlySavingsSub">Income - Expenses</div>
           </div>
         </div>
 
         <!-- Charts Section -->
         <div class="charts-section">
           <div class="chart-container">
-            <h3>Spending by Category</h3>
+            <div class="chart-header-row">
+              <h3>Spending by Category</h3>
+              <small id="categoryChartSubtitle" class="chart-subtitle">This Month</small>
+            </div>
             <canvas id="categoryChart"></canvas>
           </div>
           <div class="chart-container">
-            <h3>Income vs Expenses</h3>
+            <div class="chart-header-row">
+              <h3>Income vs Expenses</h3>
+              <small class="chart-subtitle">Monthly Trends</small>
+            </div>
             <canvas id="incomeExpenseChart"></canvas>
           </div>
         </div>
 
-        <!-- Recent Transactions -->
-        <div class="card full-width">
-          <h3>Recent Transactions</h3>
-          <div id="recentTransactions" class="transactions-list">
-            <p class="placeholder">Loading transactions...</p>
+        <!-- Monthly Financial History Table -->
+        <div class="card full-width" id="monthlyHistorySection">
+          <div class="section-card-header">
+            <div>
+              <h3>📅 Monthly Financial History</h3>
+              <p class="section-subtitle">Track your income, expenses, savings, and total balance month by month.</p>
+            </div>
+            <div id="monthlyHistoryBadge" class="history-count-badge"></div>
+          </div>
+          <div class="table-responsive">
+            <table class="monthly-history-table">
+              <thead>
+                <tr>
+                  <th>Month</th>
+                  <th class="text-right">Monthly Income</th>
+                  <th class="text-right">Monthly Expenses</th>
+                  <th class="text-right">Monthly Savings</th>
+                  <th class="text-right">Total Balance</th>
+                  <th class="text-center">Action</th>
+                </tr>
+              </thead>
+              <tbody id="monthlyHistoryTableBody">
+                <tr><td colspan="6" class="placeholder">Loading monthly financial history...</td></tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </section>
@@ -511,80 +546,6 @@
         </div>
       </section>
 
-      <!-- Budgets Page -->
-      <section id="page-budgets" class="page">
-        <div class="page-header">
-          <div class="page-header-text">
-            <h1>Budget Management</h1>
-            <p>Set spending limits for a Day, Week, Month, or Trip/Event.</p>
-          </div>
-          <div class="page-header-actions">
-            <button class="button button-success" id="addBudgetBtn">+ Add Budget</button>
-          </div>
-        </div>
-
-        <!-- Add/Edit Budget Modal Form -->
-        <div class="modal hidden" id="budgetModal">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h2>Add Budget</h2>
-              <button class="modal-close" id="closeBudgetModal">✕</button>
-            </div>
-            <form id="budgetForm" class="form">
-              <div class="form-group">
-                <label for="budgetName">Budget Title (Optional)</label>
-                <input type="text" id="budgetName" placeholder="e.g. Weekly Groceries, Paris Trip Budget" />
-              </div>
-              <div class="form-group">
-                <label for="budgetCategory">Category</label>
-                <select id="budgetCategory" required>
-                  <option value="">Select category...</option>
-                  <option value="Food">🍔 Food & Dining</option>
-                  <option value="Transport">🚗 Transport</option>
-                  <option value="Bills">📄 Bills & Utilities</option>
-                  <option value="Shopping">🛍️ Shopping</option>
-                  <option value="Rent">🏠 Rent</option>
-                  <option value="Entertainment">🎬 Entertainment</option>
-                  <option value="Healthcare">🏥 Healthcare</option>
-                  <option value="Education">🎓 Education</option>
-                  <option value="Travel">✈️ Travel</option>
-                  <option value="Return">🔄 Return / Refund</option>
-                  <option value="Other">📌 Other</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label for="budgetPeriod">Timeframe / Period</label>
-                <select id="budgetPeriod" required>
-                  <option value="monthly">Monthly</option>
-                  <option value="weekly">Weekly</option>
-                  <option value="daily">Single Day</option>
-                  <option value="trip">Trip / Event</option>
-                  <option value="custom">Custom Date Range</option>
-                </select>
-              </div>
-              <div id="budgetDateRow" class="form-row hidden">
-                <div class="form-group">
-                  <label for="budgetStartDate">Start Date</label>
-                  <input type="date" id="budgetStartDate" />
-                </div>
-                <div class="form-group">
-                  <label for="budgetEndDate">End Date</label>
-                  <input type="date" id="budgetEndDate" />
-                </div>
-              </div>
-              <div class="form-group">
-                <label for="budgetAmount">Budget Limit Amount</label>
-                <input type="number" id="budgetAmount" placeholder="500.00" step="0.01" required />
-              </div>
-              <button type="submit" class="button button-primary" style="width:100%;">Save Budget</button>
-            </form>
-          </div>
-        </div>
-
-        <div id="budgetsList" class="budgets-grid">
-          <p class="placeholder">Loading budgets...</p>
-        </div>
-      </section>
 
       <!-- Future Plans Page -->
       <section id="page-plans" class="page">
@@ -719,10 +680,6 @@
       <button class="bottom-nav-item" data-page="expenses">
         <span class="bottom-nav-icon">📉</span>
         <span class="bottom-nav-label">Expenses</span>
-      </button>
-      <button class="bottom-nav-item" data-page="budgets">
-        <span class="bottom-nav-icon">🎯</span>
-        <span class="bottom-nav-label">Budgets</span>
       </button>
       <button class="bottom-nav-item" data-page="plans">
         <span class="bottom-nav-icon">🚀</span>

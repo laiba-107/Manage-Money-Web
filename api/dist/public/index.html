@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
   <title>Manage Money - Personal Finance Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -41,14 +41,13 @@
         </a>
       </div>
 
-      <!-- Compact Navigation Menu -->
+      <!-- Center Navigation Menu (Desktop) -->
       <nav class="nav-menu" id="navMenu">
         <button class="nav-link guest-nav-only active" data-page="home"><span class="nav-icon">🏠</span> Home</button>
         <button class="nav-link guest-nav-only" data-page="features" id="navLinkFeatures"><span class="nav-icon">✨</span> Features</button>
         <button class="nav-link app-nav-only hidden" data-page="dashboard"><span class="nav-icon">📊</span> Dashboard</button>
         <button class="nav-link app-nav-only hidden" data-page="income"><span class="nav-icon">📈</span> Income</button>
         <button class="nav-link app-nav-only hidden" data-page="expenses"><span class="nav-icon">📉</span> Expenses</button>
-        <button class="nav-link app-nav-only hidden" data-page="budgets"><span class="nav-icon">🎯</span> Budgets</button>
         <button class="nav-link app-nav-only hidden" data-page="plans"><span class="nav-icon">🚀</span> Plans</button>
         <button class="nav-link app-nav-only hidden" data-page="transactions"><span class="nav-icon">📝</span> All Transactions</button>
       </nav>
@@ -83,10 +82,6 @@
           </div>
           <button id="authButton" class="button button-small button-ghost">Sign out</button>
         </div>
-
-        <button class="mobile-toggle" id="mobileNavToggle" aria-label="Toggle Navigation">
-          <span></span><span></span><span></span>
-        </button>
       </div>
     </header>
 
@@ -214,51 +209,87 @@
       <!-- Dashboard Page -->
       <section id="page-dashboard" class="page">
         <div class="page-header">
-          <h1>Dashboard</h1>
-          <p>Welcome back! Here's your financial overview.</p>
+          <div class="page-header-text">
+            <h1>Dashboard</h1>
+            <p>Welcome back! Here's your real-time financial overview.</p>
+          </div>
+          <div class="page-header-actions">
+            <div class="month-selector-group">
+              <label for="dashboardMonthSelect" class="month-select-label">📅 Period:</label>
+              <select id="dashboardMonthSelect" class="month-select-dropdown">
+                <!-- Dynamically populated with all months -->
+              </select>
+            </div>
+          </div>
         </div>
 
         <!-- Financial Summary Cards -->
         <div class="cards-grid">
           <div class="card card-primary">
-            <div class="card-label">Total Balance</div>
+            <div class="card-label" id="totalBalanceLabel">Total Balance</div>
             <div class="card-value" id="totalBalance">$0.00</div>
-            <div class="card-change positive">↑ +12.5% this month</div>
+            <div class="card-change" id="totalBalanceSub">Cumulative balance</div>
           </div>
           <div class="card card-success">
-            <div class="card-label">Monthly Income</div>
+            <div class="card-label" id="monthlyIncomeLabel">Monthly Income</div>
             <div class="card-value" id="monthlyIncome">$0.00</div>
-            <div class="card-change">From all sources</div>
+            <div class="card-change positive" id="monthlyIncomeSub">From all sources</div>
           </div>
           <div class="card card-danger">
-            <div class="card-label">Monthly Expenses</div>
+            <div class="card-label" id="monthlyExpensesLabel">Monthly Expenses</div>
             <div class="card-value" id="monthlyExpenses">$0.00</div>
-            <div class="card-change">Spending this month</div>
+            <div class="card-change negative" id="monthlyExpensesSub">Spending this month</div>
           </div>
           <div class="card card-info">
-            <div class="card-label">Savings</div>
+            <div class="card-label" id="monthlySavingsLabel">Monthly Savings</div>
             <div class="card-value" id="monthlySavings">$0.00</div>
-            <div class="card-change">Income - Expenses</div>
+            <div class="card-change" id="monthlySavingsSub">Income - Expenses</div>
           </div>
         </div>
 
         <!-- Charts Section -->
         <div class="charts-section">
           <div class="chart-container">
-            <h3>Spending by Category</h3>
+            <div class="chart-header-row">
+              <h3>Spending by Category</h3>
+              <small id="categoryChartSubtitle" class="chart-subtitle">This Month</small>
+            </div>
             <canvas id="categoryChart"></canvas>
           </div>
           <div class="chart-container">
-            <h3>Income vs Expenses</h3>
+            <div class="chart-header-row">
+              <h3>Income vs Expenses</h3>
+              <small class="chart-subtitle">Monthly Trends</small>
+            </div>
             <canvas id="incomeExpenseChart"></canvas>
           </div>
         </div>
 
-        <!-- Recent Transactions -->
-        <div class="card full-width">
-          <h3>Recent Transactions</h3>
-          <div id="recentTransactions" class="transactions-list">
-            <p class="placeholder">Loading transactions...</p>
+        <!-- Monthly Financial History Table -->
+        <div class="card full-width" id="monthlyHistorySection">
+          <div class="section-card-header">
+            <div>
+              <h3>📅 Monthly Financial History</h3>
+              <p class="section-subtitle">Track your income, expenses, savings, and total balance month by month.</p>
+            </div>
+            <div id="monthlyHistoryBadge" class="history-count-badge"></div>
+          </div>
+          <div class="table-responsive">
+            <table class="monthly-history-table">
+              <thead>
+                <tr>
+                  <th>Month</th>
+                  <th class="text-right">Monthly Income</th>
+                  <th class="text-right">Monthly Expenses</th>
+                  <th class="text-right">Monthly Savings</th>
+                  <th class="text-right">Total Balance</th>
+                  <th class="text-center">Action</th>
+                </tr>
+              </thead>
+              <tbody id="monthlyHistoryTableBody">
+                <tr><td colspan="6" class="placeholder">Loading monthly financial history...</td></tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </section>
@@ -266,8 +297,13 @@
       <!-- Income Page -->
       <section id="page-income" class="page">
         <div class="page-header">
-          <h1>Income Management</h1>
-          <button class="button button-success" id="addIncomeBtn">+ Add Income</button>
+          <div class="page-header-text">
+            <h1>Income Management</h1>
+            <p>Track your recurring and one-time income streams.</p>
+          </div>
+          <div class="page-header-actions">
+            <button class="button button-success" id="addIncomeBtn">+ Add Income</button>
+          </div>
         </div>
 
         <!-- Add Income Modal Form -->
@@ -278,12 +314,12 @@
               <button class="modal-close" id="closeIncomeModal">✕</button>
             </div>
             <form id="incomeForm" class="form">
-              <div class="form-row" style="display:flex;gap:12px;">
-                <div class="form-group" style="flex:2;">
+              <div class="form-row">
+                <div class="form-group form-group-amount">
                   <label for="incomeAmount">Amount</label>
                   <input type="number" id="incomeAmount" placeholder="0.00" step="0.01" required />
                 </div>
-                <div class="form-group" style="flex:1;">
+                <div class="form-group form-group-currency">
                   <label for="incomeCurrency">Currency</label>
                   <select id="incomeCurrency" class="currency-select">
                     <option value="USD">USD ($)</option>
@@ -327,7 +363,7 @@
                   Set as recurring income
                 </label>
               </div>
-              <button type="submit" class="button button-primary">Add Income</button>
+              <button type="submit" class="button button-primary" style="width:100%;">Add Income</button>
             </form>
           </div>
         </div>
@@ -344,11 +380,11 @@
       <!-- Expenses Page -->
       <section id="page-expenses" class="page">
         <div class="page-header">
-          <div>
+          <div class="page-header-text">
             <h1>Expense Tracking</h1>
-            <p style="color:var(--muted);font-size:0.9rem;">Track single expenses or create expense groups for trips, weeks, or custom events.</p>
+            <p>Track single expenses or create expense groups for trips, weeks, or custom events.</p>
           </div>
-          <div style="display:flex;gap:8px;">
+          <div class="page-header-actions">
             <button class="button button-danger" id="addExpenseBtn">+ Add Expense</button>
             <button class="button button-primary" id="addExpenseGroupBtn">+ Create Expense Group / Trip</button>
           </div>
@@ -370,12 +406,12 @@
               <button class="modal-close" id="closeExpenseModal">✕</button>
             </div>
             <form id="expenseForm" class="form">
-              <div class="form-row" style="display:flex;gap:12px;">
-                <div class="form-group" style="flex:2;">
+              <div class="form-row">
+                <div class="form-group form-group-amount">
                   <label for="expenseAmount">Amount</label>
                   <input type="number" id="expenseAmount" placeholder="0.00" step="0.01" required />
                 </div>
-                <div class="form-group" style="flex:1;">
+                <div class="form-group form-group-currency">
                   <label for="expenseCurrency">Currency</label>
                   <select id="expenseCurrency" class="currency-select">
                     <option value="USD">USD ($)</option>
@@ -433,14 +469,14 @@
                 <label for="receiptUpload">Receipt Image (Optional)</label>
                 <input type="file" id="receiptUpload" accept="image/*" />
               </div>
-              <button type="submit" class="button button-primary">Add Expense</button>
+              <button type="submit" class="button button-primary" style="width:100%;">Add Expense</button>
             </form>
           </div>
         </div>
 
         <!-- Add/Edit Expense Group Modal -->
         <div class="modal hidden" id="expenseGroupModal">
-          <div class="modal-content" style="max-width: 680px;">
+          <div class="modal-content modal-content-large">
             <div class="modal-header">
               <h2 id="groupModalTitle">Create Expense Group</h2>
               <button class="modal-close" id="closeExpenseGroupModal">✕</button>
@@ -450,8 +486,8 @@
                 <label for="groupName">Group Title / Name</label>
                 <input type="text" id="groupName" placeholder="e.g. Paris Trip 2026, Weekly Grocery Run, Monday Outing" required />
               </div>
-              <div class="form-row" style="display:flex;gap:12px;">
-                <div class="form-group" style="flex:1;">
+              <div class="form-row form-row-3">
+                <div class="form-group">
                   <label for="groupType">Group Type</label>
                   <select id="groupType">
                     <option value="trip">✈️ Trip / Event</option>
@@ -460,24 +496,24 @@
                     <option value="custom">📆 Custom Date Range</option>
                   </select>
                 </div>
-                <div class="form-group" style="flex:1;">
+                <div class="form-group">
                   <label for="groupStartDate">Start Date</label>
                   <input type="date" id="groupStartDate" required />
                 </div>
-                <div class="form-group" style="flex:1;">
+                <div class="form-group">
                   <label for="groupEndDate">End Date</label>
                   <input type="date" id="groupEndDate" required />
                 </div>
               </div>
 
               <!-- Interactive Line Items List -->
-              <div class="card" style="background:#f8fafc;padding:14px;border:1px dashed var(--border);margin-bottom:14px;">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+              <div class="card card-line-items">
+                <div class="line-items-header">
                   <h4 style="margin:0;">Line-Item Expenses in Group</h4>
                   <button type="button" class="button button-small button-outline" id="addGroupItemBtn">+ Add Line Item</button>
                 </div>
-                <div id="groupItemsContainer"></div>
-                <div style="text-align:right;margin-top:10px;font-weight:700;font-size:1.05rem;">
+                <div id="groupItemsContainer" class="line-items-container"></div>
+                <div class="line-items-total">
                   Calculated Total: <span id="groupTotalDisplay">$0.00</span>
                 </div>
               </div>
@@ -510,92 +546,22 @@
         </div>
       </section>
 
-      <!-- Budgets Page -->
-      <section id="page-budgets" class="page">
-        <div class="page-header">
-          <div>
-            <h1>Budget Management</h1>
-            <p style="color:var(--muted);font-size:0.9rem;">Set spending limits for a Day, Week, Month, or Trip/Event.</p>
-          </div>
-          <button class="button button-success" id="addBudgetBtn">+ Add Budget</button>
-        </div>
-
-        <!-- Add/Edit Budget Modal Form -->
-        <div class="modal hidden" id="budgetModal">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h2>Add Budget</h2>
-              <button class="modal-close" id="closeBudgetModal">✕</button>
-            </div>
-            <form id="budgetForm" class="form">
-              <div class="form-group">
-                <label for="budgetName">Budget Title (Optional)</label>
-                <input type="text" id="budgetName" placeholder="e.g. Weekly Groceries, Paris Trip Budget" />
-              </div>
-              <div class="form-group">
-                <label for="budgetCategory">Category</label>
-                <select id="budgetCategory" required>
-                  <option value="">Select category...</option>
-                  <option value="Food">🍔 Food & Dining</option>
-                  <option value="Transport">🚗 Transport</option>
-                  <option value="Bills">📄 Bills & Utilities</option>
-                  <option value="Shopping">🛍️ Shopping</option>
-                  <option value="Rent">🏠 Rent</option>
-                  <option value="Entertainment">🎬 Entertainment</option>
-                  <option value="Healthcare">🏥 Healthcare</option>
-                  <option value="Education">🎓 Education</option>
-                  <option value="Travel">✈️ Travel</option>
-                  <option value="Return">🔄 Return / Refund</option>
-                  <option value="Other">📌 Other</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label for="budgetPeriod">Timeframe / Period</label>
-                <select id="budgetPeriod" required>
-                  <option value="monthly">Monthly</option>
-                  <option value="weekly">Weekly</option>
-                  <option value="daily">Single Day</option>
-                  <option value="trip">Trip / Event</option>
-                  <option value="custom">Custom Date Range</option>
-                </select>
-              </div>
-              <div id="budgetDateRow" class="form-row hidden" style="display:flex;gap:12px;">
-                <div class="form-group" style="flex:1;">
-                  <label for="budgetStartDate">Start Date</label>
-                  <input type="date" id="budgetStartDate" />
-                </div>
-                <div class="form-group" style="flex:1;">
-                  <label for="budgetEndDate">End Date</label>
-                  <input type="date" id="budgetEndDate" />
-                </div>
-              </div>
-              <div class="form-group">
-                <label for="budgetAmount">Budget Limit Amount</label>
-                <input type="number" id="budgetAmount" placeholder="500.00" step="0.01" required />
-              </div>
-              <button type="submit" class="button button-primary">Save Budget</button>
-            </form>
-          </div>
-        </div>
-
-        <div id="budgetsList" class="budgets-grid">
-          <p class="placeholder">Loading budgets...</p>
-        </div>
-      </section>
 
       <!-- Future Plans Page -->
       <section id="page-plans" class="page">
         <div class="page-header">
-          <div>
+          <div class="page-header-text">
             <h1>🚀 Future Plans</h1>
-            <p style="color:var(--muted);font-size:0.9rem;">Plan future expenses (education, trips, renovations) and calculate estimated costs. <strong>Note:</strong> Future plans are kept separate and will not affect your active balance or current expenses.</p>
+            <p>Plan future expenses (education, trips, renovations) and calculate estimated costs. <strong>Note:</strong> Future plans are kept separate and will not affect your active balance.</p>
           </div>
-          <button class="button button-success" id="addPlanBtn">+ Create Future Plan</button>
+          <div class="page-header-actions">
+            <button class="button button-success" id="addPlanBtn">+ Create Future Plan</button>
+          </div>
         </div>
 
         <!-- Add/Edit Future Plan Modal -->
         <div class="modal hidden" id="planModal">
-          <div class="modal-content" style="max-width: 680px;">
+          <div class="modal-content modal-content-large">
             <div class="modal-header">
               <h2 id="planModalTitle">Create Future Plan</h2>
               <button class="modal-close" id="closePlanModal">✕</button>
@@ -605,21 +571,21 @@
                 <label for="planName">Plan Title</label>
                 <input type="text" id="planName" placeholder="e.g. Master's Degree 2027, Japan Tour, Home Renovation" required />
               </div>
-              <div class="form-row" style="display:flex;gap:12px;">
-                <div class="form-group" style="flex:1;">
+              <div class="form-row">
+                <div class="form-group">
                   <label for="planTargetDate">Target Completion Date</label>
                   <input type="date" id="planTargetDate" required />
                 </div>
               </div>
 
               <!-- Estimated Cost Items List -->
-              <div class="card" style="background:#f8fafc;padding:14px;border:1px dashed var(--border);margin-bottom:14px;">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+              <div class="card card-line-items">
+                <div class="line-items-header">
                   <h4 style="margin:0;">Estimated Line Item Expenses</h4>
                   <button type="button" class="button button-small button-outline" id="addPlanItemBtn">+ Add Estimated Item</button>
                 </div>
-                <div id="planItemsContainer"></div>
-                <div style="text-align:right;margin-top:10px;font-weight:700;font-size:1.05rem;color:var(--success);">
+                <div id="planItemsContainer" class="line-items-container"></div>
+                <div class="line-items-total" style="color:var(--success);">
                   Total Estimated Cost: <span id="planTotalDisplay">$0.00</span>
                 </div>
               </div>
@@ -700,6 +666,30 @@
 
     <!-- Message Toast -->
     <div id="message" class="toast hidden"></div>
+
+    <!-- Native Mobile Bottom Navigation Bar (Hidden on Desktop, Active on Mobile when Authenticated) -->
+    <nav class="mobile-bottom-nav hidden" id="mobileBottomNav">
+      <button class="bottom-nav-item active" data-page="dashboard">
+        <span class="bottom-nav-icon">📊</span>
+        <span class="bottom-nav-label">Overview</span>
+      </button>
+      <button class="bottom-nav-item" data-page="income">
+        <span class="bottom-nav-icon">📈</span>
+        <span class="bottom-nav-label">Income</span>
+      </button>
+      <button class="bottom-nav-item" data-page="expenses">
+        <span class="bottom-nav-icon">📉</span>
+        <span class="bottom-nav-label">Expenses</span>
+      </button>
+      <button class="bottom-nav-item" data-page="plans">
+        <span class="bottom-nav-icon">🚀</span>
+        <span class="bottom-nav-label">Plans</span>
+      </button>
+      <button class="bottom-nav-item" data-page="transactions">
+        <span class="bottom-nav-icon">📝</span>
+        <span class="bottom-nav-label">All</span>
+      </button>
+    </nav>
   </div>
 
   <script src="app.js"></script>

@@ -1667,3 +1667,177 @@ button {
     display: none;
   }
 }
+
+/* Month Selector in Header */
+.month-selector-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #ffffff;
+  padding: 6px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+}
+
+.month-select-label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.month-select-dropdown {
+  border: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #1e150f;
+  cursor: pointer;
+  outline: none;
+  padding: 4px 6px;
+  border-radius: 8px;
+}
+
+.month-select-dropdown:hover {
+  background: rgba(72, 92, 39, 0.05);
+}
+
+.month-select-dropdown:focus {
+  outline: 2px solid var(--primary);
+}
+
+/* Chart Header Row */
+.chart-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.chart-header-row h3 {
+  margin: 0 !important;
+}
+
+.chart-subtitle {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--primary);
+  background: rgba(72, 92, 39, 0.08);
+  padding: 3px 8px;
+  border-radius: 8px;
+  white-space: nowrap;
+}
+
+/* Monthly Financial History Table */
+.section-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.section-card-header h3 {
+  margin: 0 0 4px 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #1e150f;
+}
+
+.section-subtitle {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.history-count-badge {
+  font-size: 0.80rem;
+  font-weight: 700;
+  color: var(--primary);
+  background: rgba(72, 92, 39, 0.09);
+  padding: 5px 12px;
+  border-radius: 20px;
+}
+
+.monthly-history-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.monthly-history-table th {
+  padding: 12px 14px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 2px solid var(--border);
+  background: #fbfaf8;
+}
+
+.monthly-history-table th:first-child {
+  border-top-left-radius: 10px;
+}
+
+.monthly-history-table th:last-child {
+  border-top-right-radius: 10px;
+}
+
+.monthly-history-table td {
+  padding: 14px 14px;
+  font-size: 0.88rem;
+  vertical-align: middle;
+  border-bottom: 1px solid rgba(229, 220, 206, 0.6);
+  transition: background-color 0.15s ease;
+}
+
+.monthly-history-table tbody tr {
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.monthly-history-table tbody tr:hover td {
+  background-color: rgba(246, 241, 233, 0.65);
+}
+
+.monthly-history-table tr.active-selected-month td {
+  background-color: rgba(72, 92, 39, 0.08);
+  font-weight: 600;
+}
+
+.monthly-history-table tr.active-selected-month td:first-child {
+  border-left: 3px solid var(--primary);
+}
+
+.month-badge-current {
+  display: inline-block;
+  margin-left: 6px;
+  font-size: 0.70rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: rgba(72, 92, 39, 0.12);
+  color: var(--primary);
+  vertical-align: middle;
+}
+
+.savings-badge {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  opacity: 0.85;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.text-center {
+  text-align: center;
+}

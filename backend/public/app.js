@@ -97,11 +97,22 @@ const totalBalanceEl = document.getElementById('totalBalance');
 const monthlyIncomeEl = document.getElementById('monthlyIncome');
 const monthlyExpensesEl = document.getElementById('monthlyExpenses');
 const monthlySavingsEl = document.getElementById('monthlySavings');
-const recentTransactionsEl = document.getElementById('recentTransactions');
+const totalBalanceLabelEl = document.getElementById('totalBalanceLabel');
+const totalBalanceSubEl = document.getElementById('totalBalanceSub');
+const monthlyIncomeLabelEl = document.getElementById('monthlyIncomeLabel');
+const monthlyIncomeSubEl = document.getElementById('monthlyIncomeSub');
+const monthlyExpensesLabelEl = document.getElementById('monthlyExpensesLabel');
+const monthlyExpensesSubEl = document.getElementById('monthlyExpensesSub');
+const monthlySavingsLabelEl = document.getElementById('monthlySavingsLabel');
+const monthlySavingsSubEl = document.getElementById('monthlySavingsSub');
+
+const dashboardMonthSelectEl = document.getElementById('dashboardMonthSelect');
+const monthlyHistoryTableBodyEl = document.getElementById('monthlyHistoryTableBody');
+const monthlyHistoryBadgeEl = document.getElementById('monthlyHistoryBadge');
+const categoryChartSubtitleEl = document.getElementById('categoryChartSubtitle');
 
 const incomeListEl = document.getElementById('incomeList');
 const expenseListEl = document.getElementById('expenseList');
-const budgetsListEl = document.getElementById('budgetsList');
 const allTransactionsListEl = document.getElementById('allTransactionsList');
 
 const incomeModal = document.getElementById('incomeModal');
@@ -133,12 +144,6 @@ const addPlanItemBtn = document.getElementById('addPlanItemBtn');
 const planTotalDisplay = document.getElementById('planTotalDisplay');
 const plansListEl = document.getElementById('plansList');
 
-const budgetModal = document.getElementById('budgetModal');
-const closeBudgetModal = document.getElementById('closeBudgetModal');
-const budgetForm = document.getElementById('budgetForm');
-const budgetPeriodSelect = document.getElementById('budgetPeriod');
-const budgetDateRow = document.getElementById('budgetDateRow');
-
 let categoryChartInstance = null;
 let incomeExpenseChartInstance = null;
 
@@ -148,12 +153,11 @@ const state = {
   expenses: [],
   rawIncomes: [],
   rawExpenses: [],
-  budgets: [],
   expenseGroups: [],
   plans: [],
+  selectedMonthKey: null,
   editingIncomeId: null,
   editingExpenseId: null,
-  editingBudgetId: null,
   editingGroupId: null,
   editingPlanId: null,
   pendingReceiptDataUrl: null,
@@ -377,35 +381,62 @@ function formatCurrency(amount, currencyCode = currentBaseCurrency) {
   }
 }
 
+function parseDateParts(dateStr) {
+  if (!dateStr) return null;
+  if (typeof dateStr === 'string') {
+    const match = dateStr.match(/^(\d{4})-(\d{2})(?:-(\d{2}))?/);
+    if (match) {
+      return {
+        year: parseInt(match[1], 10),
+        month: parseInt(match[2], 10) - 1,
+        day: match[3] ? parseInt(match[3], 10) : 1,
+      };
+    }
+  }
+  const d = new Date(dateStr);
+  if (Number.isNaN(d.getTime())) return null;
+  return {
+    year: d.getFullYear(),
+    month: d.getMonth(),
+    day: d.getDate(),
+  };
+}
+
 function formatDate(dateStr) {
   if (!dateStr) return '—';
-  const d = new Date(dateStr);
-  if (Number.isNaN(d.getTime())) return dateStr;
+  const parts = parseDateParts(dateStr);
+  if (!parts) return String(dateStr);
+  const d = new Date(parts.year, parts.month, parts.day);
   return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 function isSameMonth(dateStr, ref = new Date()) {
-  const d = new Date(dateStr);
-  if (Number.isNaN(d.getTime())) return false;
-  return d.getFullYear() === ref.getFullYear() && d.getMonth() === ref.getMonth();
+  const parts = parseDateParts(dateStr);
+  if (!parts) return false;
+  return parts.year === ref.getFullYear() && parts.month === ref.getMonth();
 }
 
 function monthKey(dateStr) {
-  const d = new Date(dateStr);
-  if (Number.isNaN(d.getTime())) return 'unknown';
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  const parts = parseDateParts(dateStr);
+  if (!parts || Number.isNaN(parts.year) || Number.isNaN(parts.month)) return 'unknown';
+  return `${parts.year}-${String(parts.month + 1).padStart(2, '0')}`;
 }
 
 function monthLabel(key) {
+  if (!key || key === 'unknown') return '—';
   const [year, month] = key.split('-');
   const d = new Date(Number(year), Number(month) - 1, 1);
-  return d.toLocaleDateString(undefined, { month: 'short' });
+  return d.toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
 }
 
 function formatApiDate(value) {
   if (!value) return '';
   if (typeof value === 'string') return value.slice(0, 10);
-  return new Date(value).toISOString().slice(0, 10);
+  try {
+    return new Date(value).toISOString().slice(0, 10);
+  } catch (_) {
+    return String(value);
+  }
 }
 
 function findCategoryByName(name, type) {
@@ -431,9 +462,13 @@ function findExpenseCategoryId(uiCategory) {
 
 function findIncomeCategoryId(source) {
   if (!source) return undefined;
-  const target = String(source).trim().toLowerCase();
+  let target = String(source).trim().toLowerCase();
+  if (target === 'other') target = 'other income';
   const cat = state.categories.find(
-    (c) => c.name.trim().toLowerCase() === target && (c.type === 'income' || c.type === 'both'),
+    (c) =>
+      (c.name.trim().toLowerCase() === target ||
+        c.name.trim().toLowerCase() === String(source).trim().toLowerCase()) &&
+      (c.type === 'income' || c.type === 'both'),
   );
   return cat?.id;
 }
@@ -442,6 +477,8 @@ function normalizeIncome(transaction) {
   const rawAmount = Number(transaction.amount);
   const currency = transaction.currency || 'USD';
   const amountInBase = convertAmount(rawAmount, currency, currentBaseCurrency);
+  let source = transaction.category?.name || transaction.title || 'Other';
+  if (source === 'Other Income') source = 'Other';
 
   return {
     id: transaction.id,
@@ -450,16 +487,21 @@ function normalizeIncome(transaction) {
     amount: amountInBase,
     date: formatApiDate(transaction.date),
     notes: transaction.notes,
-    source: transaction.category?.name || transaction.title || 'Other',
+    source,
     recurring: Boolean(transaction.isRecurring),
   };
 }
 
 function normalizeExpense(transaction) {
-  const uiCategory = DB_EXPENSE_TO_UI[transaction.category?.name]
-    || transaction.category?.name
-    || transaction.title
-    || 'Other';
+  const catCandidate = transaction.category?.name || transaction.title || 'Other';
+  const uiCategory =
+    DB_EXPENSE_TO_UI[catCandidate] ||
+    (EXPENSE_CATEGORIES[catCandidate] ? catCandidate : null) ||
+    (transaction.category?.name ? DB_EXPENSE_TO_UI[transaction.category.name] : null) ||
+    (transaction.title ? DB_EXPENSE_TO_UI[transaction.title] : null) ||
+    (transaction.category?.name && EXPENSE_CATEGORIES[transaction.category.name] ? transaction.category.name : null) ||
+    (transaction.title && EXPENSE_CATEGORIES[transaction.title] ? transaction.title : null) ||
+    'Other';
 
   const rawAmount = Number(transaction.amount);
   const currency = transaction.currency || 'USD';
@@ -476,20 +518,6 @@ function normalizeExpense(transaction) {
     paymentMethod: PAYMENT_METHOD_FROM_API[transaction.paymentMethod] || 'Cash',
     receiptUrl: transaction.receiptUrl,
     receiptImage: transaction.receiptUrl,
-  };
-}
-
-function normalizeBudget(budget) {
-  const categoryName = budget.category?.name || budget.name?.replace(/ Budget$/, '') || 'Other';
-  const uiCategory = DB_EXPENSE_TO_UI[categoryName] || categoryName;
-
-  return {
-    id: budget.id,
-    category: uiCategory,
-    name: budget.name,
-    amount: Number(budget.amount),
-    limit: Number(budget.amount),
-    spent: Number(budget.spent ?? 0),
   };
 }
 
@@ -680,6 +708,10 @@ function switchPage(pageName) {
   document.querySelectorAll('#mobileBottomNav .bottom-nav-item').forEach((btn) => {
     btn.classList.toggle('active', btn.dataset.page === pageName);
   });
+
+  if (pageName === 'dashboard') {
+    renderDashboard();
+  }
 }
 
 // Advanced Navbar delegated listener
@@ -825,29 +857,12 @@ document.getElementById('heroExploreFeaturesBtn')?.addEventListener('click', () 
 /* Data loading                                                           */
 /* ---------------------------------------------------------------------- */
 
-async function loadAllData() {
-  await fetchLiveExchangeRates();
-
-  const categoriesResult = await apiRequest('GET', '/categories').catch(() => ({ data: [] }));
-  state.categories = Array.isArray(categoriesResult?.data) ? categoriesResult.data : [];
-
-  const [incomesResult, expensesResult, budgetsResult] = await Promise.all([
-    apiRequest('GET', '/transactions?type=income&limit=500&sortOrder=DESC').catch(() => ({ data: [] })),
-    apiRequest('GET', '/transactions?type=expense&limit=500&sortOrder=DESC').catch(() => ({ data: [] })),
-    apiRequest('GET', '/budgets').catch(() => ({ data: [] })),
-  ]);
-
-  state.rawIncomes = Array.isArray(incomesResult?.data) ? incomesResult.data : [];
-  state.rawExpenses = Array.isArray(expensesResult?.data) ? expensesResult.data : [];
-
-  await loadExpenseGroups();
-  await loadPlans();
-
-  state.incomes = state.rawIncomes.map(normalizeIncome);
+function refreshNormalizedTransactions() {
+  state.incomes = (state.rawIncomes || []).map(normalizeIncome);
 
   // Combine standalone expenses with all line items from Expense Groups
   const groupLineItems = [];
-  state.expenseGroups.forEach((g) => {
+  (state.expenseGroups || []).forEach((g) => {
     (g.items || []).forEach((item) => {
       groupLineItems.push({
         id: item.id || `${g.id}-${Date.now()}`,
@@ -862,9 +877,28 @@ async function loadAllData() {
     });
   });
 
-  const combinedRawExpenses = [...state.rawExpenses, ...groupLineItems];
+  const combinedRawExpenses = [...(state.rawExpenses || []), ...groupLineItems];
   state.expenses = combinedRawExpenses.map(normalizeExpense);
-  state.budgets = (Array.isArray(budgetsResult?.data) ? budgetsResult.data : []).map(normalizeBudget);
+}
+
+async function loadAllData() {
+  await fetchLiveExchangeRates();
+
+  const categoriesResult = await apiRequest('GET', '/categories').catch(() => ({ data: [] }));
+  state.categories = Array.isArray(categoriesResult?.data) ? categoriesResult.data : [];
+
+  const [incomesResult, expensesResult] = await Promise.all([
+    apiRequest('GET', '/transactions?type=income&limit=500&sortOrder=DESC').catch(() => ({ data: [] })),
+    apiRequest('GET', '/transactions?type=expense&limit=500&sortOrder=DESC').catch(() => ({ data: [] })),
+  ]);
+
+  state.rawIncomes = Array.isArray(incomesResult?.data) ? incomesResult.data : [];
+  state.rawExpenses = Array.isArray(expensesResult?.data) ? expensesResult.data : [];
+
+  await loadExpenseGroups();
+  await loadPlans();
+
+  refreshNormalizedTransactions();
 }
 
 async function loadApp() {
@@ -877,14 +911,11 @@ async function loadApp() {
     userBaseCurrencySelect.onchange = (e) => {
       currentBaseCurrency = e.target.value;
       localStorage.setItem('user_base_currency', currentBaseCurrency);
-      if (state.rawIncomes) {
-        state.incomes = state.rawIncomes.map(normalizeIncome);
-        state.expenses = state.rawExpenses.map(normalizeExpense);
-      }
+      refreshNormalizedTransactions();
       renderDashboard();
       renderIncomeList();
       renderExpenseList();
-      renderBudgets();
+      renderExpenseGroupsList();
       renderAllTransactions();
       showMessage(`Base currency changed to ${currentBaseCurrency}`, 'info');
     };
@@ -946,7 +977,6 @@ async function loadApp() {
     renderDashboard();
     renderIncomeList();
     renderExpenseList();
-    renderBudgets();
     renderExpenseGroupsList();
     renderPlansList();
     renderAllTransactions();
@@ -959,24 +989,86 @@ async function loadApp() {
 }
 
 /* ---------------------------------------------------------------------- */
-/* Dashboard                                                              */
+/* Dashboard & Monthly Financial History                                  */
 /* ---------------------------------------------------------------------- */
 
-function computeDashboardStats() {
+function computeMonthlyFinancialHistory() {
+  const incomes = state.incomes || [];
+  const expenses = state.expenses || [];
+
+  const monthMap = new Map();
+
+  function getOrInitMonth(key) {
+    if (!monthMap.has(key)) {
+      const [yStr, mStr] = key.split('-');
+      const year = parseInt(yStr, 10);
+      const month = parseInt(mStr, 10) - 1;
+      const d = new Date(year, month, 1);
+      monthMap.set(key, {
+        key,
+        year,
+        month,
+        label: d.toLocaleDateString(undefined, { month: 'long', year: 'numeric' }),
+        shortLabel: d.toLocaleDateString(undefined, { month: 'short', year: 'numeric' }),
+        income: 0,
+        expenses: 0,
+        savings: 0,
+        balance: 0,
+      });
+    }
+    return monthMap.get(key);
+  }
+
+  // Ensure current month is always present
   const now = new Date();
-  const totalIncome = state.incomes.reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
-  const totalExpenses = state.expenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
-  const monthlyIncome = state.incomes
-    .filter((i) => isSameMonth(i.date, now))
-    .reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
-  const monthlyExpenses = state.expenses
-    .filter((e) => isSameMonth(e.date, now))
-    .reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+  const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  getOrInitMonth(currentMonthKey);
 
-  const totalBalance = totalIncome - totalExpenses;
-  const monthlySavings = monthlyIncome - monthlyExpenses;
+  incomes.forEach((i) => {
+    const key = monthKey(i.date);
+    if (key !== 'unknown') {
+      const entry = getOrInitMonth(key);
+      entry.income += (Number(i.amount) || 0);
+    }
+  });
 
-  return { totalBalance, monthlyIncome, monthlyExpenses, monthlySavings };
+  expenses.forEach((e) => {
+    const key = monthKey(e.date);
+    if (key !== 'unknown') {
+      const entry = getOrInitMonth(key);
+      entry.expenses += (Number(e.amount) || 0);
+    }
+  });
+
+  const sortedAscKeys = Array.from(monthMap.keys()).sort();
+
+  let runningBalance = 0;
+  let allTimeIncome = 0;
+  let allTimeExpenses = 0;
+
+  sortedAscKeys.forEach((key) => {
+    const entry = monthMap.get(key);
+    entry.savings = entry.income - entry.expenses;
+    runningBalance += entry.savings;
+    entry.balance = runningBalance;
+    allTimeIncome += entry.income;
+    allTimeExpenses += entry.expenses;
+  });
+
+  const allTimeSavings = allTimeIncome - allTimeExpenses;
+  const allTimeBalance = runningBalance;
+
+  // History in reverse chronological order (most recent first)
+  const historyDesc = sortedAscKeys.map((k) => monthMap.get(k)).reverse();
+
+  return {
+    historyDesc,
+    currentMonthKey,
+    allTimeIncome,
+    allTimeExpenses,
+    allTimeSavings,
+    allTimeBalance,
+  };
 }
 
 function setFormattedCardValue(el, value) {
@@ -993,16 +1085,342 @@ function setFormattedCardValue(el, value) {
   }
 }
 
-function renderDashboard() {
-  const stats = computeDashboardStats();
-  setFormattedCardValue(totalBalanceEl, stats.totalBalance);
-  setFormattedCardValue(monthlyIncomeEl, stats.monthlyIncome);
-  setFormattedCardValue(monthlyExpensesEl, stats.monthlyExpenses);
-  setFormattedCardValue(monthlySavingsEl, stats.monthlySavings);
+function populateDashboardMonthSelect(historyDesc, currentMonthKey) {
+  if (!dashboardMonthSelectEl) return;
 
-  renderRecentTransactions();
-  renderCategoryChart();
+  const previousSelection = state.selectedMonthKey;
+  dashboardMonthSelectEl.innerHTML = '';
+
+  const allOpt = document.createElement('option');
+  allOpt.value = 'all';
+  allOpt.textContent = '🌟 All-Time Overview';
+  dashboardMonthSelectEl.appendChild(allOpt);
+
+  historyDesc.forEach((m) => {
+    const opt = document.createElement('option');
+    opt.value = m.key;
+    const isCurrent = m.key === currentMonthKey;
+    opt.textContent = `${m.label}${isCurrent ? ' (Current Month)' : ''}`;
+    dashboardMonthSelectEl.appendChild(opt);
+  });
+
+  if (previousSelection && (previousSelection === 'all' || historyDesc.some((m) => m.key === previousSelection))) {
+    state.selectedMonthKey = previousSelection;
+  } else {
+    state.selectedMonthKey = currentMonthKey;
+  }
+  dashboardMonthSelectEl.value = state.selectedMonthKey;
+}
+
+function selectDashboardMonth(key) {
+  state.selectedMonthKey = key;
+  if (dashboardMonthSelectEl) {
+    dashboardMonthSelectEl.value = key;
+  }
+  renderDashboard();
+  const cardsGrid = document.querySelector('.cards-grid');
+  if (cardsGrid) {
+    cardsGrid.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+}
+
+function renderDashboard() {
+  const historyData = computeMonthlyFinancialHistory();
+  const { historyDesc, currentMonthKey, allTimeIncome, allTimeExpenses, allTimeSavings, allTimeBalance } = historyData;
+
+  populateDashboardMonthSelect(historyDesc, currentMonthKey);
+
+  const selectedKey = state.selectedMonthKey;
+
+  if (selectedKey === 'all') {
+    setFormattedCardValue(totalBalanceEl, allTimeBalance);
+    setFormattedCardValue(monthlyIncomeEl, allTimeIncome);
+    setFormattedCardValue(monthlyExpensesEl, allTimeExpenses);
+    setFormattedCardValue(monthlySavingsEl, allTimeSavings);
+
+    if (totalBalanceLabelEl) totalBalanceLabelEl.textContent = 'Total Balance';
+    if (totalBalanceSubEl) totalBalanceSubEl.textContent = 'All-time cumulative balance';
+
+    if (monthlyIncomeLabelEl) monthlyIncomeLabelEl.textContent = 'Total Income';
+    if (monthlyIncomeSubEl) monthlyIncomeSubEl.textContent = 'All time from all sources';
+
+    if (monthlyExpensesLabelEl) monthlyExpensesLabelEl.textContent = 'Total Expenses';
+    if (monthlyExpensesSubEl) monthlyExpensesSubEl.textContent = 'All-time total spending';
+
+    if (monthlySavingsLabelEl) monthlySavingsLabelEl.textContent = 'Total Savings';
+    const rate = allTimeIncome > 0 ? ((allTimeSavings / allTimeIncome) * 100).toFixed(1) : 0;
+    if (monthlySavingsSubEl) monthlySavingsSubEl.textContent = `${rate}% all-time savings rate`;
+  } else {
+    const monthItem = historyDesc.find((m) => m.key === selectedKey) || historyDesc[0] || {
+      key: currentMonthKey,
+      label: 'Current Month',
+      shortLabel: 'Current Month',
+      income: 0,
+      expenses: 0,
+      savings: 0,
+      balance: 0,
+    };
+
+    setFormattedCardValue(totalBalanceEl, monthItem.balance);
+    setFormattedCardValue(monthlyIncomeEl, monthItem.income);
+    setFormattedCardValue(monthlyExpensesEl, monthItem.expenses);
+    setFormattedCardValue(monthlySavingsEl, monthItem.savings);
+
+    if (totalBalanceLabelEl) totalBalanceLabelEl.textContent = 'Total Balance';
+    if (totalBalanceSubEl) totalBalanceSubEl.textContent = `As of ${monthItem.shortLabel}`;
+
+    if (monthlyIncomeLabelEl) monthlyIncomeLabelEl.textContent = 'Monthly Income';
+    if (monthlyIncomeSubEl) monthlyIncomeSubEl.textContent = `Earned in ${monthItem.shortLabel}`;
+
+    if (monthlyExpensesLabelEl) monthlyExpensesLabelEl.textContent = 'Monthly Expenses';
+    if (monthlyExpensesSubEl) monthlyExpensesSubEl.textContent = `Spent in ${monthItem.shortLabel}`;
+
+    if (monthlySavingsLabelEl) monthlySavingsLabelEl.textContent = 'Monthly Savings';
+    const rate = monthItem.income > 0 ? ((monthItem.savings / monthItem.income) * 100).toFixed(1) : null;
+    if (monthlySavingsSubEl) {
+      monthlySavingsSubEl.textContent = rate !== null ? `${rate}% savings rate` : 'Income - Expenses';
+    }
+  }
+
+  renderCategoryChart(selectedKey);
   renderIncomeExpenseChart();
+  renderMonthlyFinancialHistory(historyData);
+}
+
+function renderCategoryChart(selectedMonthKey = state.selectedMonthKey) {
+  const canvas = document.getElementById('categoryChart');
+  if (!canvas || typeof Chart === 'undefined') return;
+
+  const container = canvas.parentElement;
+
+  const dashboardPage = document.getElementById('page-dashboard');
+  if (dashboardPage && !dashboardPage.classList.contains('active')) {
+    return;
+  }
+
+  if (categoryChartInstance) {
+    categoryChartInstance.destroy();
+    categoryChartInstance = null;
+  }
+
+  const oldEmpty = container?.querySelector('.chart-empty-state');
+  if (oldEmpty) oldEmpty.remove();
+
+  let targetExpenses = state.expenses || [];
+  let periodTitle = 'All Time';
+
+  if (selectedMonthKey && selectedMonthKey !== 'all') {
+    targetExpenses = (state.expenses || []).filter((e) => monthKey(e.date) === selectedMonthKey);
+    const [y, m] = selectedMonthKey.split('-');
+    const d = new Date(Number(y), Number(m) - 1, 1);
+    periodTitle = d.toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
+  }
+
+  if (categoryChartSubtitleEl) {
+    categoryChartSubtitleEl.textContent = periodTitle;
+  }
+
+  const byCategory = {};
+  targetExpenses.forEach((e) => {
+    let key = e.category || 'Other';
+    if (DB_EXPENSE_TO_UI[key]) key = DB_EXPENSE_TO_UI[key];
+    byCategory[key] = (byCategory[key] || 0) + (Number(e.amount) || 0);
+  });
+
+  const labels = Object.keys(byCategory).filter((k) => (byCategory[k] || 0) > 0);
+
+  if (!labels.length) {
+    canvas.style.display = 'none';
+    const emptyDiv = document.createElement('div');
+    emptyDiv.className = 'chart-empty-state';
+    emptyDiv.style.cssText = 'display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;min-height:220px;text-align:center;padding:24px 16px;background:rgba(248,250,252,0.6);border-radius:14px;border:1px dashed #cbd5e1;margin-top:8px;';
+    emptyDiv.innerHTML = `
+      <div style="width:48px;height:48px;border-radius:14px;background:#eef2ff;display:grid;place-items:center;font-size:24px;margin-bottom:10px;">📊</div>
+      <strong style="color:#1e293b;font-size:0.95rem;">No spending recorded for ${periodTitle}</strong>
+      <small style="color:#64748b;margin-top:4px;max-width:260px;font-size:0.82rem;">Add expenses for this period to generate an interactive spending category breakdown!</small>
+    `;
+    container?.appendChild(emptyDiv);
+    return;
+  }
+
+  canvas.style.display = 'block';
+
+  const fallbackColors = ['#b57e4c', '#556b2f', '#6b705c', '#c27d53', '#4a3525', '#c88d2d', '#b24434', '#3d6330', '#8a572c', '#5d8c47', '#8c7e6d', '#0284c7', '#7c3aed', '#db2777'];
+
+  categoryChartInstance = new Chart(canvas, {
+    type: 'doughnut',
+    data: {
+      labels: labels.map((k) => EXPENSE_CATEGORIES[k]?.label || k),
+      datasets: [{
+        data: labels.map((k) => byCategory[k]),
+        backgroundColor: labels.map((k, idx) => EXPENSE_CATEGORIES[k]?.color || fallbackColors[idx % fallbackColors.length]),
+        borderWidth: 2,
+        borderColor: '#ffffff',
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { boxWidth: 12, padding: 12, font: { family: 'Plus Jakarta Sans', weight: '600' } },
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              const val = context.raw || 0;
+              const total = context.dataset.data.reduce((a, b) => a + b, 0);
+              const pct = total > 0 ? ((val / total) * 100).toFixed(1) : 0;
+              return ` ${context.label}: ${formatCurrency(val)} (${pct}%)`;
+            }
+          }
+        }
+      },
+    },
+  });
+}
+
+function renderIncomeExpenseChart() {
+  const canvas = document.getElementById('incomeExpenseChart');
+  if (!canvas || typeof Chart === 'undefined') return;
+
+  const container = canvas.parentElement;
+
+  const dashboardPage = document.getElementById('page-dashboard');
+  if (dashboardPage && !dashboardPage.classList.contains('active')) {
+    return;
+  }
+
+  if (incomeExpenseChartInstance) {
+    incomeExpenseChartInstance.destroy();
+    incomeExpenseChartInstance = null;
+  }
+
+  const oldEmpty = container?.querySelector('.chart-empty-state');
+  if (oldEmpty) oldEmpty.remove();
+
+  const historyData = computeMonthlyFinancialHistory();
+  const chronologicalMonths = [...historyData.historyDesc].reverse();
+  const displayMonths = chronologicalMonths.slice(-12);
+
+  const labels = displayMonths.map((m) => m.shortLabel || monthLabel(m.key));
+  const incomeData = displayMonths.map((m) => m.income);
+  const expenseData = displayMonths.map((m) => m.expenses);
+
+  const hasData = displayMonths.some((m) => m.income > 0 || m.expenses > 0);
+
+  if (!hasData) {
+    canvas.style.display = 'none';
+    const emptyDiv = document.createElement('div');
+    emptyDiv.className = 'chart-empty-state';
+    emptyDiv.style.cssText = 'display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;min-height:220px;text-align:center;padding:24px 16px;background:rgba(248,250,252,0.6);border-radius:14px;border:1px dashed #cbd5e1;margin-top:8px;';
+    emptyDiv.innerHTML = `
+      <div style="width:48px;height:48px;border-radius:14px;background:#eef2ff;display:grid;place-items:center;font-size:24px;margin-bottom:10px;">📈</div>
+      <strong style="color:#1e293b;font-size:0.95rem;">No income or expense trends yet</strong>
+      <small style="color:#64748b;margin-top:4px;max-width:260px;font-size:0.82rem;">Log income or expenses to track monthly financial trends over time!</small>
+    `;
+    container?.appendChild(emptyDiv);
+    return;
+  }
+
+  canvas.style.display = 'block';
+
+  incomeExpenseChartInstance = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [
+        { label: 'Income', data: incomeData, backgroundColor: '#556b2f', borderRadius: 6 },
+        { label: 'Expenses', data: expenseData, backgroundColor: '#b24434', borderRadius: 6 },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            callback: function(val) {
+              return formatCurrency(val);
+            }
+          }
+        }
+      },
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { boxWidth: 12, padding: 14, font: { family: 'Plus Jakarta Sans', weight: '600' } },
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              return ` ${context.dataset.label}: ${formatCurrency(context.raw)}`;
+            }
+          }
+        }
+      },
+    },
+  });
+}
+
+function renderMonthlyFinancialHistory(historyData = computeMonthlyFinancialHistory()) {
+  if (!monthlyHistoryTableBodyEl) return;
+
+  const { historyDesc, currentMonthKey } = historyData;
+
+  if (monthlyHistoryBadgeEl) {
+    const count = historyDesc.length;
+    monthlyHistoryBadgeEl.textContent = `${count} ${count === 1 ? 'Month' : 'Months'} Tracked`;
+  }
+
+  if (!historyDesc.length) {
+    monthlyHistoryTableBodyEl.innerHTML = '<tr><td colspan="6" class="placeholder">No monthly financial history recorded yet. Add your first transaction to get started!</td></tr>';
+    return;
+  }
+
+  const selectedKey = state.selectedMonthKey || currentMonthKey;
+
+  monthlyHistoryTableBodyEl.innerHTML = historyDesc.map((m) => {
+    const isCurrent = m.key === currentMonthKey;
+    const isSelected = m.key === selectedKey;
+    const activeClass = isSelected ? 'active-selected-month' : '';
+    const currentBadge = isCurrent ? '<span class="month-badge-current">Current</span>' : '';
+
+    const savingsPct = m.income > 0 ? ((m.savings / m.income) * 100).toFixed(1) : null;
+    const savingsClass = m.savings >= 0 ? 'positive' : 'negative';
+    const savingsSign = m.savings >= 0 ? '+' : '';
+    const savingsSub = savingsPct !== null
+      ? `<span class="savings-badge ${savingsClass}">${savingsPct}% saved</span>`
+      : '';
+
+    const incomeFormatted = m.income > 0 ? `+${formatCurrency(m.income)}` : formatCurrency(m.income);
+    const expensesFormatted = m.expenses > 0 ? `-${formatCurrency(m.expenses)}` : formatCurrency(m.expenses);
+    const balanceClass = m.balance >= 0 ? 'positive' : 'negative';
+
+    return `
+      <tr class="${activeClass}" data-month-key="${m.key}">
+        <td>
+          <strong>${m.label}</strong>${currentBadge}
+        </td>
+        <td class="text-right positive" style="font-weight:600;">${incomeFormatted}</td>
+        <td class="text-right negative" style="font-weight:600;">${expensesFormatted}</td>
+        <td class="text-right">
+          <span class="${savingsClass}" style="font-weight:700;">${savingsSign}${formatCurrency(m.savings)}</span>
+          ${savingsSub}
+        </td>
+        <td class="text-right">
+          <strong class="${balanceClass}" style="font-size:0.95rem;">${formatCurrency(m.balance)}</strong>
+        </td>
+        <td class="text-center">
+          <button class="button button-small ${isSelected ? 'button-primary' : 'button-ghost'} view-month-btn" data-select-month="${m.key}">
+            ${isSelected ? '✓ Viewing' : 'View Month'}
+          </button>
+        </td>
+      </tr>
+    `;
+  }).join('');
 }
 
 function transactionRowHtml(t, isIncome, { editable = false } = {}) {
@@ -1036,176 +1454,25 @@ function transactionRowHtml(t, isIncome, { editable = false } = {}) {
     </div>`;
 }
 
-function renderRecentTransactions() {
-  const merged = [
-    ...state.incomes.map((i) => ({ ...i, kind: 'income' })),
-    ...state.expenses.map((e) => ({ ...e, kind: 'expense' })),
-  ]
-    .filter((t) => t.date)
-    .sort((a, b) => new Date(b.date) - new Date(a.date))
-    .slice(0, 8);
-
-  if (!merged.length) {
-    recentTransactionsEl.innerHTML = '<p class="placeholder">No transactions yet.</p>';
-    return;
-  }
-  recentTransactionsEl.innerHTML = merged.map((t) => transactionRowHtml(t, t.kind === 'income')).join('');
-}
-
 function renderAllTransactions() {
   const merged = [
     ...state.incomes.map((i) => ({ ...i, kind: 'income' })),
     ...state.expenses.map((e) => ({ ...e, kind: 'expense' })),
   ]
     .filter((t) => t.date)
-    .sort((a, b) => new Date(b.date) - new Date(a.date));
+    .sort((a, b) => {
+      const partsA = parseDateParts(a.date);
+      const partsB = parseDateParts(b.date);
+      const timeA = partsA ? new Date(partsA.year, partsA.month, partsA.day).getTime() : 0;
+      const timeB = partsB ? new Date(partsB.year, partsB.month, partsB.day).getTime() : 0;
+      return timeB - timeA;
+    });
 
   if (!merged.length) {
     allTransactionsListEl.innerHTML = '<p class="placeholder">No transactions yet.</p>';
     return;
   }
-  allTransactionsListEl.innerHTML = merged.map((t) => transactionRowHtml(t, t.kind === 'income')).join('');
-}
-
-function renderCategoryChart() {
-  const now = new Date();
-  const byCategory = {};
-
-  let targetExpenses = state.expenses.filter((e) => isSameMonth(e.date, now));
-  if (!targetExpenses.length && state.expenses.length) {
-    targetExpenses = state.expenses;
-  }
-
-  targetExpenses.forEach((e) => {
-    const key = e.category || 'Other';
-    byCategory[key] = (byCategory[key] || 0) + (Number(e.amount) || 0);
-  });
-
-  const labels = Object.keys(byCategory);
-  const canvas = document.getElementById('categoryChart');
-  if (!canvas || typeof Chart === 'undefined') return;
-
-  const container = canvas.parentElement;
-
-  if (categoryChartInstance) {
-    categoryChartInstance.destroy();
-    categoryChartInstance = null;
-  }
-
-  const oldEmpty = container?.querySelector('.chart-empty-state');
-  if (oldEmpty) oldEmpty.remove();
-
-  if (!labels.length) {
-    canvas.style.display = 'none';
-    const emptyDiv = document.createElement('div');
-    emptyDiv.className = 'chart-empty-state';
-    emptyDiv.style.cssText = 'display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;min-height:200px;text-align:center;padding:24px 16px;background:rgba(248,250,252,0.6);border-radius:14px;border:1px dashed #cbd5e1;margin-top:8px;';
-    emptyDiv.innerHTML = `
-      <div style="width:48px;height:48px;border-radius:14px;background:#eef2ff;display:grid;place-items:center;font-size:24px;margin-bottom:10px;">📊</div>
-      <strong style="color:#1e293b;font-size:0.95rem;">No spending recorded yet</strong>
-      <small style="color:#64748b;margin-top:4px;max-width:260px;font-size:0.82rem;">Add your first expense to generate an interactive spending category breakdown!</small>
-    `;
-    container?.appendChild(emptyDiv);
-    return;
-  }
-
-  canvas.style.display = 'block';
-
-  categoryChartInstance = new Chart(canvas, {
-    type: 'doughnut',
-    data: {
-      labels: labels.map((k) => EXPENSE_CATEGORIES[k]?.label || k),
-      datasets: [{
-        data: labels.map((k) => byCategory[k]),
-        backgroundColor: labels.map((k) => EXPENSE_CATEGORIES[k]?.color || '#94a3b8'),
-        borderWidth: 2,
-        borderColor: '#ffffff',
-      }],
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          position: 'bottom',
-          labels: { boxWidth: 12, padding: 14, font: { family: 'Plus Jakarta Sans', weight: '600' } },
-        },
-      },
-    },
-  });
-}
-
-function renderIncomeExpenseChart() {
-  const months = [];
-  const now = new Date();
-  for (let i = 5; i >= 0; i -= 1) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    months.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
-  }
-
-  const incomeByMonth = {};
-  state.incomes.forEach((i) => {
-    const key = monthKey(i.date);
-    incomeByMonth[key] = (incomeByMonth[key] || 0) + (Number(i.amount) || 0);
-  });
-  const expenseByMonth = {};
-  state.expenses.forEach((e) => {
-    const key = monthKey(e.date);
-    expenseByMonth[key] = (expenseByMonth[key] || 0) + (Number(e.amount) || 0);
-  });
-
-  const hasData = months.some((m) => (incomeByMonth[m] || 0) > 0 || (expenseByMonth[m] || 0) > 0);
-
-  const canvas = document.getElementById('incomeExpenseChart');
-  if (!canvas || typeof Chart === 'undefined') return;
-
-  const container = canvas.parentElement;
-
-  if (incomeExpenseChartInstance) {
-    incomeExpenseChartInstance.destroy();
-    incomeExpenseChartInstance = null;
-  }
-
-  const oldEmpty = container?.querySelector('.chart-empty-state');
-  if (oldEmpty) oldEmpty.remove();
-
-  if (!hasData) {
-    canvas.style.display = 'none';
-    const emptyDiv = document.createElement('div');
-    emptyDiv.className = 'chart-empty-state';
-    emptyDiv.style.cssText = 'display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;min-height:200px;text-align:center;padding:24px 16px;background:rgba(248,250,252,0.6);border-radius:14px;border:1px dashed #cbd5e1;margin-top:8px;';
-    emptyDiv.innerHTML = `
-      <div style="width:48px;height:48px;border-radius:14px;background:#eef2ff;display:grid;place-items:center;font-size:24px;margin-bottom:10px;">📈</div>
-      <strong style="color:#1e293b;font-size:0.95rem;">No income or expense trends yet</strong>
-      <small style="color:#64748b;margin-top:4px;max-width:260px;font-size:0.82rem;">Log income or expenses to track monthly financial trends over time!</small>
-    `;
-    container?.appendChild(emptyDiv);
-    return;
-  }
-
-  canvas.style.display = 'block';
-
-  incomeExpenseChartInstance = new Chart(canvas, {
-    type: 'bar',
-    data: {
-      labels: months.map(monthLabel),
-      datasets: [
-        { label: 'Income', data: months.map((m) => incomeByMonth[m] || 0), backgroundColor: '#556b2f', borderRadius: 6 },
-        { label: 'Expenses', data: months.map((m) => expenseByMonth[m] || 0), backgroundColor: '#b24434', borderRadius: 6 },
-      ],
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      scales: { y: { beginAtZero: true } },
-      plugins: {
-        legend: {
-          position: 'bottom',
-          labels: { boxWidth: 12, padding: 14, font: { family: 'Plus Jakarta Sans', weight: '600' } },
-        },
-      },
-    },
-  });
+  allTransactionsListEl.innerHTML = merged.map((t) => transactionRowHtml(t, t.kind === 'income', { editable: true })).join('');
 }
 
 /* ---------------------------------------------------------------------- */
@@ -1373,7 +1640,6 @@ expenseForm?.addEventListener('submit', async (e) => {
     renderExpenseList();
     renderDashboard();
     renderAllTransactions();
-    renderBudgets();
   } catch (error) {
     showMessage(error instanceof Error ? error.message : 'Unable to save expense.', 'error');
   }
@@ -1388,183 +1654,10 @@ async function deleteExpense(id) {
     renderExpenseList();
     renderDashboard();
     renderAllTransactions();
-    renderBudgets();
   } catch (error) {
     showMessage(error instanceof Error ? error.message : 'Unable to delete expense.', 'error');
   }
 }
-
-/* ---------------------------------------------------------------------- */
-/* Budgets (read-only progress view; add flow uses a simple prompt         */
-/* since no budget form exists yet in the markup)                         */
-/* ---------------------------------------------------------------------- */
-
-/* ---------------------------------------------------------------------- */
-/* Flexible Budgets                                                       */
-/* ---------------------------------------------------------------------- */
-
-function computeBudgetProgress() {
-  const now = new Date();
-  return state.budgets.map((budget) => {
-    const limit = Number(budget.amount ?? budget.limit ?? 0);
-    const category = budget.category || budget.name || 'Other';
-    const period = budget.period || 'monthly';
-    const startDate = budget.startDate;
-    const endDate = budget.endDate;
-
-    const matchingExpenses = state.expenses.filter((e) => {
-      if (category && category !== 'Other' && (e.category || 'Other') !== category) {
-        return false;
-      }
-      const eDate = new Date(e.date);
-      if (period === 'daily') {
-        const ref = startDate ? new Date(startDate) : now;
-        return eDate.toDateString() === ref.toDateString();
-      }
-      if (period === 'weekly') {
-        const ref = startDate ? new Date(startDate) : now;
-        const diffDays = Math.abs((eDate - ref) / (1000 * 3600 * 24));
-        return diffDays <= 7;
-      }
-      if (period === 'trip' || period === 'custom') {
-        if (!startDate || !endDate) return true;
-        return eDate >= new Date(startDate) && eDate <= new Date(endDate);
-      }
-      return isSameMonth(e.date, now);
-    });
-
-    const spent = matchingExpenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
-    const pct = limit > 0 ? Math.min((spent / limit) * 100, 100) : 0;
-    return { ...budget, category, limit, spent, pct, period };
-  });
-}
-
-function renderBudgets() {
-  const budgets = computeBudgetProgress();
-  if (!budgets.length) {
-    budgetsListEl.innerHTML = '<p class="placeholder">No budgets yet. Use "+ Add Budget" to create one.</p>';
-    return;
-  }
-  budgetsListEl.innerHTML = budgets.map((b) => {
-    const meta = EXPENSE_CATEGORIES[b.category] || { label: b.category };
-    const fillClass = b.pct >= 100 ? 'danger' : b.pct >= 80 ? 'warning' : '';
-    const periodLabel = b.period ? `(${b.period.toUpperCase()})` : '';
-    return `
-      <div class="budget-card">
-        <div class="budget-card-top">
-          <span>${meta.label} <small style="font-size:0.75rem;opacity:0.75;">${periodLabel}</small></span>
-          <span>${Math.round(b.pct)}%</span>
-        </div>
-        <div class="progress-track"><div class="progress-fill ${fillClass}" style="width:${b.pct}%"></div></div>
-        <div class="budget-card-amounts"><span>${formatCurrency(b.spent)} spent</span><span>of ${formatCurrency(b.limit)}</span></div>
-        <div class="tx-actions">
-          <button class="button button-small button-ghost" data-edit-budget="${b.id}">Edit</button>
-          <button class="button button-small button-danger" data-delete-budget="${b.id}">Delete</button>
-        </div>
-      </div>`;
-  }).join('');
-}
-
-function openBudgetModal(budget = null) {
-  budgetForm?.reset();
-  state.editingBudgetId = budget?.id || null;
-  const header = document.querySelector('#budgetModal .modal-header h2');
-  if (header) header.textContent = budget ? 'Edit Budget' : 'Add Budget';
-
-  const titleInput = document.getElementById('budgetName');
-  if (titleInput) titleInput.value = budget?.name || '';
-  const catInput = document.getElementById('budgetCategory');
-  if (catInput) catInput.value = budget?.category || '';
-  const amtInput = document.getElementById('budgetAmount');
-  if (amtInput) amtInput.value = budget?.limit ?? budget?.amount ?? '';
-  const periodInput = document.getElementById('budgetPeriod');
-  if (periodInput) periodInput.value = budget?.period || 'monthly';
-
-  if (budget?.period === 'trip' || budget?.period === 'custom') {
-    budgetDateRow?.classList.remove('hidden');
-    document.getElementById('budgetStartDate').value = budget.startDate || '';
-    document.getElementById('budgetEndDate').value = budget.endDate || '';
-  } else {
-    budgetDateRow?.classList.add('hidden');
-  }
-
-  budgetModal?.classList.remove('hidden');
-}
-
-budgetPeriodSelect?.addEventListener('change', (e) => {
-  const p = e.target.value;
-  if (p === 'trip' || p === 'custom') {
-    budgetDateRow?.classList.remove('hidden');
-  } else {
-    budgetDateRow?.classList.add('hidden');
-  }
-});
-
-const addBudgetBtn = document.getElementById('addBudgetBtn');
-addBudgetBtn?.addEventListener('click', () => openBudgetModal());
-closeBudgetModal?.addEventListener('click', () => budgetModal?.classList.add('hidden'));
-budgetModal?.addEventListener('click', (e) => {
-  if (e.target === budgetModal) budgetModal?.classList.add('hidden');
-});
-
-budgetForm?.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const name = document.getElementById('budgetName').value;
-  const category = document.getElementById('budgetCategory').value;
-  const period = document.getElementById('budgetPeriod').value;
-  const amount = Number(document.getElementById('budgetAmount').value);
-  const startDate = document.getElementById('budgetStartDate').value;
-  const endDate = document.getElementById('budgetEndDate').value;
-
-  if (!category || !amount || amount <= 0) {
-    showMessage('Please select a category and valid amount.', 'error');
-    return;
-  }
-  try {
-    const dbCategory = EXPENSE_CATEGORY_TO_DB[category] || category;
-    const payload = {
-      name: name || `${dbCategory} ${period.toUpperCase()} Budget`,
-      amount,
-      period,
-      startDate: startDate || undefined,
-      endDate: endDate || undefined,
-      categoryId: findExpenseCategoryId(category),
-    };
-
-    if (state.editingBudgetId) {
-      await apiRequest('PUT', `/budgets/${state.editingBudgetId}`, payload);
-      showMessage('Budget updated.', 'success');
-    } else {
-      await apiRequest('POST', '/budgets', payload);
-      showMessage('Budget added.', 'success');
-    }
-    budgetModal?.classList.add('hidden');
-    await loadAllData();
-    renderBudgets();
-  } catch (error) {
-    showMessage(error instanceof Error ? error.message : 'Unable to save budget.', 'error');
-  }
-});
-
-budgetsListEl?.addEventListener('click', async (e) => {
-  const editBtn = e.target.closest('[data-edit-budget]');
-  const deleteBtn = e.target.closest('[data-delete-budget]');
-  if (editBtn) {
-    const budget = state.budgets.find((b) => String(b.id) === String(editBtn.dataset.editBudget));
-    if (budget) openBudgetModal(budget);
-  }
-  if (deleteBtn) {
-    if (!window.confirm('Delete this budget?')) return;
-    try {
-      await apiRequest('DELETE', `/budgets/${deleteBtn.dataset.deleteBudget}`);
-      showMessage('Budget deleted.', 'success');
-      await loadAllData();
-      renderBudgets();
-    } catch (error) {
-      showMessage(error instanceof Error ? error.message : 'Unable to delete budget.', 'error');
-    }
-  }
-});
 
 /* ---------------------------------------------------------------------- */
 /* Expense Groups & Trips                                                 */
@@ -1757,12 +1850,33 @@ function renderExpenseGroupsList() {
     return;
   }
 
-  expenseGroupsListEl.innerHTML = state.expenseGroups.map((g) => {
+  // Display expense groups in reverse chronological order (most recent first)
+  const sortedGroups = [...state.expenseGroups].sort((a, b) => {
+    const parseGroupDate = (g) => {
+      const dStr = g.startDate || g.endDate || g.createdAt;
+      const parts = parseDateParts(dStr);
+      return parts ? new Date(parts.year, parts.month, parts.day).getTime() : 0;
+    };
+    return parseGroupDate(b) - parseGroupDate(a);
+  });
+
+  expenseGroupsListEl.innerHTML = sortedGroups.map((g) => {
     const total = computeGroupTotal(g);
     const typeBadges = { trip: '✈️ Trip', day: '📅 Single Day', week: '🗓️ Week', custom: '📆 Custom' };
     const badgeText = typeBadges[g.type] || '📦 Group';
 
-    const itemsHtml = (g.items || []).map((item) => `
+    // Display line-item expenses in reverse chronological order (most recent first)
+    const sortedItems = [...(g.items || [])].sort((a, b) => {
+      const dStrA = a.date || g.startDate;
+      const dStrB = b.date || g.startDate;
+      const partsA = parseDateParts(dStrA);
+      const partsB = parseDateParts(dStrB);
+      const timeA = partsA ? new Date(partsA.year, partsA.month, partsA.day).getTime() : 0;
+      const timeB = partsB ? new Date(partsB.year, partsB.month, partsB.day).getTime() : 0;
+      return timeB - timeA;
+    });
+
+    const itemsHtml = sortedItems.map((item) => `
       <tr>
         <td style="padding:8px 6px;font-size:0.82rem;">${EXPENSE_CATEGORIES[item.category]?.label || item.category}</td>
         <td style="padding:8px 6px;font-size:0.82rem;font-weight:600;">${item.title || 'Item'}</td>
@@ -1835,6 +1949,44 @@ expenseGroupsListEl?.addEventListener('click', async (e) => {
     await loadAllData();
     renderExpenseGroupsList();
     renderDashboard();
+  }
+});
+
+// Month selector change listener
+dashboardMonthSelectEl?.addEventListener('change', (e) => {
+  selectDashboardMonth(e.target.value);
+});
+
+// Monthly history table row/button click delegation
+monthlyHistoryTableBodyEl?.addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-select-month]');
+  const tr = e.target.closest('tr[data-month-key]');
+  const key = btn ? btn.dataset.selectMonth : (tr ? tr.dataset.monthKey : null);
+  if (key) {
+    selectDashboardMonth(key);
+  }
+});
+
+// All transactions list edit/delete delegation
+allTransactionsListEl?.addEventListener('click', (e) => {
+  const editBtn = e.target.closest('[data-edit]');
+  const deleteBtn = e.target.closest('[data-delete]');
+  if (editBtn) {
+    const id = editBtn.dataset.edit;
+    const kind = editBtn.dataset.kind;
+    if (kind === 'income') {
+      const inc = state.incomes.find((i) => String(i.id) === String(id));
+      if (inc) openIncomeModal(inc);
+    } else {
+      const exp = state.expenses.find((x) => String(x.id) === String(id));
+      if (exp) openExpenseModal(exp);
+    }
+  }
+  if (deleteBtn) {
+    const id = deleteBtn.dataset.delete;
+    const kind = deleteBtn.dataset.kind;
+    if (kind === 'income') deleteIncome(id);
+    else deleteExpense(id);
   }
 });
 
