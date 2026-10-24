@@ -93,18 +93,18 @@ const headerUserName = document.getElementById('headerUserName');
 const sidebar = document.getElementById('sidebar');
 const messageEl = document.getElementById('message');
 
-const totalBalanceEl = document.getElementById('totalBalance');
-const monthlyIncomeEl = document.getElementById('monthlyIncome');
+const currentMoneyEl = document.getElementById('currentMoney');
+const currentMoneyLabelEl = document.getElementById('currentMoneyLabel');
+const currentMoneySubEl = document.getElementById('currentMoneySub');
 const monthlyExpensesEl = document.getElementById('monthlyExpenses');
-const monthlySavingsEl = document.getElementById('monthlySavings');
-const totalBalanceLabelEl = document.getElementById('totalBalanceLabel');
-const totalBalanceSubEl = document.getElementById('totalBalanceSub');
-const monthlyIncomeLabelEl = document.getElementById('monthlyIncomeLabel');
-const monthlyIncomeSubEl = document.getElementById('monthlyIncomeSub');
 const monthlyExpensesLabelEl = document.getElementById('monthlyExpensesLabel');
 const monthlyExpensesSubEl = document.getElementById('monthlyExpensesSub');
-const monthlySavingsLabelEl = document.getElementById('monthlySavingsLabel');
-const monthlySavingsSubEl = document.getElementById('monthlySavingsSub');
+const currentMonthLeftEl = document.getElementById('currentMonthLeft');
+const currentMonthLeftLabelEl = document.getElementById('currentMonthLeftLabel');
+const currentMonthLeftSubEl = document.getElementById('currentMonthLeftSub');
+const prevMonthsLeftEl = document.getElementById('prevMonthsLeft');
+const prevMonthsLeftLabelEl = document.getElementById('prevMonthsLeftLabel');
+const prevMonthsLeftSubEl = document.getElementById('prevMonthsLeftSub');
 
 const dashboardMonthSelectEl = document.getElementById('dashboardMonthSelect');
 const monthlyHistoryTableBodyEl = document.getElementById('monthlyHistoryTableBody');
@@ -1126,30 +1126,42 @@ function selectDashboardMonth(key) {
 
 function renderDashboard() {
   const historyData = computeMonthlyFinancialHistory();
-  const { historyDesc, currentMonthKey, allTimeIncome, allTimeExpenses, allTimeSavings, allTimeBalance } = historyData;
+  const { historyDesc, currentMonthKey, allTimeIncome, allTimeExpenses, allTimeBalance } = historyData;
 
   populateDashboardMonthSelect(historyDesc, currentMonthKey);
 
   const selectedKey = state.selectedMonthKey;
 
   if (selectedKey === 'all') {
-    setFormattedCardValue(totalBalanceEl, allTimeBalance);
-    setFormattedCardValue(monthlyIncomeEl, allTimeIncome);
+    // All-time view: previous months leftover = all-time balance minus current month savings
+    const currentMonthItem = historyDesc.find((m) => m.key === currentMonthKey) || { income: 0, expenses: 0, savings: 0 };
+    const allPrevMonthsLeft = historyDesc
+      .filter((m) => m.key < currentMonthKey)
+      .reduce((sum, m) => sum + m.savings, 0);
+    const allCurrentMonthLeft = currentMonthItem.income - currentMonthItem.expenses;
+    const allCurrentMoney = allTimeIncome + allPrevMonthsLeft; // All income + all prior leftovers (redundant in all-time but consistent)
+
+    setFormattedCardValue(currentMoneyEl, allTimeBalance);
     setFormattedCardValue(monthlyExpensesEl, allTimeExpenses);
-    setFormattedCardValue(monthlySavingsEl, allTimeSavings);
+    setFormattedCardValue(currentMonthLeftEl, allCurrentMonthLeft);
+    setFormattedCardValue(prevMonthsLeftEl, allPrevMonthsLeft);
 
-    if (totalBalanceLabelEl) totalBalanceLabelEl.textContent = 'Total Balance';
-    if (totalBalanceSubEl) totalBalanceSubEl.textContent = 'All-time cumulative balance';
-
-    if (monthlyIncomeLabelEl) monthlyIncomeLabelEl.textContent = 'Total Income';
-    if (monthlyIncomeSubEl) monthlyIncomeSubEl.textContent = 'All time from all sources';
+    if (currentMoneyLabelEl) currentMoneyLabelEl.textContent = 'Total Money';
+    if (currentMoneySubEl) currentMoneySubEl.textContent = 'All-time cumulative balance';
 
     if (monthlyExpensesLabelEl) monthlyExpensesLabelEl.textContent = 'Total Expenses';
     if (monthlyExpensesSubEl) monthlyExpensesSubEl.textContent = 'All-time total spending';
 
-    if (monthlySavingsLabelEl) monthlySavingsLabelEl.textContent = 'Total Savings';
-    const rate = allTimeIncome > 0 ? ((allTimeSavings / allTimeIncome) * 100).toFixed(1) : 0;
-    if (monthlySavingsSubEl) monthlySavingsSubEl.textContent = `${rate}% all-time savings rate`;
+    if (currentMonthLeftLabelEl) currentMonthLeftLabelEl.textContent = 'Current Month Left';
+    if (currentMonthLeftSubEl) currentMonthLeftSubEl.textContent = 'This month’s income minus expenses';
+
+    if (prevMonthsLeftLabelEl) prevMonthsLeftLabelEl.textContent = 'Previous Months Left';
+    const prevCount = historyDesc.filter((m) => m.key < currentMonthKey).length;
+    if (prevMonthsLeftSubEl) {
+      prevMonthsLeftSubEl.textContent = prevCount > 0
+        ? `Leftover across ${prevCount} prior month${prevCount !== 1 ? 's' : ''}`
+        : 'No prior month data';
+    }
   } else {
     const monthItem = historyDesc.find((m) => m.key === selectedKey) || historyDesc[0] || {
       key: currentMonthKey,
@@ -1161,30 +1173,36 @@ function renderDashboard() {
       balance: 0,
     };
 
-    // Previous Savings = cumulative savings of all months BEFORE the selected month
-    const previousSavings = historyDesc
+    // Previous months leftover = sum of (income - expenses) for all months BEFORE the selected month
+    const prevMonthsLeftover = historyDesc
       .filter((m) => m.key < selectedKey)
       .reduce((sum, m) => sum + m.savings, 0);
 
-    setFormattedCardValue(totalBalanceEl, monthItem.balance);
-    setFormattedCardValue(monthlyIncomeEl, monthItem.income);
+    // Current month left = this month's income - this month's expenses
+    const currentMonthLeftover = monthItem.income - monthItem.expenses;
+
+    // Current Money = this month's income + previous months leftover
+    const currentMoney = monthItem.income + prevMonthsLeftover;
+
+    setFormattedCardValue(currentMoneyEl, currentMoney);
     setFormattedCardValue(monthlyExpensesEl, monthItem.expenses);
-    setFormattedCardValue(monthlySavingsEl, previousSavings);
+    setFormattedCardValue(currentMonthLeftEl, currentMonthLeftover);
+    setFormattedCardValue(prevMonthsLeftEl, prevMonthsLeftover);
 
-    if (totalBalanceLabelEl) totalBalanceLabelEl.textContent = 'Total Balance';
-    if (totalBalanceSubEl) totalBalanceSubEl.textContent = `As of ${monthItem.shortLabel}`;
-
-    if (monthlyIncomeLabelEl) monthlyIncomeLabelEl.textContent = 'Monthly Income';
-    if (monthlyIncomeSubEl) monthlyIncomeSubEl.textContent = `Earned in ${monthItem.shortLabel}`;
+    if (currentMoneyLabelEl) currentMoneyLabelEl.textContent = 'Current Money';
+    if (currentMoneySubEl) currentMoneySubEl.textContent = `${monthItem.shortLabel} income + prior leftovers`;
 
     if (monthlyExpensesLabelEl) monthlyExpensesLabelEl.textContent = 'Monthly Expenses';
     if (monthlyExpensesSubEl) monthlyExpensesSubEl.textContent = `Spent in ${monthItem.shortLabel}`;
 
-    if (monthlySavingsLabelEl) monthlySavingsLabelEl.textContent = 'Previous Savings';
+    if (currentMonthLeftLabelEl) currentMonthLeftLabelEl.textContent = 'Current Month Left';
+    if (currentMonthLeftSubEl) currentMonthLeftSubEl.textContent = `${monthItem.shortLabel}: income minus expenses`;
+
+    if (prevMonthsLeftLabelEl) prevMonthsLeftLabelEl.textContent = 'Previous Months Left';
     const prevMonthCount = historyDesc.filter((m) => m.key < selectedKey).length;
-    if (monthlySavingsSubEl) {
-      monthlySavingsSubEl.textContent = prevMonthCount > 0
-        ? `Saved across ${prevMonthCount} prior month${prevMonthCount !== 1 ? 's' : ''}`
+    if (prevMonthsLeftSubEl) {
+      prevMonthsLeftSubEl.textContent = prevMonthCount > 0
+        ? `Leftover across ${prevMonthCount} prior month${prevMonthCount !== 1 ? 's' : ''}`
         : 'No prior month data';
     }
   }
