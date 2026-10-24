@@ -366,7 +366,7 @@ button {
   cursor: pointer;
   padding: 0;
   width: auto;
-  max-width: 68px;
+  max-width: 110px;
 }
 
 /* Premium Buttons */
@@ -641,9 +641,10 @@ button {
 }
 
 .chart-container canvas {
+  display: block;
   flex: 1;
-  width: 100% !important;
-  height: 100% !important;
+  width: 100%;
+  min-height: 220px;
   max-height: 270px;
 }
 

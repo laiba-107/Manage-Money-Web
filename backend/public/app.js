@@ -1161,10 +1161,15 @@ function renderDashboard() {
       balance: 0,
     };
 
+    // Previous Savings = cumulative savings of all months BEFORE the selected month
+    const previousSavings = historyDesc
+      .filter((m) => m.key < selectedKey)
+      .reduce((sum, m) => sum + m.savings, 0);
+
     setFormattedCardValue(totalBalanceEl, monthItem.balance);
     setFormattedCardValue(monthlyIncomeEl, monthItem.income);
     setFormattedCardValue(monthlyExpensesEl, monthItem.expenses);
-    setFormattedCardValue(monthlySavingsEl, monthItem.savings);
+    setFormattedCardValue(monthlySavingsEl, previousSavings);
 
     if (totalBalanceLabelEl) totalBalanceLabelEl.textContent = 'Total Balance';
     if (totalBalanceSubEl) totalBalanceSubEl.textContent = `As of ${monthItem.shortLabel}`;
@@ -1175,10 +1180,12 @@ function renderDashboard() {
     if (monthlyExpensesLabelEl) monthlyExpensesLabelEl.textContent = 'Monthly Expenses';
     if (monthlyExpensesSubEl) monthlyExpensesSubEl.textContent = `Spent in ${monthItem.shortLabel}`;
 
-    if (monthlySavingsLabelEl) monthlySavingsLabelEl.textContent = 'Monthly Savings';
-    const rate = monthItem.income > 0 ? ((monthItem.savings / monthItem.income) * 100).toFixed(1) : null;
+    if (monthlySavingsLabelEl) monthlySavingsLabelEl.textContent = 'Previous Savings';
+    const prevMonthCount = historyDesc.filter((m) => m.key < selectedKey).length;
     if (monthlySavingsSubEl) {
-      monthlySavingsSubEl.textContent = rate !== null ? `${rate}% savings rate` : 'Income - Expenses';
+      monthlySavingsSubEl.textContent = prevMonthCount > 0
+        ? `Saved across ${prevMonthCount} prior month${prevMonthCount !== 1 ? 's' : ''}`
+        : 'No prior month data';
     }
   }
 
@@ -1192,11 +1199,6 @@ function renderCategoryChart(selectedMonthKey = state.selectedMonthKey) {
   if (!canvas || typeof Chart === 'undefined') return;
 
   const container = canvas.parentElement;
-
-  const dashboardPage = document.getElementById('page-dashboard');
-  if (dashboardPage && !dashboardPage.classList.contains('active')) {
-    return;
-  }
 
   if (categoryChartInstance) {
     categoryChartInstance.destroy();
@@ -1287,11 +1289,6 @@ function renderIncomeExpenseChart() {
 
   const container = canvas.parentElement;
 
-  const dashboardPage = document.getElementById('page-dashboard');
-  if (dashboardPage && !dashboardPage.classList.contains('active')) {
-    return;
-  }
-
   if (incomeExpenseChartInstance) {
     incomeExpenseChartInstance.destroy();
     incomeExpenseChartInstance = null;
@@ -1366,7 +1363,7 @@ function renderIncomeExpenseChart() {
 }
 
 function renderMonthlyFinancialHistory(historyData = computeMonthlyFinancialHistory()) {
-  if (!monthlyHistoryTableBodyEl) return;
+  if (!monthlyHistoryTableBodyEl) return; // section removed from DOM, skip gracefully
 
   const { historyDesc, currentMonthKey } = historyData;
 

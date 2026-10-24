@@ -241,9 +241,9 @@
             <div class="card-change negative" id="monthlyExpensesSub">Spending this month</div>
           </div>
           <div class="card card-info">
-            <div class="card-label" id="monthlySavingsLabel">Monthly Savings</div>
+            <div class="card-label" id="monthlySavingsLabel">Previous Savings</div>
             <div class="card-value" id="monthlySavings">$0.00</div>
-            <div class="card-change" id="monthlySavingsSub">Income - Expenses</div>
+            <div class="card-change" id="monthlySavingsSub">Savings from prior months</div>
           </div>
         </div>
 
@@ -262,34 +262,6 @@
               <small class="chart-subtitle">Monthly Trends</small>
             </div>
             <canvas id="incomeExpenseChart"></canvas>
-          </div>
-        </div>
-
-        <!-- Monthly Financial History Table -->
-        <div class="card full-width" id="monthlyHistorySection">
-          <div class="section-card-header">
-            <div>
-              <h3>📅 Monthly Financial History</h3>
-              <p class="section-subtitle">Track your income, expenses, savings, and total balance month by month.</p>
-            </div>
-            <div id="monthlyHistoryBadge" class="history-count-badge"></div>
-          </div>
-          <div class="table-responsive">
-            <table class="monthly-history-table">
-              <thead>
-                <tr>
-                  <th>Month</th>
-                  <th class="text-right">Monthly Income</th>
-                  <th class="text-right">Monthly Expenses</th>
-                  <th class="text-right">Monthly Savings</th>
-                  <th class="text-right">Total Balance</th>
-                  <th class="text-center">Action</th>
-                </tr>
-              </thead>
-              <tbody id="monthlyHistoryTableBody">
-                <tr><td colspan="6" class="placeholder">Loading monthly financial history...</td></tr>
-              </tbody>
-            </table>
           </div>
         </div>
       </section>

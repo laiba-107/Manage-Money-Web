@@ -45,4 +45,16 @@ filesToCopy.forEach((file) => {
   }
 });
 
+// Also copy to dist/public if it exists (used by the compiled server)
+if (fs.existsSync(distPublicDir)) {
+  filesToCopy.forEach((file) => {
+    const sourcePath = path.join(sourceDir, file);
+    const distDestPath = path.join(distPublicDir, file);
+    if (fs.existsSync(sourcePath)) {
+      fs.copyFileSync(sourcePath, distDestPath);
+      console.log(`✓ Copied ${file} to dist/public/`);
+    }
+  });
+}
+
 console.log('Frontend files copied to public directory');
