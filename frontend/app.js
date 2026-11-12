@@ -52,29 +52,6 @@ const PAYMENT_METHOD_FROM_API = {
 /* ---------------------------------------------------------------------- */
 
 const EXPENSE_CATEGORIES = {
-  Food: { label: 'ðŸ” Food & Dining', color: '#b57e4c' },
-  Transport: { label: 'ðŸš— Transport', color: '#556b2f' },
-  Bills: { label: 'ðŸ“„ Bills & Utilities', color: '#6b705c' },
-  Shopping: { label: 'ðŸ›ï¸ Shopping', color: '#c27d53' },
-  Rent: { label: 'ðŸ  Rent', color: '#4a3525' },
-  Entertainment: { label: 'ðŸŽ¬ Entertainment', color: '#c88d2d' },
-  Healthcare: { label: 'ðŸ¥ Healthcare', color: '#b24434' },
-  Education: { label: 'ðŸŽ“ Education', color: '#3d6330' },
-  Travel: { label: 'âœˆï¸ Travel', color: '#8a572c' },
-  Return: { label: 'ðŸ”„ Return / Refund', color: '#5d8c47' },
-  Other: { label: 'ðŸ“Œ Other', color: '#8c7e6d' },
-};
-
-const INCOME_SOURCES = {
-  Salary: 'ðŸ’¼ Salary',
-  Freelance: 'ðŸ’» Freelance',
-  Business: 'ðŸ¢ Business',
-  Investments: 'ðŸ“ˆ Investments',
-  Other: 'ðŸ’° Other',
-};
-
-// Clean category and income metadata overrides
-Object.assign(EXPENSE_CATEGORIES, {
   Food: { label: '🍔 Food & Dining', color: '#b57e4c' },
   Transport: { label: '🚗 Transport', color: '#556b2f' },
   Bills: { label: '📄 Bills & Utilities', color: '#6b705c' },
@@ -86,22 +63,21 @@ Object.assign(EXPENSE_CATEGORIES, {
   Travel: { label: '✈️ Travel', color: '#8a572c' },
   Return: { label: '🔄 Return / Refund', color: '#5d8c47' },
   Other: { label: '📌 Other', color: '#8c7e6d' },
-});
+};
 
-Object.assign(INCOME_SOURCES, {
+const INCOME_SOURCES = {
   Salary: '💼 Salary',
   Freelance: '💻 Freelance',
   Business: '🏢 Business',
   Investments: '📈 Investments',
   Other: '💰 Other',
-});
+};
 
 /* ---------------------------------------------------------------------- */
 /* DOM references                                                         */
 /* ---------------------------------------------------------------------- */
 
 const authButton = document.getElementById('authButton');
-
 const emailAuthButton = document.getElementById('emailAuthButton');
 const authModal = document.getElementById('authModal');
 const closeAuthModal = document.getElementById('closeAuthModal');
@@ -203,33 +179,32 @@ function showMessage(text, type = 'info') {
 }
 
 /* ---------------------------------------------------------------------- */
-/* Currency Engine & Exchange Rates                                        */
+/* Currency Engine & Exchange Rates                                       */
 /* ---------------------------------------------------------------------- */
 
 const WORLD_CURRENCIES = [
-  // Popular / Major
   { code: 'USD', name: 'US Dollar', symbol: '$', rate: 1.0, locale: 'en-US' },
-  { code: 'EUR', name: 'Euro', symbol: 'â‚¬', rate: 0.92, locale: 'de-DE' },
-  { code: 'GBP', name: 'British Pound', symbol: 'Â£', rate: 0.79, locale: 'en-GB' },
+  { code: 'EUR', name: 'Euro', symbol: '€', rate: 0.92, locale: 'de-DE' },
+  { code: 'GBP', name: 'British Pound', symbol: '£', rate: 0.79, locale: 'en-GB' },
   { code: 'PKR', name: 'Pakistani Rupee', symbol: 'Rs ', rate: 278.5, locale: 'ur-PK' },
-  { code: 'INR', name: 'Indian Rupee', symbol: 'â‚¹', rate: 83.5, locale: 'hi-IN' },
+  { code: 'INR', name: 'Indian Rupee', symbol: '₹', rate: 83.5, locale: 'hi-IN' },
   { code: 'AED', name: 'UAE Dirham', symbol: 'AED ', rate: 3.67, locale: 'ar-AE' },
   { code: 'SAR', name: 'Saudi Riyal', symbol: 'SAR ', rate: 3.75, locale: 'ar-SA' },
   { code: 'CAD', name: 'Canadian Dollar', symbol: 'C$', rate: 1.36, locale: 'en-CA' },
   { code: 'AUD', name: 'Australian Dollar', symbol: 'A$', rate: 1.52, locale: 'en-AU' },
-  { code: 'JPY', name: 'Japanese Yen', symbol: 'Â¥', rate: 155.0, locale: 'ja-JP' },
-  { code: 'CNY', name: 'Chinese Yuan', symbol: 'Â¥', rate: 7.23, locale: 'zh-CN' },
+  { code: 'JPY', name: 'Japanese Yen', symbol: '¥', rate: 155.0, locale: 'ja-JP' },
+  { code: 'CNY', name: 'Chinese Yuan', symbol: '¥', rate: 7.23, locale: 'zh-CN' },
   { code: 'CHF', name: 'Swiss Franc', symbol: 'CHF ', rate: 0.90, locale: 'de-CH' },
   { code: 'SGD', name: 'Singapore Dollar', symbol: 'S$', rate: 1.35, locale: 'en-SG' },
   { code: 'NZD', name: 'New Zealand Dollar', symbol: 'NZ$', rate: 1.65, locale: 'en-NZ' },
   { code: 'HKD', name: 'Hong Kong Dollar', symbol: 'HK$', rate: 7.82, locale: 'zh-HK' },
   { code: 'MYR', name: 'Malaysian Ringgit', symbol: 'RM ', rate: 4.72, locale: 'ms-MY' },
-  { code: 'THB', name: 'Thai Baht', symbol: 'à¸¿', rate: 36.8, locale: 'th-TH' },
+  { code: 'THB', name: 'Thai Baht', symbol: '฿', rate: 36.8, locale: 'th-TH' },
   { code: 'IDR', name: 'Indonesian Rupiah', symbol: 'Rp ', rate: 16100, locale: 'id-ID' },
-  { code: 'PHP', name: 'Philippine Peso', symbol: 'â‚±', rate: 57.5, locale: 'fil-PH' },
-  { code: 'BDT', name: 'Bangladeshi Taka', symbol: 'à§³', rate: 117.0, locale: 'bn-BD' },
+  { code: 'PHP', name: 'Philippine Peso', symbol: '₱', rate: 57.5, locale: 'fil-PH' },
+  { code: 'BDT', name: 'Bangladeshi Taka', symbol: '৳', rate: 117.0, locale: 'bn-BD' },
   { code: 'LKR', name: 'Sri Lankan Rupee', symbol: 'Rs ', rate: 302.0, locale: 'si-LK' },
-  { code: 'TRY', name: 'Turkish Lira', symbol: 'â‚º', rate: 32.2, locale: 'tr-TR' },
+  { code: 'TRY', name: 'Turkish Lira', symbol: '₺', rate: 32.2, locale: 'tr-TR' },
   { code: 'ZAR', name: 'South African Rand', symbol: 'R ', rate: 18.3, locale: 'en-ZA' },
   { code: 'BRL', name: 'Brazilian Real', symbol: 'R$', rate: 5.15, locale: 'pt-BR' },
   { code: 'MXN', name: 'Mexican Peso', symbol: 'Mex$', rate: 16.8, locale: 'es-MX' },
@@ -238,61 +213,61 @@ const WORLD_CURRENCIES = [
   { code: 'BHD', name: 'Bahraini Dinar', symbol: 'BD ', rate: 0.38, locale: 'ar-BH' },
   { code: 'OMR', name: 'Omani Rial', symbol: 'OMR ', rate: 0.385, locale: 'ar-OM' },
   { code: 'JOD', name: 'Jordanian Dinar', symbol: 'JD ', rate: 0.71, locale: 'ar-JO' },
-  { code: 'EGP', name: 'Egyptian Pound', symbol: 'EÂ£ ', rate: 47.5, locale: 'ar-EG' },
-  { code: 'NGN', name: 'Nigerian Naira', symbol: 'â‚¦', rate: 1450, locale: 'en-NG' },
+  { code: 'EGP', name: 'Egyptian Pound', symbol: 'E£ ', rate: 47.5, locale: 'ar-EG' },
+  { code: 'NGN', name: 'Nigerian Naira', symbol: '₦', rate: 1450, locale: 'en-NG' },
   { code: 'KES', name: 'Kenyan Shilling', symbol: 'KSh ', rate: 132.0, locale: 'sw-KE' },
-  { code: 'GHS', name: 'Ghanaian Cedi', symbol: 'GHâ‚µ ', rate: 14.5, locale: 'ak-GH' },
-  { code: 'KRW', name: 'South Korean Won', symbol: 'â‚©', rate: 1370, locale: 'ko-KR' },
+  { code: 'GHS', name: 'Ghanaian Cedi', symbol: 'GH₵ ', rate: 14.5, locale: 'ak-GH' },
+  { code: 'KRW', name: 'South Korean Won', symbol: '₩', rate: 1370, locale: 'ko-KR' },
   { code: 'TWD', name: 'New Taiwan Dollar', symbol: 'NT$', rate: 32.4, locale: 'zh-TW' },
-  { code: 'VND', name: 'Vietnamese Dong', symbol: 'â‚«', rate: 25400, locale: 'vi-VN' },
+  { code: 'VND', name: 'Vietnamese Dong', symbol: '₫', rate: 25400, locale: 'vi-VN' },
   { code: 'SEK', name: 'Swedish Krona', symbol: 'kr ', rate: 10.8, locale: 'sv-SE' },
   { code: 'NOK', name: 'Norwegian Krone', symbol: 'kr ', rate: 10.7, locale: 'nb-NO' },
   { code: 'DKK', name: 'Danish Krone', symbol: 'kr ', rate: 6.9, locale: 'da-DK' },
-  { code: 'PLN', name: 'Polish Zloty', symbol: 'zÅ‚ ', rate: 3.95, locale: 'pl-PL' },
-  { code: 'CZK', name: 'Czech Koruna', symbol: 'KÄ ', rate: 23.0, locale: 'cs-CZ' },
+  { code: 'PLN', name: 'Polish Zloty', symbol: 'zł ', rate: 3.95, locale: 'pl-PL' },
+  { code: 'CZK', name: 'Czech Koruna', symbol: 'Kč ', rate: 23.0, locale: 'cs-CZ' },
   { code: 'HUF', name: 'Hungarian Forint', symbol: 'Ft ', rate: 360.0, locale: 'hu-HU' },
   { code: 'RON', name: 'Romanian Leu', symbol: 'lei ', rate: 4.6, locale: 'ro-RO' },
-  { code: 'BGN', name: 'Bulgarian Lev', symbol: 'Ð»Ð² ', rate: 1.8, locale: 'bg-BG' },
-  { code: 'ILS', name: 'Israeli Shekel', symbol: 'â‚ª', rate: 3.7, locale: 'he-IL' },
-  { code: 'RUB', name: 'Russian Ruble', symbol: 'â‚½', rate: 91.0, locale: 'ru-RU' },
-  { code: 'UAH', name: 'Ukrainian Hryvnia', symbol: 'â‚´', rate: 39.8, locale: 'uk-UA' },
-  { code: 'KZT', name: 'Kazakhstani Tenge', symbol: 'â‚¸', rate: 445.0, locale: 'kk-KZ' },
+  { code: 'BGN', name: 'Bulgarian Lev', symbol: 'лв ', rate: 1.8, locale: 'bg-BG' },
+  { code: 'ILS', name: 'Israeli Shekel', symbol: '₪', rate: 3.7, locale: 'he-IL' },
+  { code: 'RUB', name: 'Russian Ruble', symbol: '₽', rate: 91.0, locale: 'ru-RU' },
+  { code: 'UAH', name: 'Ukrainian Hryvnia', symbol: '₴', rate: 39.8, locale: 'uk-UA' },
+  { code: 'KZT', name: 'Kazakhstani Tenge', symbol: '₸', rate: 445.0, locale: 'kk-KZ' },
   { code: 'UZS', name: 'Uzbekistani Som', symbol: "so'm ", rate: 12700, locale: 'uz-UZ' },
-  { code: 'KGS', name: 'Kyrgyzstani Som', symbol: 'ÑÐ¾Ð¼ ', rate: 87.5, locale: 'ky-KG' },
+  { code: 'KGS', name: 'Kyrgyzstani Som', symbol: 'сом', rate: 87.5, locale: 'ky-KG' },
   { code: 'MAD', name: 'Moroccan Dirham', symbol: 'MAD ', rate: 10.0, locale: 'ar-MA' },
   { code: 'DZD', name: 'Algerian Dinar', symbol: 'DA ', rate: 134.0, locale: 'ar-DZ' },
   { code: 'TND', name: 'Tunisian Dinar', symbol: 'DT ', rate: 3.12, locale: 'ar-TN' },
   { code: 'IQD', name: 'Iraqi Dinar', symbol: 'IQD ', rate: 1310, locale: 'ar-IQ' },
-  { code: 'LBP', name: 'Lebanese Pound', symbol: 'LÂ£ ', rate: 89500, locale: 'ar-LB' },
+  { code: 'LBP', name: 'Lebanese Pound', symbol: 'L£ ', rate: 89500, locale: 'ar-LB' },
   { code: 'NPR', name: 'Nepalese Rupee', symbol: 'Rs ', rate: 133.5, locale: 'ne-NP' },
-  { code: 'AFN', name: 'Afghan Afghani', symbol: 'Ø‹', rate: 71.0, locale: 'ps-AF' },
+  { code: 'AFN', name: 'Afghan Afghani', symbol: '؋', rate: 71.0, locale: 'ps-AF' },
   { code: 'MMK', name: 'Myanmar Kyat', symbol: 'K ', rate: 2100, locale: 'my-MM' },
-  { code: 'KHR', name: 'Cambodian Riel', symbol: 'áŸ›', rate: 4100, locale: 'km-KH' },
-  { code: 'LAK', name: 'Lao Kip', symbol: 'â‚­', rate: 21500, locale: 'lo-LA' },
+  { code: 'KHR', name: 'Cambodian Riel', symbol: '៛', rate: 4100, locale: 'km-KH' },
+  { code: 'LAK', name: 'Lao Kip', symbol: '₭', rate: 21500, locale: 'lo-LA' },
   { code: 'ISK', name: 'Icelandic Krona', symbol: 'kr ', rate: 139.0, locale: 'is-IS' },
   { code: 'RSD', name: 'Serbian Dinar', symbol: 'din. ', rate: 108.0, locale: 'sr-RS' },
-  { code: 'GEL', name: 'Georgian Lari', symbol: 'â‚¾', rate: 2.7, locale: 'ka-GE' },
-  { code: 'AZN', name: 'Azerbaijani Manat', symbol: 'â‚¼', rate: 1.7, locale: 'az-AZ' },
-  { code: 'AMD', name: 'Armenian Dram', symbol: 'Ö', rate: 388.0, locale: 'hy-AM' },
+  { code: 'GEL', name: 'Georgian Lari', symbol: '₾', rate: 2.7, locale: 'ka-GE' },
+  { code: 'AZN', name: 'Azerbaijani Manat', symbol: '₼', rate: 1.7, locale: 'az-AZ' },
+  { code: 'AMD', name: 'Armenian Dram', symbol: '֏ ', rate: 388.0, locale: 'hy-AM' },
   { code: 'BYN', name: 'Belarusian Ruble', symbol: 'Br ', rate: 3.27, locale: 'be-BY' },
   { code: 'ARS', name: 'Argentine Peso', symbol: '$', rate: 885.0, locale: 'es-AR' },
   { code: 'COP', name: 'Colombian Peso', symbol: '$', rate: 3850, locale: 'es-CO' },
   { code: 'CLP', name: 'Chilean Peso', symbol: '$', rate: 935.0, locale: 'es-CL' },
   { code: 'PEN', name: 'Peruvian Sol', symbol: 'S/. ', rate: 3.73, locale: 'es-PE' },
-  { code: 'CRC', name: 'Costa Rican Colon', symbol: 'â‚¡', rate: 515.0, locale: 'es-CR' },
-  { code: 'DOP', name: 'Dominican Peso', symbol: 'RD$ ', rate: 59.0, locale: 'es-DO' },
+  { code: 'CRC', name: 'Costa Rican Colon', symbol: '₡', rate: 515.0, locale: 'es-CR' },
+  { code: 'DOP', name: 'Dominican Peso', symbol: 'RD$', rate: 59.0, locale: 'es-DO' },
   { code: 'GTQ', name: 'Guatemalan Quetzal', symbol: 'Q ', rate: 7.78, locale: 'es-GT' },
   { code: 'HNL', name: 'Honduran Lempira', symbol: 'L ', rate: 24.7, locale: 'es-HN' },
-  { code: 'NIO', name: 'Nicaraguan Cordoba', symbol: 'C$ ', rate: 36.8, locale: 'es-NI' },
+  { code: 'NIO', name: 'Nicaraguan Cordoba', symbol: 'C$', rate: 36.8, locale: 'es-NI' },
   { code: 'PAB', name: 'Panamanian Balboa', symbol: 'B/. ', rate: 1.0, locale: 'es-PA' },
-  { code: 'PYG', name: 'Paraguayan Guarani', symbol: 'â‚²', rate: 7500, locale: 'es-PY' },
+  { code: 'PYG', name: 'Paraguayan Guarani', symbol: '₲', rate: 7500, locale: 'es-PY' },
   { code: 'UYU', name: 'Uruguayan Peso', symbol: '$U ', rate: 38.6, locale: 'es-UY' },
   { code: 'BOB', name: 'Bolivian Boliviano', symbol: 'Bs. ', rate: 6.91, locale: 'es-BO' },
-  { code: 'JMD', name: 'Jamaican Dollar', symbol: 'J$ ', rate: 156.0, locale: 'en-JM' },
-  { code: 'TTD', name: 'Trinidad & Tobago Dollar', symbol: 'TT$ ', rate: 6.78, locale: 'en-TT' },
-  { code: 'BBD', name: 'Barbadian Dollar', symbol: 'Bds$ ', rate: 2.0, locale: 'en-BB' },
-  { code: 'BSD', name: 'Bahamian Dollar', symbol: 'B$ ', rate: 1.0, locale: 'en-BS' },
-  { code: 'BZD', name: 'Belize Dollar', symbol: 'BZ$ ', rate: 2.0, locale: 'en-BZ' },
+  { code: 'JMD', name: 'Jamaican Dollar', symbol: 'J$', rate: 156.0, locale: 'en-JM' },
+  { code: 'TTD', name: 'Trinidad & Tobago Dollar', symbol: 'TT$', rate: 6.78, locale: 'en-TT' },
+  { code: 'BBD', name: 'Barbadian Dollar', symbol: 'Bds$', rate: 2.0, locale: 'en-BB' },
+  { code: 'BSD', name: 'Bahamian Dollar', symbol: 'B$', rate: 1.0, locale: 'en-BS' },
+  { code: 'BZD', name: 'Belize Dollar', symbol: 'BZ$', rate: 2.0, locale: 'en-BZ' },
   { code: 'XOF', name: 'West African CFA Franc', symbol: 'CFA ', rate: 605.0, locale: 'fr-SN' },
   { code: 'XAF', name: 'Central African CFA Franc', symbol: 'FCFA ', rate: 605.0, locale: 'fr-CM' },
   { code: 'TZS', name: 'Tanzanian Shilling', symbol: 'TSh ', rate: 2600, locale: 'sw-TZ' },
@@ -303,117 +278,15 @@ const WORLD_CURRENCIES = [
   { code: 'AOA', name: 'Angolan Kwanza', symbol: 'Kz ', rate: 855.0, locale: 'pt-AO' },
   { code: 'ZMW', name: 'Zambian Kwacha', symbol: 'ZK ', rate: 26.5, locale: 'en-ZM' },
   { code: 'BWP', name: 'Botswana Pula', symbol: 'P ', rate: 13.7, locale: 'en-BW' },
-  { code: 'NAD', name: 'Namibian Dollar', symbol: 'N$ ', rate: 18.3, locale: 'en-NA' },
+  { code: 'NAD', name: 'Namibian Dollar', symbol: 'N$', rate: 18.3, locale: 'en-NA' },
   { code: 'MUR', name: 'Mauritian Rupee', symbol: 'Rs ', rate: 46.2, locale: 'en-MU' },
-  { code: 'FJD', name: 'Fijian Dollar', symbol: 'FJ$ ', rate: 2.26, locale: 'en-FJ' },
+  { code: 'FJD', name: 'Fijian Dollar', symbol: 'FJ$', rate: 2.26, locale: 'en-FJ' },
 ];
 
-const CLEAN_CURRENCY_SYMBOLS = {
-  USD: '$',
-  EUR: '€',
-  GBP: '£',
-  PKR: 'Rs ',
-  INR: '₹',
-  AED: 'AED ',
-  SAR: 'SAR ',
-  CAD: 'C$',
-  AUD: 'A$',
-  JPY: '¥',
-  CNY: '¥',
-  CHF: 'CHF ',
-  SGD: 'S$',
-  NZD: 'NZ$',
-  HKD: 'HK$',
-  MYR: 'RM ',
-  THB: '฿',
-  IDR: 'Rp ',
-  PHP: '₱',
-  BDT: '৳',
-  LKR: 'Rs ',
-  TRY: '₺',
-  ZAR: 'R ',
-  BRL: 'R$',
-  MXN: 'Mex$',
-  QAR: 'QR ',
-  KWD: 'KD ',
-  BHD: 'BD ',
-  OMR: 'OMR ',
-  JOD: 'JD ',
-  EGP: 'E£ ',
-  NGN: '₦',
-  KES: 'KSh ',
-  GHS: 'GH₵ ',
-  KRW: '₩',
-  TWD: 'NT$',
-  VND: '₫',
-  SEK: 'kr ',
-  NOK: 'kr ',
-  DKK: 'kr ',
-  PLN: 'zł ',
-  CZK: 'Kč ',
-  HUF: 'Ft ',
-  RON: 'lei ',
-  BGN: 'лв ',
-  ILS: '₪',
-  RUB: '₽',
-  UAH: '₴',
-  KZT: '₸',
-  UZS: "so'm ",
-  KGS: 'сом',
-  MAD: 'MAD ',
-  DZD: 'DA ',
-  TND: 'DT ',
-  IQD: 'IQD ',
-  LBP: 'L£ ',
-  NPR: 'Rs ',
-  AFN: '؋',
-  MMK: 'K ',
-  KHR: '៛',
-  LAK: '₭',
-  ISK: 'kr ',
-  RSD: 'din. ',
-  GEL: '₾',
-  AZN: '₼',
-  AMD: '֏ ',
-  BYN: 'Br ',
-  ARS: '$',
-  COP: '$',
-  CLP: '$',
-  PEN: 'S/. ',
-  CRC: '₡',
-  DOP: 'RD$',
-  GTQ: 'Q ',
-  HNL: 'L ',
-  NIO: 'C$',
-  PAB: 'B/. ',
-  PYG: '₲',
-  UYU: '$U ',
-  BOB: 'Bs. ',
-  JMD: 'J$',
-  TTD: 'TT$',
-  BBD: 'Bds$',
-  BSD: 'B$',
-  BZD: 'BZ$',
-  XOF: 'CFA ',
-  XAF: 'FCFA ',
-  TZS: 'TSh ',
-  UGX: 'USh ',
-  RWF: 'RF ',
-  ETB: 'Br ',
-  MZN: 'MT ',
-  AOA: 'Kz ',
-  ZMW: 'ZK ',
-  BWP: 'P ',
-  NAD: 'N$',
-  MUR: 'Rs ',
-  FJD: 'FJ$',
-};
+const SORTED_WORLD_CURRENCIES = [...WORLD_CURRENCIES].sort((a, b) => a.code.localeCompare(b.code));
 
 const CURRENCIES = {};
 WORLD_CURRENCIES.forEach((c) => {
-  if (CLEAN_CURRENCY_SYMBOLS[c.code]) {
-    c.symbol = CLEAN_CURRENCY_SYMBOLS[c.code];
-  }
   CURRENCIES[c.code] = {
     symbol: c.symbol,
     rate: c.rate,
@@ -424,46 +297,14 @@ WORLD_CURRENCIES.forEach((c) => {
 
 let currentBaseCurrency = localStorage.getItem('user_base_currency') || 'USD';
 
-function populateCurrencyDropdown(selectEl, selectedValue = currentBaseCurrency) {
-  if (!selectEl) return;
-  const currentVal = selectedValue || selectEl.value || currentBaseCurrency;
-  const isNavbarSelect = selectEl.id === 'userBaseCurrency';
-  selectEl.innerHTML = '';
-
-  const popularGroup = document.createElement('optgroup');
-  popularGroup.label = 'â­ Popular Currencies';
-
-  const popularCodes = ['USD', 'EUR', 'GBP', 'PKR', 'INR', 'AED', 'SAR', 'CAD', 'AUD', 'JPY', 'CNY', 'CHF', 'TRY', 'BRL', 'SGD', 'MYR'];
-  popularCodes.forEach((code) => {
-    const c = CURRENCIES[code];
-    if (c) {
-      const opt = document.createElement('option');
-      opt.value = code;
-      opt.textContent = isNavbarSelect
-        ? `${code} (${c.symbol.trim()})`
-        : `${code} (${c.symbol.trim()}) Â· ${c.name}`;
-      popularGroup.appendChild(opt);
-    }
-  });
-
-  const allGroup = document.createElement('optgroup');
-  allGroup.label = 'ðŸŒ All World Currencies (A-Z)';
-  const sorted = [...WORLD_CURRENCIES].sort((a, b) => a.code.localeCompare(b.code));
-  sorted.forEach((c) => {
-    const opt = document.createElement('option');
-    opt.value = c.code;
-    opt.textContent = isNavbarSelect
-      ? `${c.code} (${c.symbol.trim()})`
-      : `${c.code} (${c.symbol.trim()}) Â· ${c.name}`;
-    allGroup.appendChild(opt);
-  });
-
-  selectEl.appendChild(popularGroup);
-  selectEl.appendChild(allGroup);
-  selectEl.value = CURRENCIES[currentVal] ? currentVal : 'USD';
+function buildCompactCurrencyOptions(selectedCode = currentBaseCurrency) {
+  const validSelected = CURRENCIES[selectedCode] ? selectedCode : 'USD';
+  return SORTED_WORLD_CURRENCIES.map(
+    (c) => `<option value="${c.code}" ${c.code === validSelected ? 'selected' : ''}>${c.code}</option>`,
+  ).join('');
 }
 
-populateCurrencyDropdown = function(selectEl, selectedValue = currentBaseCurrency) {
+function populateCurrencyDropdown(selectEl, selectedValue = currentBaseCurrency) {
   if (!selectEl) return;
   const currentVal = selectedValue || selectEl.value || currentBaseCurrency;
   const isNavbarSelect = selectEl.id === 'userBaseCurrency';
@@ -487,8 +328,7 @@ populateCurrencyDropdown = function(selectEl, selectedValue = currentBaseCurrenc
 
   const allGroup = document.createElement('optgroup');
   allGroup.label = '🌐 All World Currencies (A-Z)';
-  const sorted = [...WORLD_CURRENCIES].sort((a, b) => a.code.localeCompare(b.code));
-  sorted.forEach((c) => {
+  SORTED_WORLD_CURRENCIES.forEach((c) => {
     const opt = document.createElement('option');
     opt.value = c.code;
     opt.textContent = isNavbarSelect
@@ -500,7 +340,7 @@ populateCurrencyDropdown = function(selectEl, selectedValue = currentBaseCurrenc
   selectEl.appendChild(popularGroup);
   selectEl.appendChild(allGroup);
   selectEl.value = CURRENCIES[currentVal] ? currentVal : 'USD';
-};
+}
 
 function populateAllCurrencySelects() {
   const ids = ['userBaseCurrency', 'incomeCurrency', 'expenseCurrency', 'groupBaseCurrency', 'planCurrency'];
@@ -547,6 +387,10 @@ function formatCurrency(amount, currencyCode = currentBaseCurrency) {
   }
 }
 
+/* ---------------------------------------------------------------------- */
+/* Date helpers                                                           */
+/* ---------------------------------------------------------------------- */
+
 function parseDateParts(dateStr) {
   if (!dateStr) return null;
   if (typeof dateStr === 'string') {
@@ -568,8 +412,17 @@ function parseDateParts(dateStr) {
   };
 }
 
+function dateTimestamp(dateStr) {
+  const parts = parseDateParts(dateStr);
+  return parts ? new Date(parts.year, parts.month, parts.day).getTime() : 0;
+}
+
+function compareDatesDesc(aDate, bDate) {
+  return dateTimestamp(bDate) - dateTimestamp(aDate);
+}
+
 function formatDate(dateStr) {
-  if (!dateStr) return 'â€”';
+  if (!dateStr) return '—';
   const parts = parseDateParts(dateStr);
   if (!parts) return String(dateStr);
   const d = new Date(parts.year, parts.month, parts.day);
@@ -589,7 +442,7 @@ function monthKey(dateStr) {
 }
 
 function monthLabel(key) {
-  if (!key || key === 'unknown') return 'â€”';
+  if (!key || key === 'unknown') return '—';
   const [year, month] = key.split('-');
   const d = new Date(Number(year), Number(month) - 1, 1);
   return d.toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
@@ -604,6 +457,10 @@ function formatApiDate(value) {
     return String(value);
   }
 }
+
+/* ---------------------------------------------------------------------- */
+/* Category & payload normalization                                       */
+/* ---------------------------------------------------------------------- */
 
 function findCategoryByName(name, type) {
   if (!name) return undefined;
@@ -640,7 +497,7 @@ function findIncomeCategoryId(source) {
 }
 
 function normalizeIncome(transaction) {
-  const rawAmount = Number(transaction.amount);
+  const rawAmount = Number(transaction.amount) || 0;
   const currency = transaction.currency || 'USD';
   const amountInBase = convertAmount(rawAmount, currency, currentBaseCurrency);
   let source = transaction.category?.name || transaction.title || 'Other';
@@ -669,9 +526,10 @@ function normalizeExpense(transaction) {
     (transaction.title && EXPENSE_CATEGORIES[transaction.title] ? transaction.title : null) ||
     'Other';
 
-  const rawAmount = Number(transaction.amount);
+  const rawAmount = Number(transaction.amount) || 0;
   const currency = transaction.currency || 'USD';
-  const amountInBase = convertAmount(rawAmount, currency, currentBaseCurrency);
+  const converted = convertAmount(rawAmount, currency, currentBaseCurrency);
+  const amountInBase = uiCategory === 'Return' ? -Math.abs(converted) : converted;
 
   return {
     id: transaction.id,
@@ -684,6 +542,8 @@ function normalizeExpense(transaction) {
     paymentMethod: PAYMENT_METHOD_FROM_API[transaction.paymentMethod] || 'Cash',
     receiptUrl: transaction.receiptUrl,
     receiptImage: transaction.receiptUrl,
+    isGroupItem: Boolean(transaction.isGroupItem),
+    groupId: transaction.groupId || null,
   };
 }
 
@@ -777,8 +637,6 @@ function handleLogin() {
   openAuthModal('login');
 }
 
-
-
 function openAuthModal(defaultTab = 'login') {
   switchAuthTab(defaultTab);
   authModal?.classList.remove('hidden');
@@ -850,7 +708,6 @@ registerForm?.addEventListener('submit', async (e) => {
 function switchPage(pageName) {
   const token = getAccessToken();
 
-  // If user is logged in, any attempt to visit home or guest features goes straight to dashboard
   if (token && (pageName === 'home' || pageName === 'features')) {
     pageName = 'dashboard';
   }
@@ -880,7 +737,6 @@ function switchPage(pageName) {
   }
 }
 
-// Advanced Navbar delegated listener
 document.getElementById('navbarAdvanced')?.addEventListener('click', (e) => {
   const btn = e.target.closest('[data-page]');
   if (!btn) return;
@@ -890,7 +746,6 @@ document.getElementById('navbarAdvanced')?.addEventListener('click', (e) => {
   }
 });
 
-// Mobile Bottom Navigation delegated listener
 document.getElementById('mobileBottomNav')?.addEventListener('click', (e) => {
   const btn = e.target.closest('[data-page]');
   if (!btn) return;
@@ -901,7 +756,6 @@ document.getElementById('mobileBottomNav')?.addEventListener('click', (e) => {
   }
 });
 
-// Brand Logo navigation listener
 document.getElementById('navLogo')?.addEventListener('click', (e) => {
   e.preventDefault();
   const token = getAccessToken();
@@ -909,7 +763,6 @@ document.getElementById('navLogo')?.addEventListener('click', (e) => {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 });
 
-// Footer navigation links
 document.getElementById('footerLinkHome')?.addEventListener('click', (e) => {
   e.preventDefault();
   const token = getAccessToken();
@@ -941,7 +794,6 @@ document.getElementById('footerLinkSignIn')?.addEventListener('click', (e) => {
   }
 });
 
-// Home Page embedded auth tab switcher
 const homeTabLoginBtn = document.getElementById('homeTabLoginBtn');
 const homeTabRegisterBtn = document.getElementById('homeTabRegisterBtn');
 const homeLoginForm = document.getElementById('homeLoginForm');
@@ -967,7 +819,6 @@ homeTabRegisterBtn?.addEventListener('click', () => {
   if (homeAuthSubtitle) homeAuthSubtitle.textContent = 'Start tracking your money for free';
 });
 
-// Home Login Form Submit
 homeLoginForm?.addEventListener('submit', async (e) => {
   e.preventDefault();
   const email = document.getElementById('homeLoginEmail').value;
@@ -984,7 +835,6 @@ homeLoginForm?.addEventListener('submit', async (e) => {
   }
 });
 
-// Home Register Form Submit
 homeRegisterForm?.addEventListener('submit', async (e) => {
   e.preventDefault();
   const displayName = document.getElementById('homeRegisterName').value;
@@ -1002,7 +852,6 @@ homeRegisterForm?.addEventListener('submit', async (e) => {
   }
 });
 
-// Hero Buttons
 document.getElementById('heroGetStartedBtn')?.addEventListener('click', () => {
   const container = document.getElementById('homeAuthContainer');
   if (container) {
@@ -1011,13 +860,9 @@ document.getElementById('heroGetStartedBtn')?.addEventListener('click', () => {
   }
 });
 
-
-
 document.getElementById('heroExploreFeaturesBtn')?.addEventListener('click', () => {
   document.getElementById('featuresSection')?.scrollIntoView({ behavior: 'smooth' });
 });
-
-
 
 /* ---------------------------------------------------------------------- */
 /* Data loading                                                           */
@@ -1026,19 +871,20 @@ document.getElementById('heroExploreFeaturesBtn')?.addEventListener('click', () 
 function refreshNormalizedTransactions() {
   state.incomes = (state.rawIncomes || []).map(normalizeIncome);
 
-  // Combine standalone expenses with all line items from Expense Groups
   const groupLineItems = [];
   (state.expenseGroups || []).forEach((g) => {
-    (g.items || []).forEach((item) => {
+    (g.items || []).forEach((item, idx) => {
       groupLineItems.push({
-        id: item.id || `${g.id}-${Date.now()}`,
+        id: item.id || `${g.id}_item_${idx}`,
         amount: item.amount,
         currency: item.currency || 'USD',
         date: item.date || g.startDate,
-        notes: `[Group: ${g.name}] ${item.notes || ''}`,
+        notes: `[Group: ${g.name}] ${item.notes || ''}`.trim(),
         title: item.title || g.name,
         category: { name: EXPENSE_CATEGORY_TO_DB[item.category] || item.category },
         paymentMethod: 'cash',
+        isGroupItem: true,
+        groupId: g.id,
       });
     });
   });
@@ -1070,7 +916,6 @@ async function loadAllData() {
 async function loadApp() {
   populateAllCurrencySelects();
 
-  emailAuthButton?.addEventListener('click', () => openAuthModal('login'));
   const userBaseCurrencySelect = document.getElementById('userBaseCurrency');
   if (userBaseCurrencySelect) {
     userBaseCurrencySelect.value = currentBaseCurrency;
@@ -1082,6 +927,7 @@ async function loadApp() {
       renderIncomeList();
       renderExpenseList();
       renderExpenseGroupsList();
+      renderPlansList();
       renderAllTransactions();
       showMessage(`Base currency changed to ${currentBaseCurrency}`, 'info');
     };
@@ -1111,7 +957,6 @@ async function loadApp() {
     return;
   }
 
-  // User is Logged In:
   appShell?.classList.add('is-logged-in');
   document.getElementById('mobileBottomNav')?.classList.remove('hidden');
   emailAuthButton?.classList.add('hidden');
@@ -1185,7 +1030,6 @@ function computeMonthlyFinancialHistory() {
     return monthMap.get(key);
   }
 
-  // Ensure current month is always present
   const now = new Date();
   const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   getOrInitMonth(currentMonthKey);
@@ -1194,7 +1038,7 @@ function computeMonthlyFinancialHistory() {
     const key = monthKey(i.date);
     if (key !== 'unknown') {
       const entry = getOrInitMonth(key);
-      entry.income += (Number(i.amount) || 0);
+      entry.income += Number(i.amount) || 0;
     }
   });
 
@@ -1202,7 +1046,7 @@ function computeMonthlyFinancialHistory() {
     const key = monthKey(e.date);
     if (key !== 'unknown') {
       const entry = getOrInitMonth(key);
-      entry.expenses += (Number(e.amount) || 0);
+      entry.expenses += Number(e.amount) || 0;
     }
   });
 
@@ -1223,8 +1067,6 @@ function computeMonthlyFinancialHistory() {
 
   const allTimeSavings = allTimeIncome - allTimeExpenses;
   const allTimeBalance = runningBalance;
-
-  // History in reverse chronological order (most recent first)
   const historyDesc = sortedAscKeys.map((k) => monthMap.get(k)).reverse();
 
   return {
@@ -1299,33 +1141,23 @@ function renderDashboard() {
   const selectedKey = state.selectedMonthKey;
 
   if (selectedKey === 'all') {
-    // All-time overview: Summary cards strictly follow the dashboard formula:
-    // Current Money = Current month income + prior leftovers
-    // Monthly Expenses = spent in current month
-    // Current Money Left = Current Money - Monthly Expenses (updates after every transaction)
-    // Previous Months Left = Leftover across prior months
-    const currentMonthItem = historyDesc.find((m) => m.key === currentMonthKey) || { income: 0, expenses: 0, savings: 0 };
     const allPrevMonthsLeft = historyDesc
       .filter((m) => m.key < currentMonthKey)
       .reduce((sum, m) => sum + m.savings, 0);
 
-    const currentMoney = currentMonthItem.income + allPrevMonthsLeft;
-    const monthlyExpenses = currentMonthItem.expenses;
-    const currentMoneyLeft = currentMoney - monthlyExpenses;
-
-    setFormattedCardValue(currentMoneyEl, currentMoney);
-    setFormattedCardValue(monthlyExpensesEl, monthlyExpenses);
-    setFormattedCardValue(currentMonthLeftEl, currentMoneyLeft);
+    setFormattedCardValue(currentMoneyEl, allTimeIncome);
+    setFormattedCardValue(monthlyExpensesEl, allTimeExpenses);
+    setFormattedCardValue(currentMonthLeftEl, allTimeBalance);
     setFormattedCardValue(prevMonthsLeftEl, allPrevMonthsLeft);
 
-    if (currentMoneyLabelEl) currentMoneyLabelEl.textContent = 'Current Money';
-    if (currentMoneySubEl) currentMoneySubEl.textContent = 'Current month income + prior leftovers';
+    if (currentMoneyLabelEl) currentMoneyLabelEl.textContent = 'All-Time Income';
+    if (currentMoneySubEl) currentMoneySubEl.textContent = `Total earned across ${historyDesc.length} month${historyDesc.length !== 1 ? 's' : ''}`;
 
-    if (monthlyExpensesLabelEl) monthlyExpensesLabelEl.textContent = 'Monthly Expenses';
-    if (monthlyExpensesSubEl) monthlyExpensesSubEl.textContent = 'Spent in current month';
+    if (monthlyExpensesLabelEl) monthlyExpensesLabelEl.textContent = 'All-Time Expenses';
+    if (monthlyExpensesSubEl) monthlyExpensesSubEl.textContent = 'Total net spent across all time';
 
-    if (currentMonthLeftLabelEl) currentMonthLeftLabelEl.textContent = 'Current Money Left';
-    if (currentMonthLeftSubEl) currentMonthLeftSubEl.textContent = 'Updates after every transaction';
+    if (currentMonthLeftLabelEl) currentMonthLeftLabelEl.textContent = 'Net Balance';
+    if (currentMonthLeftSubEl) currentMonthLeftSubEl.textContent = 'All-time income minus expenses';
 
     if (prevMonthsLeftLabelEl) prevMonthsLeftLabelEl.textContent = 'Previous Months Left';
     const prevCount = historyDesc.filter((m) => m.key < currentMonthKey).length;
@@ -1346,15 +1178,11 @@ function renderDashboard() {
       balance: 0,
     };
 
-    // Previous Months Left = sum of (income - expenses) for all months BEFORE the selected month
     const prevMonthsLeftover = historyDesc
       .filter((m) => m.key < selectedKey)
       .reduce((sum, m) => sum + m.savings, 0);
 
-    // Current Money = selected month income + previous months leftover
     const currentMoney = monthItem.income + prevMonthsLeftover;
-
-    // Current Money Left = Current Money - selected month expenses
     const currentMoneyLeft = currentMoney - monthItem.expenses;
 
     setFormattedCardValue(currentMoneyEl, currentMoney);
@@ -1393,7 +1221,6 @@ function renderDashboard() {
   renderMonthlyFinancialHistory(historyData);
 }
 
-
 function renderCategoryChart(selectedMonthKey = state.selectedMonthKey) {
   const canvas = document.getElementById('categoryChart');
   if (!canvas || typeof Chart === 'undefined') return;
@@ -1426,7 +1253,10 @@ function renderCategoryChart(selectedMonthKey = state.selectedMonthKey) {
   targetExpenses.forEach((e) => {
     let key = e.category || 'Other';
     if (DB_EXPENSE_TO_UI[key]) key = DB_EXPENSE_TO_UI[key];
-    byCategory[key] = (byCategory[key] || 0) + (Number(e.amount) || 0);
+    const amt = Number(e.amount) || 0;
+    if (amt > 0) {
+      byCategory[key] = (byCategory[key] || 0) + amt;
+    }
   });
 
   const labels = Object.keys(byCategory).filter((k) => (byCategory[k] || 0) > 0);
@@ -1470,14 +1300,14 @@ function renderCategoryChart(selectedMonthKey = state.selectedMonthKey) {
         },
         tooltip: {
           callbacks: {
-            label: function(context) {
+            label: function (context) {
               const val = context.raw || 0;
               const total = context.dataset.data.reduce((a, b) => a + b, 0);
               const pct = total > 0 ? ((val / total) * 100).toFixed(1) : 0;
               return ` ${context.label}: ${formatCurrency(val)} (${pct}%)`;
-            }
-          }
-        }
+            },
+          },
+        },
       },
     },
   });
@@ -1503,9 +1333,9 @@ function renderIncomeExpenseChart() {
 
   const labels = displayMonths.map((m) => m.shortLabel || monthLabel(m.key));
   const incomeData = displayMonths.map((m) => m.income);
-  const expenseData = displayMonths.map((m) => m.expenses);
+  const expenseData = displayMonths.map((m) => Math.max(0, m.expenses));
 
-  const hasData = displayMonths.some((m) => m.income > 0 || m.expenses > 0);
+  const hasData = displayMonths.some((m) => m.income > 0 || m.expenses !== 0);
 
   if (!hasData) {
     canvas.style.display = 'none';
@@ -1526,7 +1356,7 @@ function renderIncomeExpenseChart() {
   incomeExpenseChartInstance = new Chart(canvas, {
     type: 'bar',
     data: {
-      labels: labels,
+      labels,
       datasets: [
         { label: 'Income', data: incomeData, backgroundColor: '#556b2f', borderRadius: 6 },
         { label: 'Expenses', data: expenseData, backgroundColor: '#b24434', borderRadius: 6 },
@@ -1539,11 +1369,11 @@ function renderIncomeExpenseChart() {
         y: {
           beginAtZero: true,
           ticks: {
-            callback: function(val) {
+            callback: function (val) {
               return formatCurrency(val);
-            }
-          }
-        }
+            },
+          },
+        },
       },
       plugins: {
         legend: {
@@ -1552,18 +1382,18 @@ function renderIncomeExpenseChart() {
         },
         tooltip: {
           callbacks: {
-            label: function(context) {
+            label: function (context) {
               return ` ${context.dataset.label}: ${formatCurrency(context.raw)}`;
-            }
-          }
-        }
+            },
+          },
+        },
       },
     },
   });
 }
 
 function renderMonthlyFinancialHistory(historyData = computeMonthlyFinancialHistory()) {
-  if (!monthlyHistoryTableBodyEl) return; // section removed from DOM, skip gracefully
+  if (!monthlyHistoryTableBodyEl) return;
 
   const { historyDesc, currentMonthKey } = historyData;
 
@@ -1593,7 +1423,9 @@ function renderMonthlyFinancialHistory(historyData = computeMonthlyFinancialHist
       : '';
 
     const incomeFormatted = m.income > 0 ? `+${formatCurrency(m.income)}` : formatCurrency(m.income);
-    const expensesFormatted = m.expenses > 0 ? `-${formatCurrency(m.expenses)}` : formatCurrency(m.expenses);
+    const expensesFormatted = m.expenses > 0
+      ? `-${formatCurrency(m.expenses)}`
+      : (m.expenses < 0 ? `+${formatCurrency(Math.abs(m.expenses))}` : formatCurrency(0));
     const balanceClass = m.balance >= 0 ? 'positive' : 'negative';
 
     return `
@@ -1602,7 +1434,7 @@ function renderMonthlyFinancialHistory(historyData = computeMonthlyFinancialHist
           <strong>${m.label}</strong>${currentBadge}
         </td>
         <td class="text-right positive" style="font-weight:600;">${incomeFormatted}</td>
-        <td class="text-right negative" style="font-weight:600;">${expensesFormatted}</td>
+        <td class="text-right ${m.expenses < 0 ? 'positive' : 'negative'}" style="font-weight:600;">${expensesFormatted}</td>
         <td class="text-right">
           <span class="${savingsClass}" style="font-weight:700;">${savingsSign}${formatCurrency(m.savings)}</span>
           ${savingsSub}
@@ -1626,23 +1458,39 @@ function transactionRowHtml(t, isIncome, { editable = false } = {}) {
     ? `<img class="receipt-thumb" src="${t.receiptImage || t.receiptUrl}" alt="Receipt" />`
     : '';
   const recurringBadge = isIncome && t.recurring ? '<span class="badge">Recurring</span>' : '';
+  const groupBadge = !isIncome && t.isGroupItem ? '<span class="badge" style="background:#f1ece5;color:#556b2f;">Group Item</span>' : '';
   const foreignBadge = t.currency && t.currency !== currentBaseCurrency
     ? `<small style="display:block;font-size:0.75rem;opacity:0.75;text-align:right;">${t.rawAmount} ${t.currency}</small>`
     : '';
-  const actions = editable ? `
-    <div class="tx-actions">
-      <button class="button button-small button-ghost" data-edit="${t.id}" data-kind="${isIncome ? 'income' : 'expense'}">Edit</button>
-      <button class="button button-small button-danger" data-delete="${t.id}" data-kind="${isIncome ? 'income' : 'expense'}">Delete</button>
-    </div>` : '';
+
+  const isCredit = isIncome || (!isIncome && t.amount < 0);
+  const displayAmount = `${isCredit ? '+' : '-'}${formatCurrency(Math.abs(t.amount))}`;
+
+  let actions = '';
+  if (editable) {
+    if (!isIncome && t.isGroupItem) {
+      actions = `
+        <div class="tx-actions">
+          <button class="button button-small button-ghost" data-view-group="${t.groupId}">View Group</button>
+        </div>`;
+    } else {
+      actions = `
+        <div class="tx-actions">
+          <button class="button button-small button-ghost" data-edit="${t.id}" data-kind="${isIncome ? 'income' : 'expense'}">Edit</button>
+          <button class="button button-small button-danger" data-delete="${t.id}" data-kind="${isIncome ? 'income' : 'expense'}">Delete</button>
+        </div>`;
+    }
+  }
+
   return `
     <div class="tx-row">
       <div class="tx-meta">
-        <span>${label} ${recurringBadge}</span>
-        <small>${formatDate(t.date)}${t.notes ? ` Â· ${t.notes}` : ''}</small>
+        <span>${label} ${recurringBadge} ${groupBadge}</span>
+        <small>${formatDate(t.date)}${t.notes ? ` · ${t.notes}` : ''}</small>
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;justify-content:center;">
         <div style="display:flex;align-items:center;">
-          <span class="tx-amount ${isIncome ? 'positive' : 'negative'}">${isIncome ? '+' : '-'}${formatCurrency(t.amount)}</span>
+          <span class="tx-amount ${isCredit ? 'positive' : 'negative'}">${displayAmount}</span>
           ${receipt}
         </div>
         ${foreignBadge}
@@ -1652,18 +1500,11 @@ function transactionRowHtml(t, isIncome, { editable = false } = {}) {
 }
 
 function renderAllTransactions() {
+  if (!allTransactionsListEl) return;
   const merged = [
     ...state.incomes.map((i) => ({ ...i, kind: 'income' })),
     ...state.expenses.map((e) => ({ ...e, kind: 'expense' })),
-  ]
-    .filter((t) => t.date)
-    .sort((a, b) => {
-      const partsA = parseDateParts(a.date);
-      const partsB = parseDateParts(b.date);
-      const timeA = partsA ? new Date(partsA.year, partsA.month, partsA.day).getTime() : 0;
-      const timeB = partsB ? new Date(partsB.year, partsB.month, partsB.day).getTime() : 0;
-      return timeB - timeA;
-    });
+  ].sort((a, b) => compareDatesDesc(a.date, b.date));
 
   if (!merged.length) {
     allTransactionsListEl.innerHTML = '<p class="placeholder">No transactions yet.</p>';
@@ -1677,11 +1518,12 @@ function renderAllTransactions() {
 /* ---------------------------------------------------------------------- */
 
 function renderIncomeList() {
+  if (!incomeListEl) return;
   if (!state.incomes.length) {
     incomeListEl.innerHTML = '<p class="placeholder">No income records yet.</p>';
     return;
   }
-  const sorted = [...state.incomes].sort((a, b) => new Date(b.date) - new Date(a.date));
+  const sorted = [...state.incomes].sort((a, b) => compareDatesDesc(a.date, b.date));
   incomeListEl.innerHTML = sorted.map((i) => transactionRowHtml(i, true, { editable: true })).join('');
 }
 
@@ -1763,11 +1605,12 @@ async function deleteIncome(id) {
 /* ---------------------------------------------------------------------- */
 
 function renderExpenseList() {
+  if (!expenseListEl) return;
   if (!state.expenses.length) {
     expenseListEl.innerHTML = '<p class="placeholder">No expenses yet.</p>';
     return;
   }
-  const sorted = [...state.expenses].sort((a, b) => new Date(b.date) - new Date(a.date));
+  const sorted = [...state.expenses].sort((a, b) => compareDatesDesc(a.date, b.date));
   expenseListEl.innerHTML = sorted.map((e) => transactionRowHtml(e, false, { editable: true })).join('');
 }
 
@@ -1777,7 +1620,7 @@ function openExpenseModal(expense = null) {
   state.pendingReceiptDataUrl = expense?.receiptImage || null;
   document.querySelector('#expenseModal .modal-header h2').textContent = expense ? 'Edit Expense' : 'Add Expense';
   document.querySelector('#expenseForm button[type="submit"]').textContent = expense ? 'Save Expense' : 'Add Expense';
-  document.getElementById('expenseAmount').value = expense?.rawAmount ?? expense?.amount ?? '';
+  document.getElementById('expenseAmount').value = expense?.rawAmount ?? Math.abs(expense?.amount ?? 0) ?? '';
   document.getElementById('expenseCurrency').value = expense?.currency || currentBaseCurrency;
   document.getElementById('expenseCategory').value = expense?.category || '';
   document.getElementById('expenseDate').value = expense?.date ? expense.date.slice(0, 10) : new Date().toISOString().slice(0, 10);
@@ -1792,12 +1635,24 @@ expenseModal?.addEventListener('click', (e) => {
   if (e.target === expenseModal) expenseModal.classList.add('hidden');
 });
 
+function navigateToExpenseGroup(groupId) {
+  const group = state.expenseGroups.find((g) => String(g.id) === String(groupId));
+  switchPage('expenses');
+  switchExpenseTab('group');
+  if (group) openExpenseGroupModal(group);
+}
+
 expenseListEl?.addEventListener('click', (e) => {
+  const viewGroupBtn = e.target.closest('[data-view-group]');
   const editBtn = e.target.closest('[data-edit][data-kind="expense"]');
   const deleteBtn = e.target.closest('[data-delete][data-kind="expense"]');
+  if (viewGroupBtn) {
+    navigateToExpenseGroup(viewGroupBtn.dataset.viewGroup);
+    return;
+  }
   if (editBtn) {
     const expense = state.expenses.find((x) => String(x.id) === String(editBtn.dataset.edit));
-    if (expense) openExpenseModal(expense);
+    if (expense && !expense.isGroupItem) openExpenseModal(expense);
   }
   if (deleteBtn) deleteExpense(deleteBtn.dataset.delete);
 });
@@ -1867,7 +1722,7 @@ async function loadExpenseGroups() {
       state.expenseGroups = JSON.parse(res.data.value);
       return;
     }
-  } catch (_) {}
+  } catch (_) { }
   const local = localStorage.getItem('user_expense_groups');
   state.expenseGroups = local ? JSON.parse(local) : [];
 }
@@ -1879,13 +1734,14 @@ async function saveExpenseGroups() {
       key: 'expense_groups',
       value: JSON.stringify(state.expenseGroups),
     });
-  } catch (_) {}
+  } catch (_) { }
 }
 
 function computeGroupTotal(group) {
   return (group.items || []).reduce((sum, item) => {
     const converted = convertAmount(item.amount, item.currency || 'USD', currentBaseCurrency);
-    return sum + converted;
+    const signed = item.category === 'Return' ? -Math.abs(converted) : converted;
+    return sum + signed;
   }, 0);
 }
 
@@ -1900,23 +1756,20 @@ function renderGroupItemRows() {
   let total = 0;
   groupItemsContainer.innerHTML = groupFormItems.map((item, idx) => {
     const itemConverted = convertAmount(item.amount || 0, item.currency || currentBaseCurrency, currentBaseCurrency);
-    total += itemConverted;
+    total += item.category === 'Return' ? -Math.abs(itemConverted) : itemConverted;
+
+    const catOptions = Object.keys(EXPENSE_CATEGORIES).map((key) => {
+      const isSel = (item.category === key || (!item.category && key === 'Other')) ? 'selected' : '';
+      return `<option value="${key}" ${isSel}>${EXPENSE_CATEGORIES[key].label}</option>`;
+    }).join('');
+
+    const currOptions = buildCompactCurrencyOptions(item.currency || currentBaseCurrency);
 
     return `
       <div class="line-item-row">
         <div class="line-item-field line-item-cat">
           <select data-item-idx="${idx}" data-field="category" class="line-item-select">
-            <option value="Food" ${item.category === 'Food' ? 'selected' : ''}>ðŸ” Food</option>
-            <option value="Transport" ${item.category === 'Transport' ? 'selected' : ''}>ðŸš— Transport</option>
-            <option value="Bills" ${item.category === 'Bills' ? 'selected' : ''}>ðŸ“„ Bills</option>
-            <option value="Shopping" ${item.category === 'Shopping' ? 'selected' : ''}>ðŸ›ï¸ Shopping</option>
-            <option value="Rent" ${item.category === 'Rent' ? 'selected' : ''}>ðŸ  Rent</option>
-            <option value="Entertainment" ${item.category === 'Entertainment' ? 'selected' : ''}>ðŸŽ¬ Entertainment</option>
-            <option value="Healthcare" ${item.category === 'Healthcare' ? 'selected' : ''}>ðŸ¥ Healthcare</option>
-            <option value="Education" ${item.category === 'Education' ? 'selected' : ''}>ðŸŽ“ Education</option>
-            <option value="Travel" ${item.category === 'Travel' ? 'selected' : ''}>âœˆï¸ Travel</option>
-            <option value="Return" ${item.category === 'Return' ? 'selected' : ''}>ðŸ”„ Return</option>
-            <option value="Other" ${!item.category || item.category === 'Other' ? 'selected' : ''}>ðŸ“Œ Other</option>
+            ${catOptions}
           </select>
         </div>
         <div class="line-item-field line-item-desc">
@@ -1927,21 +1780,11 @@ function renderGroupItemRows() {
         </div>
         <div class="line-item-field line-item-curr">
           <select data-item-idx="${idx}" data-field="currency" class="currency-select line-item-select">
-            <option value="USD" ${item.currency === 'USD' ? 'selected' : ''}>USD</option>
-            <option value="EUR" ${item.currency === 'EUR' ? 'selected' : ''}>EUR</option>
-            <option value="GBP" ${item.currency === 'GBP' ? 'selected' : ''}>GBP</option>
-            <option value="PKR" ${item.currency === 'PKR' ? 'selected' : ''}>PKR</option>
-            <option value="INR" ${item.currency === 'INR' ? 'selected' : ''}>INR</option>
-            <option value="AED" ${item.currency === 'AED' ? 'selected' : ''}>AED</option>
-            <option value="SAR" ${item.currency === 'SAR' ? 'selected' : ''}>SAR</option>
-            <option value="CAD" ${item.currency === 'CAD' ? 'selected' : ''}>CAD</option>
-            <option value="AUD" ${item.currency === 'AUD' ? 'selected' : ''}>AUD</option>
-            <option value="JPY" ${item.currency === 'JPY' ? 'selected' : ''}>JPY</option>
-            <option value="KGS" ${item.currency === 'KGS' ? 'selected' : ''}>KGS</option>
+            ${currOptions}
           </select>
         </div>
         <div class="line-item-actions">
-          <button type="button" class="button button-small button-danger line-item-del-btn" data-remove-group-item="${idx}">âœ•</button>
+          <button type="button" class="button button-small button-danger line-item-del-btn" data-remove-group-item="${idx}">✕</button>
         </div>
       </div>`;
   }).join('');
@@ -1970,6 +1813,7 @@ groupItemsContainer?.addEventListener('click', (e) => {
 
 addGroupItemBtn?.addEventListener('click', () => {
   groupFormItems.push({
+    id: `gitem_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
     category: 'Food',
     title: '',
     amount: '',
@@ -2015,6 +1859,12 @@ expenseGroupForm?.addEventListener('submit', async (e) => {
   const endDate = document.getElementById('groupEndDate').value;
   const notes = document.getElementById('groupNotes').value;
 
+  const syncedItems = groupFormItems.map((item, idx) => ({
+    ...item,
+    id: item.id || `gitem_${Date.now()}_${idx}`,
+    date: startDate || item.date,
+  }));
+
   const groupData = {
     id: state.editingGroupId || `group_${Date.now()}`,
     name,
@@ -2022,7 +1872,7 @@ expenseGroupForm?.addEventListener('submit', async (e) => {
     startDate,
     endDate,
     notes,
-    items: groupFormItems,
+    items: syncedItems,
   };
 
   if (state.editingGroupId) {
@@ -2037,6 +1887,8 @@ expenseGroupForm?.addEventListener('submit', async (e) => {
   showMessage(state.editingGroupId ? 'Expense Group updated.' : 'Expense Group created.', 'success');
   await loadAllData();
   renderExpenseGroupsList();
+  renderExpenseList();
+  renderAllTransactions();
   renderDashboard();
 });
 
@@ -2047,31 +1899,20 @@ function renderExpenseGroupsList() {
     return;
   }
 
-  // Display expense groups in reverse chronological order (most recent first)
   const sortedGroups = [...state.expenseGroups].sort((a, b) => {
-    const parseGroupDate = (g) => {
-      const dStr = g.startDate || g.endDate || g.createdAt;
-      const parts = parseDateParts(dStr);
-      return parts ? new Date(parts.year, parts.month, parts.day).getTime() : 0;
-    };
-    return parseGroupDate(b) - parseGroupDate(a);
+    const dA = a.startDate || a.endDate || a.createdAt;
+    const dB = b.startDate || b.endDate || b.createdAt;
+    return compareDatesDesc(dA, dB);
   });
 
   expenseGroupsListEl.innerHTML = sortedGroups.map((g) => {
     const total = computeGroupTotal(g);
-    const typeBadges = { trip: 'âœˆï¸ Trip', day: 'ðŸ“… Single Day', week: 'ðŸ—“ï¸ Week', custom: 'ðŸ“† Custom' };
-    const badgeText = typeBadges[g.type] || 'ðŸ“¦ Group';
+    const typeBadges = { trip: '✈️ Trip', day: '📅 Single Day', week: '🗓️ Week', custom: '📆 Custom' };
+    const badgeText = typeBadges[g.type] || '📦 Group';
 
-    // Display line-item expenses in reverse chronological order (most recent first)
-    const sortedItems = [...(g.items || [])].sort((a, b) => {
-      const dStrA = a.date || g.startDate;
-      const dStrB = b.date || g.startDate;
-      const partsA = parseDateParts(dStrA);
-      const partsB = parseDateParts(dStrB);
-      const timeA = partsA ? new Date(partsA.year, partsA.month, partsA.day).getTime() : 0;
-      const timeB = partsB ? new Date(partsB.year, partsB.month, partsB.day).getTime() : 0;
-      return timeB - timeA;
-    });
+    const sortedItems = [...(g.items || [])].sort((a, b) =>
+      compareDatesDesc(a.date || g.startDate, b.date || g.startDate),
+    );
 
     const itemsHtml = sortedItems.map((item) => `
       <tr>
@@ -2084,11 +1925,12 @@ function renderExpenseGroupsList() {
       </tr>`).join('');
 
     return `
-      <div class="card budget-card-item" style="margin-bottom:16px;">
+      <div class="card expense-group-item" style="margin-bottom:16px;">
         <div class="card-top-flex">
           <div>
-            <h3 style="margin:0 0 4px 0;">${g.name} <span class="badge" style="background:#e0f2fe;color:#0369a1;margin-left:6px;">${badgeText}</span></h3>
-            <small style="color:var(--muted);">${formatDate(g.startDate)} ${g.startDate !== g.endDate ? `â€” ${formatDate(g.endDate)}` : ''}</small>
+            <span class="badge" style="background:#f1ece5;color:#556b2f;font-weight:700;">${badgeText}</span>
+            <h3 style="margin:6px 0 2px 0;">${g.name}</h3>
+            <small style="color:var(--muted);">${formatDate(g.startDate)}${g.endDate && g.startDate !== g.endDate ? ` — ${formatDate(g.endDate)}` : ''}</small>
           </div>
           <div class="card-total-badge">
             <span style="font-size:1.25rem;font-weight:700;color:var(--danger);">${formatCurrency(total)}</span>
@@ -2099,25 +1941,28 @@ function renderExpenseGroupsList() {
         ${g.notes ? `<p style="font-size:0.85rem;color:var(--muted);margin:8px 0;">${g.notes}</p>` : ''}
 
         <details style="margin-top:10px;background:#f8fafc;padding:8px 12px;border-radius:12px;border:1px solid var(--border);">
-          <summary style="font-size:0.85rem;font-weight:600;cursor:pointer;">View Line-Item Breakdown (${(g.items || []).length})</summary>
+          <summary style="font-size:0.85rem;font-weight:600;cursor:pointer;">Line-Item Expenses (${(g.items || []).length})</summary>
           <div class="table-responsive" style="margin-top:8px;">
             <table style="width:100%;border-collapse:collapse;">
               <thead>
                 <tr style="border-bottom:1px solid #cbd5e1;text-align:left;font-size:0.75rem;color:var(--muted);">
-                  <th>Category</th><th>Item</th><th style="text-align:right;">Amount</th>
+                  <th>Category</th><th>Description</th><th style="text-align:right;">Amount</th>
                 </tr>
               </thead>
-              <tbody>${itemsHtml || '<tr><td colspan="3" style="padding:8px 6px;font-size:0.8rem;">No items</td></tr>'}</tbody>
+              <tbody>
+                ${itemsHtml || '<tr><td colspan="3" style="text-align:center;padding:8px;color:var(--muted);">No items</td></tr>'}
+              </tbody>
             </table>
           </div>
         </details>
 
-        <div class="tx-actions" style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;">
-          <button class="button button-small button-outline" data-add-item-group="${g.id}">+ Add Item</button>
-          <button class="button button-small button-ghost" data-edit-group="${g.id}">Edit</button>
-          <button class="button button-small button-danger" data-delete-group="${g.id}">Delete</button>
+        <div class="card-footer-actions" style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;">
+          <button type="button" class="button button-small button-outline" data-add-item-group="${g.id}">+ Quick Item</button>
+          <button type="button" class="button button-small button-ghost" data-edit-group="${g.id}">Edit</button>
+          <button type="button" class="button button-small button-danger" data-delete-group="${g.id}">Delete</button>
         </div>
-      </div>`;
+      </div>
+    `;
   }).join('');
 }
 
@@ -2130,7 +1975,14 @@ expenseGroupsListEl?.addEventListener('click', async (e) => {
     const group = state.expenseGroups.find((g) => String(g.id) === String(addBtn.dataset.addItemGroup));
     if (group) {
       openExpenseGroupModal(group);
-      groupFormItems.push({ category: 'Food', title: '', amount: '', currency: currentBaseCurrency, date: group.startDate });
+      groupFormItems.push({
+        id: `gitem_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+        category: 'Food',
+        title: '',
+        amount: '',
+        currency: currentBaseCurrency,
+        date: group.startDate,
+      });
       renderGroupItemRows();
     }
   }
@@ -2145,16 +1997,16 @@ expenseGroupsListEl?.addEventListener('click', async (e) => {
     showMessage('Expense group deleted.', 'success');
     await loadAllData();
     renderExpenseGroupsList();
+    renderExpenseList();
+    renderAllTransactions();
     renderDashboard();
   }
 });
 
-// Month selector change listener
 dashboardMonthSelectEl?.addEventListener('change', (e) => {
   selectDashboardMonth(e.target.value);
 });
 
-// Monthly history table row/button click delegation
 monthlyHistoryTableBodyEl?.addEventListener('click', (e) => {
   const btn = e.target.closest('[data-select-month]');
   const tr = e.target.closest('tr[data-month-key]');
@@ -2164,10 +2016,14 @@ monthlyHistoryTableBodyEl?.addEventListener('click', (e) => {
   }
 });
 
-// All transactions list edit/delete delegation
 allTransactionsListEl?.addEventListener('click', (e) => {
+  const viewGroupBtn = e.target.closest('[data-view-group]');
   const editBtn = e.target.closest('[data-edit]');
   const deleteBtn = e.target.closest('[data-delete]');
+  if (viewGroupBtn) {
+    navigateToExpenseGroup(viewGroupBtn.dataset.viewGroup);
+    return;
+  }
   if (editBtn) {
     const id = editBtn.dataset.edit;
     const kind = editBtn.dataset.kind;
@@ -2176,7 +2032,7 @@ allTransactionsListEl?.addEventListener('click', (e) => {
       if (inc) openIncomeModal(inc);
     } else {
       const exp = state.expenses.find((x) => String(x.id) === String(id));
-      if (exp) openExpenseModal(exp);
+      if (exp && !exp.isGroupItem) openExpenseModal(exp);
     }
   }
   if (deleteBtn) {
@@ -2188,7 +2044,7 @@ allTransactionsListEl?.addEventListener('click', (e) => {
 });
 
 /* ---------------------------------------------------------------------- */
-/* Expenses View Tabs (Individual vs Group)                              */
+/* Expenses View Tabs (Individual vs Group)                               */
 /* ---------------------------------------------------------------------- */
 
 const tabIndividualExpensesBtn = document.getElementById('tabIndividualExpensesBtn');
@@ -2224,7 +2080,7 @@ async function loadPlans() {
       state.plans = JSON.parse(res.data.value);
       return;
     }
-  } catch (_) {}
+  } catch (_) { }
   const local = localStorage.getItem('user_future_plans');
   state.plans = local ? JSON.parse(local) : [];
 }
@@ -2236,7 +2092,7 @@ async function savePlans() {
       key: 'future_plans',
       value: JSON.stringify(state.plans),
     });
-  } catch (_) {}
+  } catch (_) { }
 }
 
 function computePlanTotal(plan) {
@@ -2259,16 +2115,18 @@ function renderPlanItemRows() {
     const itemConverted = convertAmount(item.amount || 0, item.currency || currentBaseCurrency, currentBaseCurrency);
     total += itemConverted;
 
+    const catOptions = Object.keys(EXPENSE_CATEGORIES).map((key) => {
+      const isSel = (item.category === key || (!item.category && key === 'Other')) ? 'selected' : '';
+      return `<option value="${key}" ${isSel}>${EXPENSE_CATEGORIES[key].label}</option>`;
+    }).join('');
+
+    const currOptions = buildCompactCurrencyOptions(item.currency || currentBaseCurrency);
+
     return `
       <div class="line-item-row">
         <div class="line-item-field line-item-cat">
           <select data-plan-idx="${idx}" data-field="category" class="line-item-select">
-            <option value="Education" ${item.category === 'Education' ? 'selected' : ''}>ðŸŽ“ Education</option>
-            <option value="Travel" ${item.category === 'Travel' ? 'selected' : ''}>âœˆï¸ Travel</option>
-            <option value="Shopping" ${item.category === 'Shopping' ? 'selected' : ''}>ðŸ›ï¸ Shopping</option>
-            <option value="Rent" ${item.category === 'Rent' ? 'selected' : ''}>ðŸ  Rent / Housing</option>
-            <option value="Bills" ${item.category === 'Bills' ? 'selected' : ''}>ðŸ“„ Bills & Setup</option>
-            <option value="Other" ${!item.category || item.category === 'Other' ? 'selected' : ''}>ðŸ“Œ Other</option>
+            ${catOptions}
           </select>
         </div>
         <div class="line-item-field line-item-desc">
@@ -2279,18 +2137,11 @@ function renderPlanItemRows() {
         </div>
         <div class="line-item-field line-item-curr">
           <select data-plan-idx="${idx}" data-field="currency" class="currency-select line-item-select">
-            <option value="USD" ${item.currency === 'USD' ? 'selected' : ''}>USD</option>
-            <option value="EUR" ${item.currency === 'EUR' ? 'selected' : ''}>EUR</option>
-            <option value="GBP" ${item.currency === 'GBP' ? 'selected' : ''}>GBP</option>
-            <option value="PKR" ${item.currency === 'PKR' ? 'selected' : ''}>PKR</option>
-            <option value="INR" ${item.currency === 'INR' ? 'selected' : ''}>INR</option>
-            <option value="AED" ${item.currency === 'AED' ? 'selected' : ''}>AED</option>
-            <option value="SAR" ${item.currency === 'SAR' ? 'selected' : ''}>SAR</option>
-            <option value="KGS" ${item.currency === 'KGS' ? 'selected' : ''}>KGS</option>
+            ${currOptions}
           </select>
         </div>
         <div class="line-item-actions">
-          <button type="button" class="button button-small button-danger line-item-del-btn" data-remove-plan-item="${idx}">âœ•</button>
+          <button type="button" class="button button-small button-danger line-item-del-btn" data-remove-plan-item="${idx}">✕</button>
         </div>
       </div>`;
   }).join('');
@@ -2449,199 +2300,8 @@ plansListEl?.addEventListener('click', async (e) => {
   }
 });
 
-// Clean UI renderer overrides (avoiding encoding corruption)
-renderGroupItemRows = function() {
-  if (!groupItemsContainer) return;
-  if (!groupFormItems.length) {
-    groupItemsContainer.innerHTML = '<p class="placeholder" style="margin:6px 0;font-size:0.85rem;">No line items in group yet. Click "+ Add Line Item" above.</p>';
-    if (groupTotalDisplay) groupTotalDisplay.textContent = formatCurrency(0);
-    return;
-  }
-
-  let total = 0;
-  groupItemsContainer.innerHTML = groupFormItems.map((item, idx) => {
-    const itemConverted = convertAmount(item.amount || 0, item.currency || currentBaseCurrency, currentBaseCurrency);
-    total += itemConverted;
-
-    const catOptions = Object.keys(EXPENSE_CATEGORIES).map((key) => {
-      const isSel = (item.category === key || (!item.category && key === 'Other')) ? 'selected' : '';
-      return `<option value="${key}" ${isSel}>${EXPENSE_CATEGORIES[key].label}</option>`;
-    }).join('');
-
-    return `
-      <div class="line-item-row">
-        <div class="line-item-field line-item-cat">
-          <select data-item-idx="${idx}" data-field="category" class="line-item-select">
-            ${catOptions}
-          </select>
-        </div>
-        <div class="line-item-field line-item-desc">
-          <input type="text" data-item-idx="${idx}" data-field="title" placeholder="Item description" value="${item.title || ''}" required />
-        </div>
-        <div class="line-item-field line-item-amt">
-          <input type="number" data-item-idx="${idx}" data-field="amount" placeholder="0.00" step="0.01" value="${item.amount ?? ''}" required />
-        </div>
-        <div class="line-item-field line-item-curr">
-          <select data-item-idx="${idx}" data-field="currency" class="currency-select line-item-select">
-            <option value="USD" ${item.currency === 'USD' ? 'selected' : ''}>USD</option>
-            <option value="EUR" ${item.currency === 'EUR' ? 'selected' : ''}>EUR</option>
-            <option value="GBP" ${item.currency === 'GBP' ? 'selected' : ''}>GBP</option>
-            <option value="PKR" ${item.currency === 'PKR' ? 'selected' : ''}>PKR</option>
-            <option value="INR" ${item.currency === 'INR' ? 'selected' : ''}>INR</option>
-            <option value="AED" ${item.currency === 'AED' ? 'selected' : ''}>AED</option>
-            <option value="SAR" ${item.currency === 'SAR' ? 'selected' : ''}>SAR</option>
-            <option value="CAD" ${item.currency === 'CAD' ? 'selected' : ''}>CAD</option>
-            <option value="AUD" ${item.currency === 'AUD' ? 'selected' : ''}>AUD</option>
-            <option value="JPY" ${item.currency === 'JPY' ? 'selected' : ''}>JPY</option>
-            <option value="KGS" ${item.currency === 'KGS' ? 'selected' : ''}>KGS</option>
-          </select>
-        </div>
-        <div class="line-item-actions">
-          <button type="button" class="button button-small button-danger line-item-del-btn" data-remove-group-item="${idx}">✕</button>
-        </div>
-      </div>`;
-  }).join('');
-
-  if (groupTotalDisplay) groupTotalDisplay.textContent = formatCurrency(total);
-};
-
-renderExpenseGroupsList = function() {
-  if (!expenseGroupsListEl) return;
-  if (!state.expenseGroups.length) {
-    expenseGroupsListEl.innerHTML = '<p class="placeholder">No expense groups yet. Click "+ Create Expense Group / Trip" to bundle expenses for trips or events!</p>';
-    return;
-  }
-
-  const sortedGroups = [...state.expenseGroups].sort((a, b) => {
-    const parseGroupDate = (g) => {
-      const dStr = g.startDate || g.endDate || g.createdAt;
-      const parts = parseDateParts(dStr);
-      return parts ? new Date(parts.year, parts.month, parts.day).getTime() : 0;
-    };
-    return parseGroupDate(b) - parseGroupDate(a);
-  });
-
-  expenseGroupsListEl.innerHTML = sortedGroups.map((g) => {
-    const total = computeGroupTotal(g);
-    const typeBadges = { trip: '✈️ Trip', day: '📅 Single Day', week: '🗓️ Week', custom: '📆 Custom' };
-    const badgeText = typeBadges[g.type] || '📦 Group';
-
-    const sortedItems = [...(g.items || [])].sort((a, b) => {
-      const dStrA = a.date || g.startDate;
-      const dStrB = b.date || g.startDate;
-      const partsA = parseDateParts(dStrA);
-      const partsB = parseDateParts(dStrB);
-      const timeA = partsA ? new Date(partsA.year, partsA.month, partsA.day).getTime() : 0;
-      const timeB = partsB ? new Date(partsB.year, partsB.month, partsB.day).getTime() : 0;
-      return timeB - timeA;
-    });
-
-    const itemsHtml = sortedItems.map((item) => `
-      <tr>
-        <td style="padding:8px 6px;font-size:0.82rem;">${EXPENSE_CATEGORIES[item.category]?.label || item.category}</td>
-        <td style="padding:8px 6px;font-size:0.82rem;font-weight:600;">${item.title || 'Item'}</td>
-        <td style="padding:8px 6px;font-size:0.82rem;text-align:right;font-weight:600;">
-          ${formatCurrency(convertAmount(item.amount, item.currency || 'USD', currentBaseCurrency))}
-          ${item.currency && item.currency !== currentBaseCurrency ? `<small style="opacity:0.7;display:block;">${item.amount} ${item.currency}</small>` : ''}
-        </td>
-      </tr>`).join('');
-
-    return `
-      <div class="card expense-group-item" style="margin-bottom:16px;">
-        <div class="card-top-flex">
-          <div>
-            <span class="badge" style="background:#f1ece5;color:#556b2f;font-weight:700;">${badgeText}</span>
-            <h3 style="margin:6px 0 2px 0;">${g.name}</h3>
-            <small style="color:var(--muted);">${formatDate(g.startDate)}${g.endDate ? ` — ${formatDate(g.endDate)}` : ''}</small>
-          </div>
-          <div class="card-total-badge">
-            <span style="font-size:1.25rem;font-weight:700;color:var(--danger);">${formatCurrency(total)}</span>
-            <small style="display:block;color:var(--muted);">Group Total</small>
-          </div>
-        </div>
-
-        ${g.notes ? `<p style="font-size:0.85rem;color:var(--muted);margin:8px 0;">${g.notes}</p>` : ''}
-
-        <details style="margin-top:10px;background:#f8fafc;padding:8px 12px;border-radius:12px;border:1px solid var(--border);">
-          <summary style="font-size:0.85rem;font-weight:600;cursor:pointer;">Line-Item Expenses (${(g.items || []).length})</summary>
-          <div class="table-responsive" style="margin-top:8px;">
-            <table style="width:100%;border-collapse:collapse;">
-              <thead>
-                <tr style="border-bottom:1px solid #cbd5e1;text-align:left;font-size:0.75rem;color:var(--muted);">
-                  <th>Category</th><th>Description</th><th style="text-align:right;">Amount</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${itemsHtml || '<tr><td colspan="3" style="text-align:center;padding:8px;color:var(--muted);">No items</td></tr>'}
-              </tbody>
-            </table>
-          </div>
-        </details>
-
-        <div class="card-footer-actions" style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end;">
-          <button type="button" class="button button-small button-ghost" data-quick-item="${g.id}">+ Quick Item</button>
-          <button type="button" class="button button-small button-ghost" data-edit-group="${g.id}">Edit</button>
-          <button type="button" class="button button-small button-danger" data-delete-group="${g.id}">Delete</button>
-        </div>
-      </div>
-    `;
-  }).join('');
-};
-
-renderPlanItemRows = function() {
-  if (!planItemsContainer) return;
-  if (!planFormItems.length) {
-    planItemsContainer.innerHTML = '<p class="placeholder" style="margin:6px 0;font-size:0.85rem;">No estimated items added yet. Click "+ Add Estimated Item" above.</p>';
-    if (planTotalDisplay) planTotalDisplay.textContent = formatCurrency(0);
-    return;
-  }
-
-  let total = 0;
-  planItemsContainer.innerHTML = planFormItems.map((item, idx) => {
-    const itemConverted = convertAmount(item.amount || 0, item.currency || currentBaseCurrency, currentBaseCurrency);
-    total += itemConverted;
-
-    const catOptions = Object.keys(EXPENSE_CATEGORIES).map((key) => {
-      const isSel = (item.category === key || (!item.category && key === 'Other')) ? 'selected' : '';
-      return `<option value="${key}" ${isSel}>${EXPENSE_CATEGORIES[key].label}</option>`;
-    }).join('');
-
-    return `
-      <div class="line-item-row">
-        <div class="line-item-field line-item-cat">
-          <select data-plan-idx="${idx}" data-field="category" class="line-item-select">
-            ${catOptions}
-          </select>
-        </div>
-        <div class="line-item-field line-item-desc">
-          <input type="text" data-plan-idx="${idx}" data-field="title" placeholder="Estimated cost description" value="${item.title || ''}" required />
-        </div>
-        <div class="line-item-field line-item-amt">
-          <input type="number" data-plan-idx="${idx}" data-field="amount" placeholder="0.00" step="0.01" value="${item.amount ?? ''}" required />
-        </div>
-        <div class="line-item-field line-item-curr">
-          <select data-plan-idx="${idx}" data-field="currency" class="currency-select line-item-select">
-            <option value="USD" ${item.currency === 'USD' ? 'selected' : ''}>USD</option>
-            <option value="EUR" ${item.currency === 'EUR' ? 'selected' : ''}>EUR</option>
-            <option value="GBP" ${item.currency === 'GBP' ? 'selected' : ''}>GBP</option>
-            <option value="PKR" ${item.currency === 'PKR' ? 'selected' : ''}>PKR</option>
-            <option value="INR" ${item.currency === 'INR' ? 'selected' : ''}>INR</option>
-            <option value="AED" ${item.currency === 'AED' ? 'selected' : ''}>AED</option>
-            <option value="SAR" ${item.currency === 'SAR' ? 'selected' : ''}>SAR</option>
-            <option value="KGS" ${item.currency === 'KGS' ? 'selected' : ''}>KGS</option>
-          </select>
-        </div>
-        <div class="line-item-actions">
-          <button type="button" class="button button-small button-danger line-item-del-btn" data-remove-plan-item="${idx}">✕</button>
-        </div>
-      </div>`;
-  }).join('');
-
-  if (planTotalDisplay) planTotalDisplay.textContent = formatCurrency(total);
-};
-
 /* ---------------------------------------------------------------------- */
-/* Init                                                                    */
+/* Init                                                                   */
 /* ---------------------------------------------------------------------- */
 
 window.addEventListener('DOMContentLoaded', () => {
