@@ -1,73 +1,56 @@
 const fs = require('fs');
 const path = require('path');
 
-// Directories
+// Source directory (single source of truth for frontend assets)
 const sourceDir = path.join(__dirname, '..', 'frontend');
-const destDir = path.join(__dirname, 'public');
-const distPublicDir = path.join(__dirname, 'dist', 'public');
-const apiDistPublicDir = path.join(__dirname, '..', 'api', 'dist', 'public');
 
-// Function to copy directory recursively
-function copyDir(src, dest) {
-  if (!fs.existsSync(dest)) {
-    fs.mkdirSync(dest, { recursive: true });
-  }
-  
-  const files = fs.readdirSync(src);
-  files.forEach((file) => {
-    const srcPath = path.join(src, file);
-    const destPath = path.join(dest, file);
-    
-    if (fs.statSync(srcPath).isDirectory()) {
-      copyDir(srcPath, destPath);
-    } else {
-      fs.copyFileSync(srcPath, destPath);
-    }
-  });
-}
+// Destination directories
+const destinations = [
+  {
+    label: 'backend/public/',
+    dir: path.join(__dirname, 'public'),
+    createIfMissing: true,
+  },
+  {
+    label: 'backend/dist/public/',
+    dir: path.join(__dirname, 'dist', 'public'),
+    createIfMissing: fs.existsSync(path.join(__dirname, 'dist')),
+  },
+  {
+    label: 'api/dist/public/',
+    dir: path.join(__dirname, '..', 'api', 'dist', 'public'),
+    createIfMissing: fs.existsSync(path.join(__dirname, '..', 'api', 'dist')),
+  },
+];
 
-// Create destination directory if it doesn't exist
-if (!fs.existsSync(destDir)) {
-  fs.mkdirSync(destDir, { recursive: true });
-}
-
-// Files to copy
+// Files to sync
 const filesToCopy = ['index.html', 'app.js', 'styles.css', 'bg.png'];
 
-filesToCopy.forEach((file) => {
-  const sourcePath = path.join(sourceDir, file);
-  const destPath = path.join(destDir, file);
-  
-  if (fs.existsSync(sourcePath)) {
-    fs.copyFileSync(sourcePath, destPath);
-    console.log(`✓ Copied ${file} to public/`);
-  } else {
-    console.warn(`⚠ Source file not found: ${file}`);
+if (!fs.existsSync(sourceDir)) {
+  console.error(`✗ Source directory not found: ${sourceDir}`);
+  process.exit(1);
+}
+
+destinations.forEach(({ label, dir, createIfMissing }) => {
+  if (!fs.existsSync(dir)) {
+    if (!createIfMissing) {
+      console.log(`- Skipped ${label} (build output directory not present)`);
+      return;
+    }
+    fs.mkdirSync(dir, { recursive: true });
   }
+
+  filesToCopy.forEach((file) => {
+    const sourcePath = path.join(sourceDir, file);
+    const destPath = path.join(dir, file);
+
+    if (fs.existsSync(sourcePath)) {
+      fs.copyFileSync(sourcePath, destPath);
+      console.log(`✓ Copied ${file} to ${label}`);
+    } else {
+      console.warn(`⚠ Source file not found: ${file}`);
+    }
+  });
 });
 
-// Also copy to dist/public if it exists (used by the compiled server)
-if (fs.existsSync(distPublicDir)) {
-  filesToCopy.forEach((file) => {
-    const sourcePath = path.join(sourceDir, file);
-    const distDestPath = path.join(distPublicDir, file);
-    if (fs.existsSync(sourcePath)) {
-      fs.copyFileSync(sourcePath, distDestPath);
-      console.log(`✓ Copied ${file} to dist/public/`);
-    }
-  });
-}
-
-// Also copy to api/dist/public if it exists (used by Vercel serverless function)
-if (fs.existsSync(apiDistPublicDir)) {
-  filesToCopy.forEach((file) => {
-    const sourcePath = path.join(sourceDir, file);
-    const apiDestPath = path.join(apiDistPublicDir, file);
-    if (fs.existsSync(sourcePath)) {
-      fs.copyFileSync(sourcePath, apiDestPath);
-      console.log(`✓ Copied ${file} to api/dist/public/`);
-    }
-  });
-}
-
-console.log('Frontend files copied to public directory');
+console.log('Frontend files synced successfully.');
