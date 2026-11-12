@@ -73,6 +73,29 @@ const INCOME_SOURCES = {
   Other: 'ðŸ’° Other',
 };
 
+// Clean category and income metadata overrides
+Object.assign(EXPENSE_CATEGORIES, {
+  Food: { label: '🍔 Food & Dining', color: '#b57e4c' },
+  Transport: { label: '🚗 Transport', color: '#556b2f' },
+  Bills: { label: '📄 Bills & Utilities', color: '#6b705c' },
+  Shopping: { label: '🛍️ Shopping', color: '#c27d53' },
+  Rent: { label: '🏠 Rent', color: '#4a3525' },
+  Entertainment: { label: '🎬 Entertainment', color: '#c88d2d' },
+  Healthcare: { label: '🩺 Healthcare', color: '#b24434' },
+  Education: { label: '🎓 Education', color: '#3d6330' },
+  Travel: { label: '✈️ Travel', color: '#8a572c' },
+  Return: { label: '🔄 Return / Refund', color: '#5d8c47' },
+  Other: { label: '📌 Other', color: '#8c7e6d' },
+});
+
+Object.assign(INCOME_SOURCES, {
+  Salary: '💼 Salary',
+  Freelance: '💻 Freelance',
+  Business: '🏢 Business',
+  Investments: '📈 Investments',
+  Other: '💰 Other',
+});
+
 /* ---------------------------------------------------------------------- */
 /* DOM references                                                         */
 /* ---------------------------------------------------------------------- */
@@ -1414,7 +1437,7 @@ function renderCategoryChart(selectedMonthKey = state.selectedMonthKey) {
     emptyDiv.className = 'chart-empty-state';
     emptyDiv.style.cssText = 'display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;min-height:220px;text-align:center;padding:24px 16px;background:rgba(248,250,252,0.6);border-radius:14px;border:1px dashed #cbd5e1;margin-top:8px;';
     emptyDiv.innerHTML = `
-      <div style="width:48px;height:48px;border-radius:14px;background:#eef2ff;display:grid;place-items:center;font-size:24px;margin-bottom:10px;">ðŸ“Š</div>
+      <div style="width:48px;height:48px;border-radius:14px;background:#eef2ff;display:grid;place-items:center;font-size:24px;margin-bottom:10px;">📊</div>
       <strong style="color:#1e293b;font-size:0.95rem;">No spending recorded for ${periodTitle}</strong>
       <small style="color:#64748b;margin-top:4px;max-width:260px;font-size:0.82rem;">Add expenses for this period to generate an interactive spending category breakdown!</small>
     `;
@@ -1490,7 +1513,7 @@ function renderIncomeExpenseChart() {
     emptyDiv.className = 'chart-empty-state';
     emptyDiv.style.cssText = 'display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;min-height:220px;text-align:center;padding:24px 16px;background:rgba(248,250,252,0.6);border-radius:14px;border:1px dashed #cbd5e1;margin-top:8px;';
     emptyDiv.innerHTML = `
-      <div style="width:48px;height:48px;border-radius:14px;background:#eef2ff;display:grid;place-items:center;font-size:24px;margin-bottom:10px;">ðŸ“ˆ</div>
+      <div style="width:48px;height:48px;border-radius:14px;background:#eef2ff;display:grid;place-items:center;font-size:24px;margin-bottom:10px;">📈</div>
       <strong style="color:#1e293b;font-size:0.95rem;">No income or expense trends yet</strong>
       <small style="color:#64748b;margin-top:4px;max-width:260px;font-size:0.82rem;">Log income or expenses to track monthly financial trends over time!</small>
     `;
@@ -2376,7 +2399,7 @@ function renderPlansList() {
       <div class="card budget-card-item" style="margin-bottom:16px;border-left:4px solid var(--success);">
         <div class="card-top-flex">
           <div>
-            <h3 style="margin:0 0 4px 0;">ðŸš€ ${p.name}</h3>
+            <h3 style="margin:0 0 4px 0;">🚀 ${p.name}</h3>
             <small style="color:var(--muted);">Target Date: ${formatDate(p.targetDate)}</small>
           </div>
           <div class="card-total-badge">
@@ -2425,6 +2448,197 @@ plansListEl?.addEventListener('click', async (e) => {
     renderPlansList();
   }
 });
+
+// Clean UI renderer overrides (avoiding encoding corruption)
+renderGroupItemRows = function() {
+  if (!groupItemsContainer) return;
+  if (!groupFormItems.length) {
+    groupItemsContainer.innerHTML = '<p class="placeholder" style="margin:6px 0;font-size:0.85rem;">No line items in group yet. Click "+ Add Line Item" above.</p>';
+    if (groupTotalDisplay) groupTotalDisplay.textContent = formatCurrency(0);
+    return;
+  }
+
+  let total = 0;
+  groupItemsContainer.innerHTML = groupFormItems.map((item, idx) => {
+    const itemConverted = convertAmount(item.amount || 0, item.currency || currentBaseCurrency, currentBaseCurrency);
+    total += itemConverted;
+
+    const catOptions = Object.keys(EXPENSE_CATEGORIES).map((key) => {
+      const isSel = (item.category === key || (!item.category && key === 'Other')) ? 'selected' : '';
+      return `<option value="${key}" ${isSel}>${EXPENSE_CATEGORIES[key].label}</option>`;
+    }).join('');
+
+    return `
+      <div class="line-item-row">
+        <div class="line-item-field line-item-cat">
+          <select data-item-idx="${idx}" data-field="category" class="line-item-select">
+            ${catOptions}
+          </select>
+        </div>
+        <div class="line-item-field line-item-desc">
+          <input type="text" data-item-idx="${idx}" data-field="title" placeholder="Item description" value="${item.title || ''}" required />
+        </div>
+        <div class="line-item-field line-item-amt">
+          <input type="number" data-item-idx="${idx}" data-field="amount" placeholder="0.00" step="0.01" value="${item.amount ?? ''}" required />
+        </div>
+        <div class="line-item-field line-item-curr">
+          <select data-item-idx="${idx}" data-field="currency" class="currency-select line-item-select">
+            <option value="USD" ${item.currency === 'USD' ? 'selected' : ''}>USD</option>
+            <option value="EUR" ${item.currency === 'EUR' ? 'selected' : ''}>EUR</option>
+            <option value="GBP" ${item.currency === 'GBP' ? 'selected' : ''}>GBP</option>
+            <option value="PKR" ${item.currency === 'PKR' ? 'selected' : ''}>PKR</option>
+            <option value="INR" ${item.currency === 'INR' ? 'selected' : ''}>INR</option>
+            <option value="AED" ${item.currency === 'AED' ? 'selected' : ''}>AED</option>
+            <option value="SAR" ${item.currency === 'SAR' ? 'selected' : ''}>SAR</option>
+            <option value="CAD" ${item.currency === 'CAD' ? 'selected' : ''}>CAD</option>
+            <option value="AUD" ${item.currency === 'AUD' ? 'selected' : ''}>AUD</option>
+            <option value="JPY" ${item.currency === 'JPY' ? 'selected' : ''}>JPY</option>
+            <option value="KGS" ${item.currency === 'KGS' ? 'selected' : ''}>KGS</option>
+          </select>
+        </div>
+        <div class="line-item-actions">
+          <button type="button" class="button button-small button-danger line-item-del-btn" data-remove-group-item="${idx}">✕</button>
+        </div>
+      </div>`;
+  }).join('');
+
+  if (groupTotalDisplay) groupTotalDisplay.textContent = formatCurrency(total);
+};
+
+renderExpenseGroupsList = function() {
+  if (!expenseGroupsListEl) return;
+  if (!state.expenseGroups.length) {
+    expenseGroupsListEl.innerHTML = '<p class="placeholder">No expense groups yet. Click "+ Create Expense Group / Trip" to bundle expenses for trips or events!</p>';
+    return;
+  }
+
+  const sortedGroups = [...state.expenseGroups].sort((a, b) => {
+    const parseGroupDate = (g) => {
+      const dStr = g.startDate || g.endDate || g.createdAt;
+      const parts = parseDateParts(dStr);
+      return parts ? new Date(parts.year, parts.month, parts.day).getTime() : 0;
+    };
+    return parseGroupDate(b) - parseGroupDate(a);
+  });
+
+  expenseGroupsListEl.innerHTML = sortedGroups.map((g) => {
+    const total = computeGroupTotal(g);
+    const typeBadges = { trip: '✈️ Trip', day: '📅 Single Day', week: '🗓️ Week', custom: '📆 Custom' };
+    const badgeText = typeBadges[g.type] || '📦 Group';
+
+    const sortedItems = [...(g.items || [])].sort((a, b) => {
+      const dStrA = a.date || g.startDate;
+      const dStrB = b.date || g.startDate;
+      const partsA = parseDateParts(dStrA);
+      const partsB = parseDateParts(dStrB);
+      const timeA = partsA ? new Date(partsA.year, partsA.month, partsA.day).getTime() : 0;
+      const timeB = partsB ? new Date(partsB.year, partsB.month, partsB.day).getTime() : 0;
+      return timeB - timeA;
+    });
+
+    const itemsHtml = sortedItems.map((item) => `
+      <tr>
+        <td style="padding:8px 6px;font-size:0.82rem;">${EXPENSE_CATEGORIES[item.category]?.label || item.category}</td>
+        <td style="padding:8px 6px;font-size:0.82rem;font-weight:600;">${item.title || 'Item'}</td>
+        <td style="padding:8px 6px;font-size:0.82rem;text-align:right;font-weight:600;">
+          ${formatCurrency(convertAmount(item.amount, item.currency || 'USD', currentBaseCurrency))}
+          ${item.currency && item.currency !== currentBaseCurrency ? `<small style="opacity:0.7;display:block;">${item.amount} ${item.currency}</small>` : ''}
+        </td>
+      </tr>`).join('');
+
+    return `
+      <div class="card expense-group-item" style="margin-bottom:16px;">
+        <div class="card-top-flex">
+          <div>
+            <span class="badge" style="background:#f1ece5;color:#556b2f;font-weight:700;">${badgeText}</span>
+            <h3 style="margin:6px 0 2px 0;">${g.name}</h3>
+            <small style="color:var(--muted);">${formatDate(g.startDate)}${g.endDate ? ` — ${formatDate(g.endDate)}` : ''}</small>
+          </div>
+          <div class="card-total-badge">
+            <span style="font-size:1.25rem;font-weight:700;color:var(--danger);">${formatCurrency(total)}</span>
+            <small style="display:block;color:var(--muted);">Group Total</small>
+          </div>
+        </div>
+
+        ${g.notes ? `<p style="font-size:0.85rem;color:var(--muted);margin:8px 0;">${g.notes}</p>` : ''}
+
+        <details style="margin-top:10px;background:#f8fafc;padding:8px 12px;border-radius:12px;border:1px solid var(--border);">
+          <summary style="font-size:0.85rem;font-weight:600;cursor:pointer;">Line-Item Expenses (${(g.items || []).length})</summary>
+          <div class="table-responsive" style="margin-top:8px;">
+            <table style="width:100%;border-collapse:collapse;">
+              <thead>
+                <tr style="border-bottom:1px solid #cbd5e1;text-align:left;font-size:0.75rem;color:var(--muted);">
+                  <th>Category</th><th>Description</th><th style="text-align:right;">Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${itemsHtml || '<tr><td colspan="3" style="text-align:center;padding:8px;color:var(--muted);">No items</td></tr>'}
+              </tbody>
+            </table>
+          </div>
+        </details>
+
+        <div class="card-footer-actions" style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end;">
+          <button type="button" class="button button-small button-ghost" data-quick-item="${g.id}">+ Quick Item</button>
+          <button type="button" class="button button-small button-ghost" data-edit-group="${g.id}">Edit</button>
+          <button type="button" class="button button-small button-danger" data-delete-group="${g.id}">Delete</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+};
+
+renderPlanItemRows = function() {
+  if (!planItemsContainer) return;
+  if (!planFormItems.length) {
+    planItemsContainer.innerHTML = '<p class="placeholder" style="margin:6px 0;font-size:0.85rem;">No estimated items added yet. Click "+ Add Estimated Item" above.</p>';
+    if (planTotalDisplay) planTotalDisplay.textContent = formatCurrency(0);
+    return;
+  }
+
+  let total = 0;
+  planItemsContainer.innerHTML = planFormItems.map((item, idx) => {
+    const itemConverted = convertAmount(item.amount || 0, item.currency || currentBaseCurrency, currentBaseCurrency);
+    total += itemConverted;
+
+    const catOptions = Object.keys(EXPENSE_CATEGORIES).map((key) => {
+      const isSel = (item.category === key || (!item.category && key === 'Other')) ? 'selected' : '';
+      return `<option value="${key}" ${isSel}>${EXPENSE_CATEGORIES[key].label}</option>`;
+    }).join('');
+
+    return `
+      <div class="line-item-row">
+        <div class="line-item-field line-item-cat">
+          <select data-plan-idx="${idx}" data-field="category" class="line-item-select">
+            ${catOptions}
+          </select>
+        </div>
+        <div class="line-item-field line-item-desc">
+          <input type="text" data-plan-idx="${idx}" data-field="title" placeholder="Estimated cost description" value="${item.title || ''}" required />
+        </div>
+        <div class="line-item-field line-item-amt">
+          <input type="number" data-plan-idx="${idx}" data-field="amount" placeholder="0.00" step="0.01" value="${item.amount ?? ''}" required />
+        </div>
+        <div class="line-item-field line-item-curr">
+          <select data-plan-idx="${idx}" data-field="currency" class="currency-select line-item-select">
+            <option value="USD" ${item.currency === 'USD' ? 'selected' : ''}>USD</option>
+            <option value="EUR" ${item.currency === 'EUR' ? 'selected' : ''}>EUR</option>
+            <option value="GBP" ${item.currency === 'GBP' ? 'selected' : ''}>GBP</option>
+            <option value="PKR" ${item.currency === 'PKR' ? 'selected' : ''}>PKR</option>
+            <option value="INR" ${item.currency === 'INR' ? 'selected' : ''}>INR</option>
+            <option value="AED" ${item.currency === 'AED' ? 'selected' : ''}>AED</option>
+            <option value="SAR" ${item.currency === 'SAR' ? 'selected' : ''}>SAR</option>
+            <option value="KGS" ${item.currency === 'KGS' ? 'selected' : ''}>KGS</option>
+          </select>
+        </div>
+        <div class="line-item-actions">
+          <button type="button" class="button button-small button-danger line-item-del-btn" data-remove-plan-item="${idx}">✕</button>
+        </div>
+      </div>`;
+  }).join('');
+
+  if (planTotalDisplay) planTotalDisplay.textContent = formatCurrency(total);
+};
 
 /* ---------------------------------------------------------------------- */
 /* Init                                                                    */

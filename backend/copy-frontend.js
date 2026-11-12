@@ -5,6 +5,7 @@ const path = require('path');
 const sourceDir = path.join(__dirname, '..', 'frontend');
 const destDir = path.join(__dirname, 'public');
 const distPublicDir = path.join(__dirname, 'dist', 'public');
+const apiDistPublicDir = path.join(__dirname, '..', 'api', 'dist', 'public');
 
 // Function to copy directory recursively
 function copyDir(src, dest) {
@@ -53,6 +54,18 @@ if (fs.existsSync(distPublicDir)) {
     if (fs.existsSync(sourcePath)) {
       fs.copyFileSync(sourcePath, distDestPath);
       console.log(`✓ Copied ${file} to dist/public/`);
+    }
+  });
+}
+
+// Also copy to api/dist/public if it exists (used by Vercel serverless function)
+if (fs.existsSync(apiDistPublicDir)) {
+  filesToCopy.forEach((file) => {
+    const sourcePath = path.join(sourceDir, file);
+    const apiDestPath = path.join(apiDistPublicDir, file);
+    if (fs.existsSync(sourcePath)) {
+      fs.copyFileSync(sourcePath, apiDestPath);
+      console.log(`✓ Copied ${file} to api/dist/public/`);
     }
   });
 }

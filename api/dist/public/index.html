@@ -55,7 +55,7 @@
       <!-- Right Header Actions -->
       <div class="nav-actions">
         <div class="currency-picker-container" title="Base Currency">
-          <span title="Base Currency" style="font-size:0.95rem;">🌐</span>
+          <span id="currencyPickerLogo" title="Base Currency" style="font-size:0.95rem;">💰</span>
           <select id="userBaseCurrency" class="currency-select">
             <option value="USD">USD</option>
             <option value="EUR">EUR</option>
@@ -226,24 +226,24 @@
         <!-- Financial Summary Cards -->
         <div class="cards-grid">
           <div class="card card-primary">
-            <div class="card-label" id="totalBalanceLabel">Total Balance</div>
-            <div class="card-value" id="totalBalance">$0.00</div>
-            <div class="card-change" id="totalBalanceSub">Cumulative balance</div>
-          </div>
-          <div class="card card-success">
-            <div class="card-label" id="monthlyIncomeLabel">Monthly Income</div>
-            <div class="card-value" id="monthlyIncome">$0.00</div>
-            <div class="card-change positive" id="monthlyIncomeSub">From all sources</div>
+            <div class="card-label" id="currentMoneyLabel">Current Money</div>
+            <div class="card-value" id="currentMoney">$0.00</div>
+            <div class="card-change" id="currentMoneySub">Income + previous leftovers</div>
           </div>
           <div class="card card-danger">
             <div class="card-label" id="monthlyExpensesLabel">Monthly Expenses</div>
             <div class="card-value" id="monthlyExpenses">$0.00</div>
             <div class="card-change negative" id="monthlyExpensesSub">Spending this month</div>
           </div>
+          <div class="card card-success">
+            <div class="card-label" id="currentMonthLeftLabel">Current Money Left</div>
+            <div class="card-value" id="currentMonthLeft">$0.00</div>
+            <div class="card-change positive" id="currentMonthLeftSub">Updated after every transaction</div>
+          </div>
           <div class="card card-info">
-            <div class="card-label" id="monthlySavingsLabel">Monthly Savings</div>
-            <div class="card-value" id="monthlySavings">$0.00</div>
-            <div class="card-change" id="monthlySavingsSub">Income - Expenses</div>
+            <div class="card-label" id="prevMonthsLeftLabel">Previous Months Left</div>
+            <div class="card-value" id="prevMonthsLeft">$0.00</div>
+            <div class="card-change" id="prevMonthsLeftSub">Leftover from prior months</div>
           </div>
         </div>
 
@@ -262,34 +262,6 @@
               <small class="chart-subtitle">Monthly Trends</small>
             </div>
             <canvas id="incomeExpenseChart"></canvas>
-          </div>
-        </div>
-
-        <!-- Monthly Financial History Table -->
-        <div class="card full-width" id="monthlyHistorySection">
-          <div class="section-card-header">
-            <div>
-              <h3>📅 Monthly Financial History</h3>
-              <p class="section-subtitle">Track your income, expenses, savings, and total balance month by month.</p>
-            </div>
-            <div id="monthlyHistoryBadge" class="history-count-badge"></div>
-          </div>
-          <div class="table-responsive">
-            <table class="monthly-history-table">
-              <thead>
-                <tr>
-                  <th>Month</th>
-                  <th class="text-right">Monthly Income</th>
-                  <th class="text-right">Monthly Expenses</th>
-                  <th class="text-right">Monthly Savings</th>
-                  <th class="text-right">Total Balance</th>
-                  <th class="text-center">Action</th>
-                </tr>
-              </thead>
-              <tbody id="monthlyHistoryTableBody">
-                <tr><td colspan="6" class="placeholder">Loading monthly financial history...</td></tr>
-              </tbody>
-            </table>
           </div>
         </div>
       </section>

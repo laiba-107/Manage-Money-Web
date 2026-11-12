@@ -52,26 +52,49 @@ const PAYMENT_METHOD_FROM_API = {
 /* ---------------------------------------------------------------------- */
 
 const EXPENSE_CATEGORIES = {
+  Food: { label: 'ðŸ” Food & Dining', color: '#b57e4c' },
+  Transport: { label: 'ðŸš— Transport', color: '#556b2f' },
+  Bills: { label: 'ðŸ“„ Bills & Utilities', color: '#6b705c' },
+  Shopping: { label: 'ðŸ›ï¸ Shopping', color: '#c27d53' },
+  Rent: { label: 'ðŸ  Rent', color: '#4a3525' },
+  Entertainment: { label: 'ðŸŽ¬ Entertainment', color: '#c88d2d' },
+  Healthcare: { label: 'ðŸ¥ Healthcare', color: '#b24434' },
+  Education: { label: 'ðŸŽ“ Education', color: '#3d6330' },
+  Travel: { label: 'âœˆï¸ Travel', color: '#8a572c' },
+  Return: { label: 'ðŸ”„ Return / Refund', color: '#5d8c47' },
+  Other: { label: 'ðŸ“Œ Other', color: '#8c7e6d' },
+};
+
+const INCOME_SOURCES = {
+  Salary: 'ðŸ’¼ Salary',
+  Freelance: 'ðŸ’» Freelance',
+  Business: 'ðŸ¢ Business',
+  Investments: 'ðŸ“ˆ Investments',
+  Other: 'ðŸ’° Other',
+};
+
+// Clean category and income metadata overrides
+Object.assign(EXPENSE_CATEGORIES, {
   Food: { label: '🍔 Food & Dining', color: '#b57e4c' },
   Transport: { label: '🚗 Transport', color: '#556b2f' },
   Bills: { label: '📄 Bills & Utilities', color: '#6b705c' },
   Shopping: { label: '🛍️ Shopping', color: '#c27d53' },
   Rent: { label: '🏠 Rent', color: '#4a3525' },
   Entertainment: { label: '🎬 Entertainment', color: '#c88d2d' },
-  Healthcare: { label: '🏥 Healthcare', color: '#b24434' },
+  Healthcare: { label: '🩺 Healthcare', color: '#b24434' },
   Education: { label: '🎓 Education', color: '#3d6330' },
   Travel: { label: '✈️ Travel', color: '#8a572c' },
   Return: { label: '🔄 Return / Refund', color: '#5d8c47' },
   Other: { label: '📌 Other', color: '#8c7e6d' },
-};
+});
 
-const INCOME_SOURCES = {
+Object.assign(INCOME_SOURCES, {
   Salary: '💼 Salary',
   Freelance: '💻 Freelance',
   Business: '🏢 Business',
   Investments: '📈 Investments',
   Other: '💰 Other',
-};
+});
 
 /* ---------------------------------------------------------------------- */
 /* DOM references                                                         */
@@ -93,18 +116,18 @@ const headerUserName = document.getElementById('headerUserName');
 const sidebar = document.getElementById('sidebar');
 const messageEl = document.getElementById('message');
 
-const totalBalanceEl = document.getElementById('totalBalance');
-const monthlyIncomeEl = document.getElementById('monthlyIncome');
+const currentMoneyEl = document.getElementById('currentMoney');
+const currentMoneyLabelEl = document.getElementById('currentMoneyLabel');
+const currentMoneySubEl = document.getElementById('currentMoneySub');
 const monthlyExpensesEl = document.getElementById('monthlyExpenses');
-const monthlySavingsEl = document.getElementById('monthlySavings');
-const totalBalanceLabelEl = document.getElementById('totalBalanceLabel');
-const totalBalanceSubEl = document.getElementById('totalBalanceSub');
-const monthlyIncomeLabelEl = document.getElementById('monthlyIncomeLabel');
-const monthlyIncomeSubEl = document.getElementById('monthlyIncomeSub');
 const monthlyExpensesLabelEl = document.getElementById('monthlyExpensesLabel');
 const monthlyExpensesSubEl = document.getElementById('monthlyExpensesSub');
-const monthlySavingsLabelEl = document.getElementById('monthlySavingsLabel');
-const monthlySavingsSubEl = document.getElementById('monthlySavingsSub');
+const currentMonthLeftEl = document.getElementById('currentMonthLeft');
+const currentMonthLeftLabelEl = document.getElementById('currentMonthLeftLabel');
+const currentMonthLeftSubEl = document.getElementById('currentMonthLeftSub');
+const prevMonthsLeftEl = document.getElementById('prevMonthsLeft');
+const prevMonthsLeftLabelEl = document.getElementById('prevMonthsLeftLabel');
+const prevMonthsLeftSubEl = document.getElementById('prevMonthsLeftSub');
 
 const dashboardMonthSelectEl = document.getElementById('dashboardMonthSelect');
 const monthlyHistoryTableBodyEl = document.getElementById('monthlyHistoryTableBody');
@@ -186,27 +209,27 @@ function showMessage(text, type = 'info') {
 const WORLD_CURRENCIES = [
   // Popular / Major
   { code: 'USD', name: 'US Dollar', symbol: '$', rate: 1.0, locale: 'en-US' },
-  { code: 'EUR', name: 'Euro', symbol: '€', rate: 0.92, locale: 'de-DE' },
-  { code: 'GBP', name: 'British Pound', symbol: '£', rate: 0.79, locale: 'en-GB' },
+  { code: 'EUR', name: 'Euro', symbol: 'â‚¬', rate: 0.92, locale: 'de-DE' },
+  { code: 'GBP', name: 'British Pound', symbol: 'Â£', rate: 0.79, locale: 'en-GB' },
   { code: 'PKR', name: 'Pakistani Rupee', symbol: 'Rs ', rate: 278.5, locale: 'ur-PK' },
-  { code: 'INR', name: 'Indian Rupee', symbol: '₹', rate: 83.5, locale: 'hi-IN' },
+  { code: 'INR', name: 'Indian Rupee', symbol: 'â‚¹', rate: 83.5, locale: 'hi-IN' },
   { code: 'AED', name: 'UAE Dirham', symbol: 'AED ', rate: 3.67, locale: 'ar-AE' },
   { code: 'SAR', name: 'Saudi Riyal', symbol: 'SAR ', rate: 3.75, locale: 'ar-SA' },
   { code: 'CAD', name: 'Canadian Dollar', symbol: 'C$', rate: 1.36, locale: 'en-CA' },
   { code: 'AUD', name: 'Australian Dollar', symbol: 'A$', rate: 1.52, locale: 'en-AU' },
-  { code: 'JPY', name: 'Japanese Yen', symbol: '¥', rate: 155.0, locale: 'ja-JP' },
-  { code: 'CNY', name: 'Chinese Yuan', symbol: '¥', rate: 7.23, locale: 'zh-CN' },
+  { code: 'JPY', name: 'Japanese Yen', symbol: 'Â¥', rate: 155.0, locale: 'ja-JP' },
+  { code: 'CNY', name: 'Chinese Yuan', symbol: 'Â¥', rate: 7.23, locale: 'zh-CN' },
   { code: 'CHF', name: 'Swiss Franc', symbol: 'CHF ', rate: 0.90, locale: 'de-CH' },
   { code: 'SGD', name: 'Singapore Dollar', symbol: 'S$', rate: 1.35, locale: 'en-SG' },
   { code: 'NZD', name: 'New Zealand Dollar', symbol: 'NZ$', rate: 1.65, locale: 'en-NZ' },
   { code: 'HKD', name: 'Hong Kong Dollar', symbol: 'HK$', rate: 7.82, locale: 'zh-HK' },
   { code: 'MYR', name: 'Malaysian Ringgit', symbol: 'RM ', rate: 4.72, locale: 'ms-MY' },
-  { code: 'THB', name: 'Thai Baht', symbol: '฿', rate: 36.8, locale: 'th-TH' },
+  { code: 'THB', name: 'Thai Baht', symbol: 'à¸¿', rate: 36.8, locale: 'th-TH' },
   { code: 'IDR', name: 'Indonesian Rupiah', symbol: 'Rp ', rate: 16100, locale: 'id-ID' },
-  { code: 'PHP', name: 'Philippine Peso', symbol: '₱', rate: 57.5, locale: 'fil-PH' },
-  { code: 'BDT', name: 'Bangladeshi Taka', symbol: '৳', rate: 117.0, locale: 'bn-BD' },
+  { code: 'PHP', name: 'Philippine Peso', symbol: 'â‚±', rate: 57.5, locale: 'fil-PH' },
+  { code: 'BDT', name: 'Bangladeshi Taka', symbol: 'à§³', rate: 117.0, locale: 'bn-BD' },
   { code: 'LKR', name: 'Sri Lankan Rupee', symbol: 'Rs ', rate: 302.0, locale: 'si-LK' },
-  { code: 'TRY', name: 'Turkish Lira', symbol: '₺', rate: 32.2, locale: 'tr-TR' },
+  { code: 'TRY', name: 'Turkish Lira', symbol: 'â‚º', rate: 32.2, locale: 'tr-TR' },
   { code: 'ZAR', name: 'South African Rand', symbol: 'R ', rate: 18.3, locale: 'en-ZA' },
   { code: 'BRL', name: 'Brazilian Real', symbol: 'R$', rate: 5.15, locale: 'pt-BR' },
   { code: 'MXN', name: 'Mexican Peso', symbol: 'Mex$', rate: 16.8, locale: 'es-MX' },
@@ -215,54 +238,54 @@ const WORLD_CURRENCIES = [
   { code: 'BHD', name: 'Bahraini Dinar', symbol: 'BD ', rate: 0.38, locale: 'ar-BH' },
   { code: 'OMR', name: 'Omani Rial', symbol: 'OMR ', rate: 0.385, locale: 'ar-OM' },
   { code: 'JOD', name: 'Jordanian Dinar', symbol: 'JD ', rate: 0.71, locale: 'ar-JO' },
-  { code: 'EGP', name: 'Egyptian Pound', symbol: 'E£ ', rate: 47.5, locale: 'ar-EG' },
-  { code: 'NGN', name: 'Nigerian Naira', symbol: '₦', rate: 1450, locale: 'en-NG' },
+  { code: 'EGP', name: 'Egyptian Pound', symbol: 'EÂ£ ', rate: 47.5, locale: 'ar-EG' },
+  { code: 'NGN', name: 'Nigerian Naira', symbol: 'â‚¦', rate: 1450, locale: 'en-NG' },
   { code: 'KES', name: 'Kenyan Shilling', symbol: 'KSh ', rate: 132.0, locale: 'sw-KE' },
-  { code: 'GHS', name: 'Ghanaian Cedi', symbol: 'GH₵ ', rate: 14.5, locale: 'ak-GH' },
-  { code: 'KRW', name: 'South Korean Won', symbol: '₩', rate: 1370, locale: 'ko-KR' },
+  { code: 'GHS', name: 'Ghanaian Cedi', symbol: 'GHâ‚µ ', rate: 14.5, locale: 'ak-GH' },
+  { code: 'KRW', name: 'South Korean Won', symbol: 'â‚©', rate: 1370, locale: 'ko-KR' },
   { code: 'TWD', name: 'New Taiwan Dollar', symbol: 'NT$', rate: 32.4, locale: 'zh-TW' },
-  { code: 'VND', name: 'Vietnamese Dong', symbol: '₫', rate: 25400, locale: 'vi-VN' },
+  { code: 'VND', name: 'Vietnamese Dong', symbol: 'â‚«', rate: 25400, locale: 'vi-VN' },
   { code: 'SEK', name: 'Swedish Krona', symbol: 'kr ', rate: 10.8, locale: 'sv-SE' },
   { code: 'NOK', name: 'Norwegian Krone', symbol: 'kr ', rate: 10.7, locale: 'nb-NO' },
   { code: 'DKK', name: 'Danish Krone', symbol: 'kr ', rate: 6.9, locale: 'da-DK' },
-  { code: 'PLN', name: 'Polish Zloty', symbol: 'zł ', rate: 3.95, locale: 'pl-PL' },
-  { code: 'CZK', name: 'Czech Koruna', symbol: 'Kč ', rate: 23.0, locale: 'cs-CZ' },
+  { code: 'PLN', name: 'Polish Zloty', symbol: 'zÅ‚ ', rate: 3.95, locale: 'pl-PL' },
+  { code: 'CZK', name: 'Czech Koruna', symbol: 'KÄ ', rate: 23.0, locale: 'cs-CZ' },
   { code: 'HUF', name: 'Hungarian Forint', symbol: 'Ft ', rate: 360.0, locale: 'hu-HU' },
   { code: 'RON', name: 'Romanian Leu', symbol: 'lei ', rate: 4.6, locale: 'ro-RO' },
-  { code: 'BGN', name: 'Bulgarian Lev', symbol: 'лв ', rate: 1.8, locale: 'bg-BG' },
-  { code: 'ILS', name: 'Israeli Shekel', symbol: '₪', rate: 3.7, locale: 'he-IL' },
-  { code: 'RUB', name: 'Russian Ruble', symbol: '₽', rate: 91.0, locale: 'ru-RU' },
-  { code: 'UAH', name: 'Ukrainian Hryvnia', symbol: '₴', rate: 39.8, locale: 'uk-UA' },
-  { code: 'KZT', name: 'Kazakhstani Tenge', symbol: '₸', rate: 445.0, locale: 'kk-KZ' },
+  { code: 'BGN', name: 'Bulgarian Lev', symbol: 'Ð»Ð² ', rate: 1.8, locale: 'bg-BG' },
+  { code: 'ILS', name: 'Israeli Shekel', symbol: 'â‚ª', rate: 3.7, locale: 'he-IL' },
+  { code: 'RUB', name: 'Russian Ruble', symbol: 'â‚½', rate: 91.0, locale: 'ru-RU' },
+  { code: 'UAH', name: 'Ukrainian Hryvnia', symbol: 'â‚´', rate: 39.8, locale: 'uk-UA' },
+  { code: 'KZT', name: 'Kazakhstani Tenge', symbol: 'â‚¸', rate: 445.0, locale: 'kk-KZ' },
   { code: 'UZS', name: 'Uzbekistani Som', symbol: "so'm ", rate: 12700, locale: 'uz-UZ' },
-  { code: 'KGS', name: 'Kyrgyzstani Som', symbol: 'сом ', rate: 87.5, locale: 'ky-KG' },
+  { code: 'KGS', name: 'Kyrgyzstani Som', symbol: 'ÑÐ¾Ð¼ ', rate: 87.5, locale: 'ky-KG' },
   { code: 'MAD', name: 'Moroccan Dirham', symbol: 'MAD ', rate: 10.0, locale: 'ar-MA' },
   { code: 'DZD', name: 'Algerian Dinar', symbol: 'DA ', rate: 134.0, locale: 'ar-DZ' },
   { code: 'TND', name: 'Tunisian Dinar', symbol: 'DT ', rate: 3.12, locale: 'ar-TN' },
   { code: 'IQD', name: 'Iraqi Dinar', symbol: 'IQD ', rate: 1310, locale: 'ar-IQ' },
-  { code: 'LBP', name: 'Lebanese Pound', symbol: 'L£ ', rate: 89500, locale: 'ar-LB' },
+  { code: 'LBP', name: 'Lebanese Pound', symbol: 'LÂ£ ', rate: 89500, locale: 'ar-LB' },
   { code: 'NPR', name: 'Nepalese Rupee', symbol: 'Rs ', rate: 133.5, locale: 'ne-NP' },
-  { code: 'AFN', name: 'Afghan Afghani', symbol: '؋', rate: 71.0, locale: 'ps-AF' },
+  { code: 'AFN', name: 'Afghan Afghani', symbol: 'Ø‹', rate: 71.0, locale: 'ps-AF' },
   { code: 'MMK', name: 'Myanmar Kyat', symbol: 'K ', rate: 2100, locale: 'my-MM' },
-  { code: 'KHR', name: 'Cambodian Riel', symbol: '៛', rate: 4100, locale: 'km-KH' },
-  { code: 'LAK', name: 'Lao Kip', symbol: '₭', rate: 21500, locale: 'lo-LA' },
+  { code: 'KHR', name: 'Cambodian Riel', symbol: 'áŸ›', rate: 4100, locale: 'km-KH' },
+  { code: 'LAK', name: 'Lao Kip', symbol: 'â‚­', rate: 21500, locale: 'lo-LA' },
   { code: 'ISK', name: 'Icelandic Krona', symbol: 'kr ', rate: 139.0, locale: 'is-IS' },
   { code: 'RSD', name: 'Serbian Dinar', symbol: 'din. ', rate: 108.0, locale: 'sr-RS' },
-  { code: 'GEL', name: 'Georgian Lari', symbol: '₾', rate: 2.7, locale: 'ka-GE' },
-  { code: 'AZN', name: 'Azerbaijani Manat', symbol: '₼', rate: 1.7, locale: 'az-AZ' },
-  { code: 'AMD', name: 'Armenian Dram', symbol: '֏', rate: 388.0, locale: 'hy-AM' },
+  { code: 'GEL', name: 'Georgian Lari', symbol: 'â‚¾', rate: 2.7, locale: 'ka-GE' },
+  { code: 'AZN', name: 'Azerbaijani Manat', symbol: 'â‚¼', rate: 1.7, locale: 'az-AZ' },
+  { code: 'AMD', name: 'Armenian Dram', symbol: 'Ö', rate: 388.0, locale: 'hy-AM' },
   { code: 'BYN', name: 'Belarusian Ruble', symbol: 'Br ', rate: 3.27, locale: 'be-BY' },
   { code: 'ARS', name: 'Argentine Peso', symbol: '$', rate: 885.0, locale: 'es-AR' },
   { code: 'COP', name: 'Colombian Peso', symbol: '$', rate: 3850, locale: 'es-CO' },
   { code: 'CLP', name: 'Chilean Peso', symbol: '$', rate: 935.0, locale: 'es-CL' },
   { code: 'PEN', name: 'Peruvian Sol', symbol: 'S/. ', rate: 3.73, locale: 'es-PE' },
-  { code: 'CRC', name: 'Costa Rican Colon', symbol: '₡', rate: 515.0, locale: 'es-CR' },
+  { code: 'CRC', name: 'Costa Rican Colon', symbol: 'â‚¡', rate: 515.0, locale: 'es-CR' },
   { code: 'DOP', name: 'Dominican Peso', symbol: 'RD$ ', rate: 59.0, locale: 'es-DO' },
   { code: 'GTQ', name: 'Guatemalan Quetzal', symbol: 'Q ', rate: 7.78, locale: 'es-GT' },
   { code: 'HNL', name: 'Honduran Lempira', symbol: 'L ', rate: 24.7, locale: 'es-HN' },
   { code: 'NIO', name: 'Nicaraguan Cordoba', symbol: 'C$ ', rate: 36.8, locale: 'es-NI' },
   { code: 'PAB', name: 'Panamanian Balboa', symbol: 'B/. ', rate: 1.0, locale: 'es-PA' },
-  { code: 'PYG', name: 'Paraguayan Guarani', symbol: '₲', rate: 7500, locale: 'es-PY' },
+  { code: 'PYG', name: 'Paraguayan Guarani', symbol: 'â‚²', rate: 7500, locale: 'es-PY' },
   { code: 'UYU', name: 'Uruguayan Peso', symbol: '$U ', rate: 38.6, locale: 'es-UY' },
   { code: 'BOB', name: 'Bolivian Boliviano', symbol: 'Bs. ', rate: 6.91, locale: 'es-BO' },
   { code: 'JMD', name: 'Jamaican Dollar', symbol: 'J$ ', rate: 156.0, locale: 'en-JM' },
@@ -285,8 +308,112 @@ const WORLD_CURRENCIES = [
   { code: 'FJD', name: 'Fijian Dollar', symbol: 'FJ$ ', rate: 2.26, locale: 'en-FJ' },
 ];
 
+const CLEAN_CURRENCY_SYMBOLS = {
+  USD: '$',
+  EUR: '€',
+  GBP: '£',
+  PKR: 'Rs ',
+  INR: '₹',
+  AED: 'AED ',
+  SAR: 'SAR ',
+  CAD: 'C$',
+  AUD: 'A$',
+  JPY: '¥',
+  CNY: '¥',
+  CHF: 'CHF ',
+  SGD: 'S$',
+  NZD: 'NZ$',
+  HKD: 'HK$',
+  MYR: 'RM ',
+  THB: '฿',
+  IDR: 'Rp ',
+  PHP: '₱',
+  BDT: '৳',
+  LKR: 'Rs ',
+  TRY: '₺',
+  ZAR: 'R ',
+  BRL: 'R$',
+  MXN: 'Mex$',
+  QAR: 'QR ',
+  KWD: 'KD ',
+  BHD: 'BD ',
+  OMR: 'OMR ',
+  JOD: 'JD ',
+  EGP: 'E£ ',
+  NGN: '₦',
+  KES: 'KSh ',
+  GHS: 'GH₵ ',
+  KRW: '₩',
+  TWD: 'NT$',
+  VND: '₫',
+  SEK: 'kr ',
+  NOK: 'kr ',
+  DKK: 'kr ',
+  PLN: 'zł ',
+  CZK: 'Kč ',
+  HUF: 'Ft ',
+  RON: 'lei ',
+  BGN: 'лв ',
+  ILS: '₪',
+  RUB: '₽',
+  UAH: '₴',
+  KZT: '₸',
+  UZS: "so'm ",
+  KGS: 'сом',
+  MAD: 'MAD ',
+  DZD: 'DA ',
+  TND: 'DT ',
+  IQD: 'IQD ',
+  LBP: 'L£ ',
+  NPR: 'Rs ',
+  AFN: '؋',
+  MMK: 'K ',
+  KHR: '៛',
+  LAK: '₭',
+  ISK: 'kr ',
+  RSD: 'din. ',
+  GEL: '₾',
+  AZN: '₼',
+  AMD: '֏ ',
+  BYN: 'Br ',
+  ARS: '$',
+  COP: '$',
+  CLP: '$',
+  PEN: 'S/. ',
+  CRC: '₡',
+  DOP: 'RD$',
+  GTQ: 'Q ',
+  HNL: 'L ',
+  NIO: 'C$',
+  PAB: 'B/. ',
+  PYG: '₲',
+  UYU: '$U ',
+  BOB: 'Bs. ',
+  JMD: 'J$',
+  TTD: 'TT$',
+  BBD: 'Bds$',
+  BSD: 'B$',
+  BZD: 'BZ$',
+  XOF: 'CFA ',
+  XAF: 'FCFA ',
+  TZS: 'TSh ',
+  UGX: 'USh ',
+  RWF: 'RF ',
+  ETB: 'Br ',
+  MZN: 'MT ',
+  AOA: 'Kz ',
+  ZMW: 'ZK ',
+  BWP: 'P ',
+  NAD: 'N$',
+  MUR: 'Rs ',
+  FJD: 'FJ$',
+};
+
 const CURRENCIES = {};
 WORLD_CURRENCIES.forEach((c) => {
+  if (CLEAN_CURRENCY_SYMBOLS[c.code]) {
+    c.symbol = CLEAN_CURRENCY_SYMBOLS[c.code];
+  }
   CURRENCIES[c.code] = {
     symbol: c.symbol,
     rate: c.rate,
@@ -298,6 +425,45 @@ WORLD_CURRENCIES.forEach((c) => {
 let currentBaseCurrency = localStorage.getItem('user_base_currency') || 'USD';
 
 function populateCurrencyDropdown(selectEl, selectedValue = currentBaseCurrency) {
+  if (!selectEl) return;
+  const currentVal = selectedValue || selectEl.value || currentBaseCurrency;
+  const isNavbarSelect = selectEl.id === 'userBaseCurrency';
+  selectEl.innerHTML = '';
+
+  const popularGroup = document.createElement('optgroup');
+  popularGroup.label = 'â­ Popular Currencies';
+
+  const popularCodes = ['USD', 'EUR', 'GBP', 'PKR', 'INR', 'AED', 'SAR', 'CAD', 'AUD', 'JPY', 'CNY', 'CHF', 'TRY', 'BRL', 'SGD', 'MYR'];
+  popularCodes.forEach((code) => {
+    const c = CURRENCIES[code];
+    if (c) {
+      const opt = document.createElement('option');
+      opt.value = code;
+      opt.textContent = isNavbarSelect
+        ? `${code} (${c.symbol.trim()})`
+        : `${code} (${c.symbol.trim()}) Â· ${c.name}`;
+      popularGroup.appendChild(opt);
+    }
+  });
+
+  const allGroup = document.createElement('optgroup');
+  allGroup.label = 'ðŸŒ All World Currencies (A-Z)';
+  const sorted = [...WORLD_CURRENCIES].sort((a, b) => a.code.localeCompare(b.code));
+  sorted.forEach((c) => {
+    const opt = document.createElement('option');
+    opt.value = c.code;
+    opt.textContent = isNavbarSelect
+      ? `${c.code} (${c.symbol.trim()})`
+      : `${c.code} (${c.symbol.trim()}) Â· ${c.name}`;
+    allGroup.appendChild(opt);
+  });
+
+  selectEl.appendChild(popularGroup);
+  selectEl.appendChild(allGroup);
+  selectEl.value = CURRENCIES[currentVal] ? currentVal : 'USD';
+}
+
+populateCurrencyDropdown = function(selectEl, selectedValue = currentBaseCurrency) {
   if (!selectEl) return;
   const currentVal = selectedValue || selectEl.value || currentBaseCurrency;
   const isNavbarSelect = selectEl.id === 'userBaseCurrency';
@@ -334,7 +500,7 @@ function populateCurrencyDropdown(selectEl, selectedValue = currentBaseCurrency)
   selectEl.appendChild(popularGroup);
   selectEl.appendChild(allGroup);
   selectEl.value = CURRENCIES[currentVal] ? currentVal : 'USD';
-}
+};
 
 function populateAllCurrencySelects() {
   const ids = ['userBaseCurrency', 'incomeCurrency', 'expenseCurrency', 'groupBaseCurrency', 'planCurrency'];
@@ -403,7 +569,7 @@ function parseDateParts(dateStr) {
 }
 
 function formatDate(dateStr) {
-  if (!dateStr) return '—';
+  if (!dateStr) return 'â€”';
   const parts = parseDateParts(dateStr);
   if (!parts) return String(dateStr);
   const d = new Date(parts.year, parts.month, parts.day);
@@ -423,7 +589,7 @@ function monthKey(dateStr) {
 }
 
 function monthLabel(key) {
-  if (!key || key === 'unknown') return '—';
+  if (!key || key === 'unknown') return 'â€”';
   const [year, month] = key.split('-');
   const d = new Date(Number(year), Number(month) - 1, 1);
   return d.toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
@@ -1126,31 +1292,50 @@ function selectDashboardMonth(key) {
 
 function renderDashboard() {
   const historyData = computeMonthlyFinancialHistory();
-  const { historyDesc, currentMonthKey, allTimeIncome, allTimeExpenses, allTimeSavings, allTimeBalance } = historyData;
+  const { historyDesc, currentMonthKey, allTimeIncome, allTimeExpenses, allTimeBalance } = historyData;
 
   populateDashboardMonthSelect(historyDesc, currentMonthKey);
 
   const selectedKey = state.selectedMonthKey;
 
   if (selectedKey === 'all') {
-    setFormattedCardValue(totalBalanceEl, allTimeBalance);
-    setFormattedCardValue(monthlyIncomeEl, allTimeIncome);
-    setFormattedCardValue(monthlyExpensesEl, allTimeExpenses);
-    setFormattedCardValue(monthlySavingsEl, allTimeSavings);
+    // All-time overview: Summary cards strictly follow the dashboard formula:
+    // Current Money = Current month income + prior leftovers
+    // Monthly Expenses = spent in current month
+    // Current Money Left = Current Money - Monthly Expenses (updates after every transaction)
+    // Previous Months Left = Leftover across prior months
+    const currentMonthItem = historyDesc.find((m) => m.key === currentMonthKey) || { income: 0, expenses: 0, savings: 0 };
+    const allPrevMonthsLeft = historyDesc
+      .filter((m) => m.key < currentMonthKey)
+      .reduce((sum, m) => sum + m.savings, 0);
 
-    if (totalBalanceLabelEl) totalBalanceLabelEl.textContent = 'Total Balance';
-    if (totalBalanceSubEl) totalBalanceSubEl.textContent = 'All-time cumulative balance';
+    const currentMoney = currentMonthItem.income + allPrevMonthsLeft;
+    const monthlyExpenses = currentMonthItem.expenses;
+    const currentMoneyLeft = currentMoney - monthlyExpenses;
 
-    if (monthlyIncomeLabelEl) monthlyIncomeLabelEl.textContent = 'Total Income';
-    if (monthlyIncomeSubEl) monthlyIncomeSubEl.textContent = 'All time from all sources';
+    setFormattedCardValue(currentMoneyEl, currentMoney);
+    setFormattedCardValue(monthlyExpensesEl, monthlyExpenses);
+    setFormattedCardValue(currentMonthLeftEl, currentMoneyLeft);
+    setFormattedCardValue(prevMonthsLeftEl, allPrevMonthsLeft);
 
-    if (monthlyExpensesLabelEl) monthlyExpensesLabelEl.textContent = 'Total Expenses';
-    if (monthlyExpensesSubEl) monthlyExpensesSubEl.textContent = 'All-time total spending';
+    if (currentMoneyLabelEl) currentMoneyLabelEl.textContent = 'Current Money';
+    if (currentMoneySubEl) currentMoneySubEl.textContent = 'Current month income + prior leftovers';
 
-    if (monthlySavingsLabelEl) monthlySavingsLabelEl.textContent = 'Total Savings';
-    const rate = allTimeIncome > 0 ? ((allTimeSavings / allTimeIncome) * 100).toFixed(1) : 0;
-    if (monthlySavingsSubEl) monthlySavingsSubEl.textContent = `${rate}% all-time savings rate`;
+    if (monthlyExpensesLabelEl) monthlyExpensesLabelEl.textContent = 'Monthly Expenses';
+    if (monthlyExpensesSubEl) monthlyExpensesSubEl.textContent = 'Spent in current month';
+
+    if (currentMonthLeftLabelEl) currentMonthLeftLabelEl.textContent = 'Current Money Left';
+    if (currentMonthLeftSubEl) currentMonthLeftSubEl.textContent = 'Updates after every transaction';
+
+    if (prevMonthsLeftLabelEl) prevMonthsLeftLabelEl.textContent = 'Previous Months Left';
+    const prevCount = historyDesc.filter((m) => m.key < currentMonthKey).length;
+    if (prevMonthsLeftSubEl) {
+      prevMonthsLeftSubEl.textContent = prevCount > 0
+        ? `Leftover across ${prevCount} prior month${prevCount !== 1 ? 's' : ''}`
+        : 'Leftover across prior months';
+    }
   } else {
+    const isSelectedCurrent = selectedKey === currentMonthKey;
     const monthItem = historyDesc.find((m) => m.key === selectedKey) || historyDesc[0] || {
       key: currentMonthKey,
       label: 'Current Month',
@@ -1161,24 +1346,45 @@ function renderDashboard() {
       balance: 0,
     };
 
-    setFormattedCardValue(totalBalanceEl, monthItem.balance);
-    setFormattedCardValue(monthlyIncomeEl, monthItem.income);
+    // Previous Months Left = sum of (income - expenses) for all months BEFORE the selected month
+    const prevMonthsLeftover = historyDesc
+      .filter((m) => m.key < selectedKey)
+      .reduce((sum, m) => sum + m.savings, 0);
+
+    // Current Money = selected month income + previous months leftover
+    const currentMoney = monthItem.income + prevMonthsLeftover;
+
+    // Current Money Left = Current Money - selected month expenses
+    const currentMoneyLeft = currentMoney - monthItem.expenses;
+
+    setFormattedCardValue(currentMoneyEl, currentMoney);
     setFormattedCardValue(monthlyExpensesEl, monthItem.expenses);
-    setFormattedCardValue(monthlySavingsEl, monthItem.savings);
+    setFormattedCardValue(currentMonthLeftEl, currentMoneyLeft);
+    setFormattedCardValue(prevMonthsLeftEl, prevMonthsLeftover);
 
-    if (totalBalanceLabelEl) totalBalanceLabelEl.textContent = 'Total Balance';
-    if (totalBalanceSubEl) totalBalanceSubEl.textContent = `As of ${monthItem.shortLabel}`;
-
-    if (monthlyIncomeLabelEl) monthlyIncomeLabelEl.textContent = 'Monthly Income';
-    if (monthlyIncomeSubEl) monthlyIncomeSubEl.textContent = `Earned in ${monthItem.shortLabel}`;
+    if (currentMoneyLabelEl) currentMoneyLabelEl.textContent = 'Current Money';
+    if (currentMoneySubEl) {
+      currentMoneySubEl.textContent = isSelectedCurrent
+        ? 'Current month income + prior leftovers'
+        : `${monthItem.shortLabel} income + prior leftovers`;
+    }
 
     if (monthlyExpensesLabelEl) monthlyExpensesLabelEl.textContent = 'Monthly Expenses';
-    if (monthlyExpensesSubEl) monthlyExpensesSubEl.textContent = `Spent in ${monthItem.shortLabel}`;
+    if (monthlyExpensesSubEl) {
+      monthlyExpensesSubEl.textContent = isSelectedCurrent
+        ? 'Spent in current month'
+        : `Spent in ${monthItem.shortLabel}`;
+    }
 
-    if (monthlySavingsLabelEl) monthlySavingsLabelEl.textContent = 'Monthly Savings';
-    const rate = monthItem.income > 0 ? ((monthItem.savings / monthItem.income) * 100).toFixed(1) : null;
-    if (monthlySavingsSubEl) {
-      monthlySavingsSubEl.textContent = rate !== null ? `${rate}% savings rate` : 'Income - Expenses';
+    if (currentMonthLeftLabelEl) currentMonthLeftLabelEl.textContent = 'Current Money Left';
+    if (currentMonthLeftSubEl) currentMonthLeftSubEl.textContent = 'Updates after every transaction';
+
+    if (prevMonthsLeftLabelEl) prevMonthsLeftLabelEl.textContent = 'Previous Months Left';
+    const prevMonthCount = historyDesc.filter((m) => m.key < selectedKey).length;
+    if (prevMonthsLeftSubEl) {
+      prevMonthsLeftSubEl.textContent = prevMonthCount > 0
+        ? `Leftover across ${prevMonthCount} prior month${prevMonthCount !== 1 ? 's' : ''}`
+        : 'Leftover across prior months';
     }
   }
 
@@ -1187,16 +1393,12 @@ function renderDashboard() {
   renderMonthlyFinancialHistory(historyData);
 }
 
+
 function renderCategoryChart(selectedMonthKey = state.selectedMonthKey) {
   const canvas = document.getElementById('categoryChart');
   if (!canvas || typeof Chart === 'undefined') return;
 
   const container = canvas.parentElement;
-
-  const dashboardPage = document.getElementById('page-dashboard');
-  if (dashboardPage && !dashboardPage.classList.contains('active')) {
-    return;
-  }
 
   if (categoryChartInstance) {
     categoryChartInstance.destroy();
@@ -1287,11 +1489,6 @@ function renderIncomeExpenseChart() {
 
   const container = canvas.parentElement;
 
-  const dashboardPage = document.getElementById('page-dashboard');
-  if (dashboardPage && !dashboardPage.classList.contains('active')) {
-    return;
-  }
-
   if (incomeExpenseChartInstance) {
     incomeExpenseChartInstance.destroy();
     incomeExpenseChartInstance = null;
@@ -1366,7 +1563,7 @@ function renderIncomeExpenseChart() {
 }
 
 function renderMonthlyFinancialHistory(historyData = computeMonthlyFinancialHistory()) {
-  if (!monthlyHistoryTableBodyEl) return;
+  if (!monthlyHistoryTableBodyEl) return; // section removed from DOM, skip gracefully
 
   const { historyDesc, currentMonthKey } = historyData;
 
@@ -1441,7 +1638,7 @@ function transactionRowHtml(t, isIncome, { editable = false } = {}) {
     <div class="tx-row">
       <div class="tx-meta">
         <span>${label} ${recurringBadge}</span>
-        <small>${formatDate(t.date)}${t.notes ? ` · ${t.notes}` : ''}</small>
+        <small>${formatDate(t.date)}${t.notes ? ` Â· ${t.notes}` : ''}</small>
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;justify-content:center;">
         <div style="display:flex;align-items:center;">
@@ -1709,17 +1906,17 @@ function renderGroupItemRows() {
       <div class="line-item-row">
         <div class="line-item-field line-item-cat">
           <select data-item-idx="${idx}" data-field="category" class="line-item-select">
-            <option value="Food" ${item.category === 'Food' ? 'selected' : ''}>🍔 Food</option>
-            <option value="Transport" ${item.category === 'Transport' ? 'selected' : ''}>🚗 Transport</option>
-            <option value="Bills" ${item.category === 'Bills' ? 'selected' : ''}>📄 Bills</option>
-            <option value="Shopping" ${item.category === 'Shopping' ? 'selected' : ''}>🛍️ Shopping</option>
-            <option value="Rent" ${item.category === 'Rent' ? 'selected' : ''}>🏠 Rent</option>
-            <option value="Entertainment" ${item.category === 'Entertainment' ? 'selected' : ''}>🎬 Entertainment</option>
-            <option value="Healthcare" ${item.category === 'Healthcare' ? 'selected' : ''}>🏥 Healthcare</option>
-            <option value="Education" ${item.category === 'Education' ? 'selected' : ''}>🎓 Education</option>
-            <option value="Travel" ${item.category === 'Travel' ? 'selected' : ''}>✈️ Travel</option>
-            <option value="Return" ${item.category === 'Return' ? 'selected' : ''}>🔄 Return</option>
-            <option value="Other" ${!item.category || item.category === 'Other' ? 'selected' : ''}>📌 Other</option>
+            <option value="Food" ${item.category === 'Food' ? 'selected' : ''}>ðŸ” Food</option>
+            <option value="Transport" ${item.category === 'Transport' ? 'selected' : ''}>ðŸš— Transport</option>
+            <option value="Bills" ${item.category === 'Bills' ? 'selected' : ''}>ðŸ“„ Bills</option>
+            <option value="Shopping" ${item.category === 'Shopping' ? 'selected' : ''}>ðŸ›ï¸ Shopping</option>
+            <option value="Rent" ${item.category === 'Rent' ? 'selected' : ''}>ðŸ  Rent</option>
+            <option value="Entertainment" ${item.category === 'Entertainment' ? 'selected' : ''}>ðŸŽ¬ Entertainment</option>
+            <option value="Healthcare" ${item.category === 'Healthcare' ? 'selected' : ''}>ðŸ¥ Healthcare</option>
+            <option value="Education" ${item.category === 'Education' ? 'selected' : ''}>ðŸŽ“ Education</option>
+            <option value="Travel" ${item.category === 'Travel' ? 'selected' : ''}>âœˆï¸ Travel</option>
+            <option value="Return" ${item.category === 'Return' ? 'selected' : ''}>ðŸ”„ Return</option>
+            <option value="Other" ${!item.category || item.category === 'Other' ? 'selected' : ''}>ðŸ“Œ Other</option>
           </select>
         </div>
         <div class="line-item-field line-item-desc">
@@ -1744,7 +1941,7 @@ function renderGroupItemRows() {
           </select>
         </div>
         <div class="line-item-actions">
-          <button type="button" class="button button-small button-danger line-item-del-btn" data-remove-group-item="${idx}">✕</button>
+          <button type="button" class="button button-small button-danger line-item-del-btn" data-remove-group-item="${idx}">âœ•</button>
         </div>
       </div>`;
   }).join('');
@@ -1862,8 +2059,8 @@ function renderExpenseGroupsList() {
 
   expenseGroupsListEl.innerHTML = sortedGroups.map((g) => {
     const total = computeGroupTotal(g);
-    const typeBadges = { trip: '✈️ Trip', day: '📅 Single Day', week: '🗓️ Week', custom: '📆 Custom' };
-    const badgeText = typeBadges[g.type] || '📦 Group';
+    const typeBadges = { trip: 'âœˆï¸ Trip', day: 'ðŸ“… Single Day', week: 'ðŸ—“ï¸ Week', custom: 'ðŸ“† Custom' };
+    const badgeText = typeBadges[g.type] || 'ðŸ“¦ Group';
 
     // Display line-item expenses in reverse chronological order (most recent first)
     const sortedItems = [...(g.items || [])].sort((a, b) => {
@@ -1891,7 +2088,7 @@ function renderExpenseGroupsList() {
         <div class="card-top-flex">
           <div>
             <h3 style="margin:0 0 4px 0;">${g.name} <span class="badge" style="background:#e0f2fe;color:#0369a1;margin-left:6px;">${badgeText}</span></h3>
-            <small style="color:var(--muted);">${formatDate(g.startDate)} ${g.startDate !== g.endDate ? `— ${formatDate(g.endDate)}` : ''}</small>
+            <small style="color:var(--muted);">${formatDate(g.startDate)} ${g.startDate !== g.endDate ? `â€” ${formatDate(g.endDate)}` : ''}</small>
           </div>
           <div class="card-total-badge">
             <span style="font-size:1.25rem;font-weight:700;color:var(--danger);">${formatCurrency(total)}</span>
@@ -2066,12 +2263,12 @@ function renderPlanItemRows() {
       <div class="line-item-row">
         <div class="line-item-field line-item-cat">
           <select data-plan-idx="${idx}" data-field="category" class="line-item-select">
-            <option value="Education" ${item.category === 'Education' ? 'selected' : ''}>🎓 Education</option>
-            <option value="Travel" ${item.category === 'Travel' ? 'selected' : ''}>✈️ Travel</option>
-            <option value="Shopping" ${item.category === 'Shopping' ? 'selected' : ''}>🛍️ Shopping</option>
-            <option value="Rent" ${item.category === 'Rent' ? 'selected' : ''}>🏠 Rent / Housing</option>
-            <option value="Bills" ${item.category === 'Bills' ? 'selected' : ''}>📄 Bills & Setup</option>
-            <option value="Other" ${!item.category || item.category === 'Other' ? 'selected' : ''}>📌 Other</option>
+            <option value="Education" ${item.category === 'Education' ? 'selected' : ''}>ðŸŽ“ Education</option>
+            <option value="Travel" ${item.category === 'Travel' ? 'selected' : ''}>âœˆï¸ Travel</option>
+            <option value="Shopping" ${item.category === 'Shopping' ? 'selected' : ''}>ðŸ›ï¸ Shopping</option>
+            <option value="Rent" ${item.category === 'Rent' ? 'selected' : ''}>ðŸ  Rent / Housing</option>
+            <option value="Bills" ${item.category === 'Bills' ? 'selected' : ''}>ðŸ“„ Bills & Setup</option>
+            <option value="Other" ${!item.category || item.category === 'Other' ? 'selected' : ''}>ðŸ“Œ Other</option>
           </select>
         </div>
         <div class="line-item-field line-item-desc">
@@ -2093,7 +2290,7 @@ function renderPlanItemRows() {
           </select>
         </div>
         <div class="line-item-actions">
-          <button type="button" class="button button-small button-danger line-item-del-btn" data-remove-plan-item="${idx}">✕</button>
+          <button type="button" class="button button-small button-danger line-item-del-btn" data-remove-plan-item="${idx}">âœ•</button>
         </div>
       </div>`;
   }).join('');
@@ -2251,6 +2448,197 @@ plansListEl?.addEventListener('click', async (e) => {
     renderPlansList();
   }
 });
+
+// Clean UI renderer overrides (avoiding encoding corruption)
+renderGroupItemRows = function() {
+  if (!groupItemsContainer) return;
+  if (!groupFormItems.length) {
+    groupItemsContainer.innerHTML = '<p class="placeholder" style="margin:6px 0;font-size:0.85rem;">No line items in group yet. Click "+ Add Line Item" above.</p>';
+    if (groupTotalDisplay) groupTotalDisplay.textContent = formatCurrency(0);
+    return;
+  }
+
+  let total = 0;
+  groupItemsContainer.innerHTML = groupFormItems.map((item, idx) => {
+    const itemConverted = convertAmount(item.amount || 0, item.currency || currentBaseCurrency, currentBaseCurrency);
+    total += itemConverted;
+
+    const catOptions = Object.keys(EXPENSE_CATEGORIES).map((key) => {
+      const isSel = (item.category === key || (!item.category && key === 'Other')) ? 'selected' : '';
+      return `<option value="${key}" ${isSel}>${EXPENSE_CATEGORIES[key].label}</option>`;
+    }).join('');
+
+    return `
+      <div class="line-item-row">
+        <div class="line-item-field line-item-cat">
+          <select data-item-idx="${idx}" data-field="category" class="line-item-select">
+            ${catOptions}
+          </select>
+        </div>
+        <div class="line-item-field line-item-desc">
+          <input type="text" data-item-idx="${idx}" data-field="title" placeholder="Item description" value="${item.title || ''}" required />
+        </div>
+        <div class="line-item-field line-item-amt">
+          <input type="number" data-item-idx="${idx}" data-field="amount" placeholder="0.00" step="0.01" value="${item.amount ?? ''}" required />
+        </div>
+        <div class="line-item-field line-item-curr">
+          <select data-item-idx="${idx}" data-field="currency" class="currency-select line-item-select">
+            <option value="USD" ${item.currency === 'USD' ? 'selected' : ''}>USD</option>
+            <option value="EUR" ${item.currency === 'EUR' ? 'selected' : ''}>EUR</option>
+            <option value="GBP" ${item.currency === 'GBP' ? 'selected' : ''}>GBP</option>
+            <option value="PKR" ${item.currency === 'PKR' ? 'selected' : ''}>PKR</option>
+            <option value="INR" ${item.currency === 'INR' ? 'selected' : ''}>INR</option>
+            <option value="AED" ${item.currency === 'AED' ? 'selected' : ''}>AED</option>
+            <option value="SAR" ${item.currency === 'SAR' ? 'selected' : ''}>SAR</option>
+            <option value="CAD" ${item.currency === 'CAD' ? 'selected' : ''}>CAD</option>
+            <option value="AUD" ${item.currency === 'AUD' ? 'selected' : ''}>AUD</option>
+            <option value="JPY" ${item.currency === 'JPY' ? 'selected' : ''}>JPY</option>
+            <option value="KGS" ${item.currency === 'KGS' ? 'selected' : ''}>KGS</option>
+          </select>
+        </div>
+        <div class="line-item-actions">
+          <button type="button" class="button button-small button-danger line-item-del-btn" data-remove-group-item="${idx}">✕</button>
+        </div>
+      </div>`;
+  }).join('');
+
+  if (groupTotalDisplay) groupTotalDisplay.textContent = formatCurrency(total);
+};
+
+renderExpenseGroupsList = function() {
+  if (!expenseGroupsListEl) return;
+  if (!state.expenseGroups.length) {
+    expenseGroupsListEl.innerHTML = '<p class="placeholder">No expense groups yet. Click "+ Create Expense Group / Trip" to bundle expenses for trips or events!</p>';
+    return;
+  }
+
+  const sortedGroups = [...state.expenseGroups].sort((a, b) => {
+    const parseGroupDate = (g) => {
+      const dStr = g.startDate || g.endDate || g.createdAt;
+      const parts = parseDateParts(dStr);
+      return parts ? new Date(parts.year, parts.month, parts.day).getTime() : 0;
+    };
+    return parseGroupDate(b) - parseGroupDate(a);
+  });
+
+  expenseGroupsListEl.innerHTML = sortedGroups.map((g) => {
+    const total = computeGroupTotal(g);
+    const typeBadges = { trip: '✈️ Trip', day: '📅 Single Day', week: '🗓️ Week', custom: '📆 Custom' };
+    const badgeText = typeBadges[g.type] || '📦 Group';
+
+    const sortedItems = [...(g.items || [])].sort((a, b) => {
+      const dStrA = a.date || g.startDate;
+      const dStrB = b.date || g.startDate;
+      const partsA = parseDateParts(dStrA);
+      const partsB = parseDateParts(dStrB);
+      const timeA = partsA ? new Date(partsA.year, partsA.month, partsA.day).getTime() : 0;
+      const timeB = partsB ? new Date(partsB.year, partsB.month, partsB.day).getTime() : 0;
+      return timeB - timeA;
+    });
+
+    const itemsHtml = sortedItems.map((item) => `
+      <tr>
+        <td style="padding:8px 6px;font-size:0.82rem;">${EXPENSE_CATEGORIES[item.category]?.label || item.category}</td>
+        <td style="padding:8px 6px;font-size:0.82rem;font-weight:600;">${item.title || 'Item'}</td>
+        <td style="padding:8px 6px;font-size:0.82rem;text-align:right;font-weight:600;">
+          ${formatCurrency(convertAmount(item.amount, item.currency || 'USD', currentBaseCurrency))}
+          ${item.currency && item.currency !== currentBaseCurrency ? `<small style="opacity:0.7;display:block;">${item.amount} ${item.currency}</small>` : ''}
+        </td>
+      </tr>`).join('');
+
+    return `
+      <div class="card expense-group-item" style="margin-bottom:16px;">
+        <div class="card-top-flex">
+          <div>
+            <span class="badge" style="background:#f1ece5;color:#556b2f;font-weight:700;">${badgeText}</span>
+            <h3 style="margin:6px 0 2px 0;">${g.name}</h3>
+            <small style="color:var(--muted);">${formatDate(g.startDate)}${g.endDate ? ` — ${formatDate(g.endDate)}` : ''}</small>
+          </div>
+          <div class="card-total-badge">
+            <span style="font-size:1.25rem;font-weight:700;color:var(--danger);">${formatCurrency(total)}</span>
+            <small style="display:block;color:var(--muted);">Group Total</small>
+          </div>
+        </div>
+
+        ${g.notes ? `<p style="font-size:0.85rem;color:var(--muted);margin:8px 0;">${g.notes}</p>` : ''}
+
+        <details style="margin-top:10px;background:#f8fafc;padding:8px 12px;border-radius:12px;border:1px solid var(--border);">
+          <summary style="font-size:0.85rem;font-weight:600;cursor:pointer;">Line-Item Expenses (${(g.items || []).length})</summary>
+          <div class="table-responsive" style="margin-top:8px;">
+            <table style="width:100%;border-collapse:collapse;">
+              <thead>
+                <tr style="border-bottom:1px solid #cbd5e1;text-align:left;font-size:0.75rem;color:var(--muted);">
+                  <th>Category</th><th>Description</th><th style="text-align:right;">Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${itemsHtml || '<tr><td colspan="3" style="text-align:center;padding:8px;color:var(--muted);">No items</td></tr>'}
+              </tbody>
+            </table>
+          </div>
+        </details>
+
+        <div class="card-footer-actions" style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end;">
+          <button type="button" class="button button-small button-ghost" data-quick-item="${g.id}">+ Quick Item</button>
+          <button type="button" class="button button-small button-ghost" data-edit-group="${g.id}">Edit</button>
+          <button type="button" class="button button-small button-danger" data-delete-group="${g.id}">Delete</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+};
+
+renderPlanItemRows = function() {
+  if (!planItemsContainer) return;
+  if (!planFormItems.length) {
+    planItemsContainer.innerHTML = '<p class="placeholder" style="margin:6px 0;font-size:0.85rem;">No estimated items added yet. Click "+ Add Estimated Item" above.</p>';
+    if (planTotalDisplay) planTotalDisplay.textContent = formatCurrency(0);
+    return;
+  }
+
+  let total = 0;
+  planItemsContainer.innerHTML = planFormItems.map((item, idx) => {
+    const itemConverted = convertAmount(item.amount || 0, item.currency || currentBaseCurrency, currentBaseCurrency);
+    total += itemConverted;
+
+    const catOptions = Object.keys(EXPENSE_CATEGORIES).map((key) => {
+      const isSel = (item.category === key || (!item.category && key === 'Other')) ? 'selected' : '';
+      return `<option value="${key}" ${isSel}>${EXPENSE_CATEGORIES[key].label}</option>`;
+    }).join('');
+
+    return `
+      <div class="line-item-row">
+        <div class="line-item-field line-item-cat">
+          <select data-plan-idx="${idx}" data-field="category" class="line-item-select">
+            ${catOptions}
+          </select>
+        </div>
+        <div class="line-item-field line-item-desc">
+          <input type="text" data-plan-idx="${idx}" data-field="title" placeholder="Estimated cost description" value="${item.title || ''}" required />
+        </div>
+        <div class="line-item-field line-item-amt">
+          <input type="number" data-plan-idx="${idx}" data-field="amount" placeholder="0.00" step="0.01" value="${item.amount ?? ''}" required />
+        </div>
+        <div class="line-item-field line-item-curr">
+          <select data-plan-idx="${idx}" data-field="currency" class="currency-select line-item-select">
+            <option value="USD" ${item.currency === 'USD' ? 'selected' : ''}>USD</option>
+            <option value="EUR" ${item.currency === 'EUR' ? 'selected' : ''}>EUR</option>
+            <option value="GBP" ${item.currency === 'GBP' ? 'selected' : ''}>GBP</option>
+            <option value="PKR" ${item.currency === 'PKR' ? 'selected' : ''}>PKR</option>
+            <option value="INR" ${item.currency === 'INR' ? 'selected' : ''}>INR</option>
+            <option value="AED" ${item.currency === 'AED' ? 'selected' : ''}>AED</option>
+            <option value="SAR" ${item.currency === 'SAR' ? 'selected' : ''}>SAR</option>
+            <option value="KGS" ${item.currency === 'KGS' ? 'selected' : ''}>KGS</option>
+          </select>
+        </div>
+        <div class="line-item-actions">
+          <button type="button" class="button button-small button-danger line-item-del-btn" data-remove-plan-item="${idx}">✕</button>
+        </div>
+      </div>`;
+  }).join('');
+
+  if (planTotalDisplay) planTotalDisplay.textContent = formatCurrency(total);
+};
 
 /* ---------------------------------------------------------------------- */
 /* Init                                                                    */
