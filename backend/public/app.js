@@ -285,8 +285,112 @@ const WORLD_CURRENCIES = [
   { code: 'FJD', name: 'Fijian Dollar', symbol: 'FJ$ ', rate: 2.26, locale: 'en-FJ' },
 ];
 
+const CLEAN_CURRENCY_SYMBOLS = {
+  USD: '$',
+  EUR: '€',
+  GBP: '£',
+  PKR: 'Rs ',
+  INR: '₹',
+  AED: 'AED ',
+  SAR: 'SAR ',
+  CAD: 'C$',
+  AUD: 'A$',
+  JPY: '¥',
+  CNY: '¥',
+  CHF: 'CHF ',
+  SGD: 'S$',
+  NZD: 'NZ$',
+  HKD: 'HK$',
+  MYR: 'RM ',
+  THB: '฿',
+  IDR: 'Rp ',
+  PHP: '₱',
+  BDT: '৳',
+  LKR: 'Rs ',
+  TRY: '₺',
+  ZAR: 'R ',
+  BRL: 'R$',
+  MXN: 'Mex$',
+  QAR: 'QR ',
+  KWD: 'KD ',
+  BHD: 'BD ',
+  OMR: 'OMR ',
+  JOD: 'JD ',
+  EGP: 'E£ ',
+  NGN: '₦',
+  KES: 'KSh ',
+  GHS: 'GH₵ ',
+  KRW: '₩',
+  TWD: 'NT$',
+  VND: '₫',
+  SEK: 'kr ',
+  NOK: 'kr ',
+  DKK: 'kr ',
+  PLN: 'zł ',
+  CZK: 'Kč ',
+  HUF: 'Ft ',
+  RON: 'lei ',
+  BGN: 'лв ',
+  ILS: '₪',
+  RUB: '₽',
+  UAH: '₴',
+  KZT: '₸',
+  UZS: "so'm ",
+  KGS: 'сом',
+  MAD: 'MAD ',
+  DZD: 'DA ',
+  TND: 'DT ',
+  IQD: 'IQD ',
+  LBP: 'L£ ',
+  NPR: 'Rs ',
+  AFN: '؋',
+  MMK: 'K ',
+  KHR: '៛',
+  LAK: '₭',
+  ISK: 'kr ',
+  RSD: 'din. ',
+  GEL: '₾',
+  AZN: '₼',
+  AMD: '֏ ',
+  BYN: 'Br ',
+  ARS: '$',
+  COP: '$',
+  CLP: '$',
+  PEN: 'S/. ',
+  CRC: '₡',
+  DOP: 'RD$',
+  GTQ: 'Q ',
+  HNL: 'L ',
+  NIO: 'C$',
+  PAB: 'B/. ',
+  PYG: '₲',
+  UYU: '$U ',
+  BOB: 'Bs. ',
+  JMD: 'J$',
+  TTD: 'TT$',
+  BBD: 'Bds$',
+  BSD: 'B$',
+  BZD: 'BZ$',
+  XOF: 'CFA ',
+  XAF: 'FCFA ',
+  TZS: 'TSh ',
+  UGX: 'USh ',
+  RWF: 'RF ',
+  ETB: 'Br ',
+  MZN: 'MT ',
+  AOA: 'Kz ',
+  ZMW: 'ZK ',
+  BWP: 'P ',
+  NAD: 'N$',
+  MUR: 'Rs ',
+  FJD: 'FJ$',
+};
+
 const CURRENCIES = {};
 WORLD_CURRENCIES.forEach((c) => {
+  if (CLEAN_CURRENCY_SYMBOLS[c.code]) {
+    c.symbol = CLEAN_CURRENCY_SYMBOLS[c.code];
+  }
   CURRENCIES[c.code] = {
     symbol: c.symbol,
     rate: c.rate,
@@ -335,6 +439,45 @@ function populateCurrencyDropdown(selectEl, selectedValue = currentBaseCurrency)
   selectEl.appendChild(allGroup);
   selectEl.value = CURRENCIES[currentVal] ? currentVal : 'USD';
 }
+
+populateCurrencyDropdown = function(selectEl, selectedValue = currentBaseCurrency) {
+  if (!selectEl) return;
+  const currentVal = selectedValue || selectEl.value || currentBaseCurrency;
+  const isNavbarSelect = selectEl.id === 'userBaseCurrency';
+  selectEl.innerHTML = '';
+
+  const popularGroup = document.createElement('optgroup');
+  popularGroup.label = '⭐ Popular Currencies';
+
+  const popularCodes = ['USD', 'EUR', 'GBP', 'PKR', 'INR', 'AED', 'SAR', 'CAD', 'AUD', 'JPY', 'CNY', 'CHF', 'TRY', 'BRL', 'SGD', 'MYR'];
+  popularCodes.forEach((code) => {
+    const c = CURRENCIES[code];
+    if (c) {
+      const opt = document.createElement('option');
+      opt.value = code;
+      opt.textContent = isNavbarSelect
+        ? `${code} (${c.symbol.trim()})`
+        : `${code} (${c.symbol.trim()}) · ${c.name}`;
+      popularGroup.appendChild(opt);
+    }
+  });
+
+  const allGroup = document.createElement('optgroup');
+  allGroup.label = '🌐 All World Currencies (A-Z)';
+  const sorted = [...WORLD_CURRENCIES].sort((a, b) => a.code.localeCompare(b.code));
+  sorted.forEach((c) => {
+    const opt = document.createElement('option');
+    opt.value = c.code;
+    opt.textContent = isNavbarSelect
+      ? `${c.code} (${c.symbol.trim()})`
+      : `${c.code} (${c.symbol.trim()}) · ${c.name}`;
+    allGroup.appendChild(opt);
+  });
+
+  selectEl.appendChild(popularGroup);
+  selectEl.appendChild(allGroup);
+  selectEl.value = CURRENCIES[currentVal] ? currentVal : 'USD';
+};
 
 function populateAllCurrencySelects() {
   const ids = ['userBaseCurrency', 'incomeCurrency', 'expenseCurrency', 'groupBaseCurrency', 'planCurrency'];
@@ -1133,36 +1276,43 @@ function renderDashboard() {
   const selectedKey = state.selectedMonthKey;
 
   if (selectedKey === 'all') {
-    // All-time view: previous months leftover = all-time balance minus current month savings
+    // All-time overview: Summary cards strictly follow the dashboard formula:
+    // Current Money = Current month income + prior leftovers
+    // Monthly Expenses = spent in current month
+    // Current Money Left = Current Money - Monthly Expenses (updates after every transaction)
+    // Previous Months Left = Leftover across prior months
     const currentMonthItem = historyDesc.find((m) => m.key === currentMonthKey) || { income: 0, expenses: 0, savings: 0 };
     const allPrevMonthsLeft = historyDesc
       .filter((m) => m.key < currentMonthKey)
       .reduce((sum, m) => sum + m.savings, 0);
-    const allCurrentMonthLeft = currentMonthItem.income - currentMonthItem.expenses;
-    const allCurrentMoney = allTimeIncome + allPrevMonthsLeft; // All income + all prior leftovers (redundant in all-time but consistent)
 
-    setFormattedCardValue(currentMoneyEl, allTimeBalance);
-    setFormattedCardValue(monthlyExpensesEl, allTimeExpenses);
-    setFormattedCardValue(currentMonthLeftEl, allCurrentMonthLeft);
+    const currentMoney = currentMonthItem.income + allPrevMonthsLeft;
+    const monthlyExpenses = currentMonthItem.expenses;
+    const currentMoneyLeft = currentMoney - monthlyExpenses;
+
+    setFormattedCardValue(currentMoneyEl, currentMoney);
+    setFormattedCardValue(monthlyExpensesEl, monthlyExpenses);
+    setFormattedCardValue(currentMonthLeftEl, currentMoneyLeft);
     setFormattedCardValue(prevMonthsLeftEl, allPrevMonthsLeft);
 
-    if (currentMoneyLabelEl) currentMoneyLabelEl.textContent = 'Total Money';
-    if (currentMoneySubEl) currentMoneySubEl.textContent = 'All-time cumulative balance';
+    if (currentMoneyLabelEl) currentMoneyLabelEl.textContent = 'Current Money';
+    if (currentMoneySubEl) currentMoneySubEl.textContent = 'Current month income + prior leftovers';
 
-    if (monthlyExpensesLabelEl) monthlyExpensesLabelEl.textContent = 'Total Expenses';
-    if (monthlyExpensesSubEl) monthlyExpensesSubEl.textContent = 'All-time total spending';
+    if (monthlyExpensesLabelEl) monthlyExpensesLabelEl.textContent = 'Monthly Expenses';
+    if (monthlyExpensesSubEl) monthlyExpensesSubEl.textContent = 'Spent in current month';
 
-    if (currentMonthLeftLabelEl) currentMonthLeftLabelEl.textContent = 'Current Month Left';
-    if (currentMonthLeftSubEl) currentMonthLeftSubEl.textContent = 'This month’s income minus expenses';
+    if (currentMonthLeftLabelEl) currentMonthLeftLabelEl.textContent = 'Current Money Left';
+    if (currentMonthLeftSubEl) currentMonthLeftSubEl.textContent = 'Updates after every transaction';
 
     if (prevMonthsLeftLabelEl) prevMonthsLeftLabelEl.textContent = 'Previous Months Left';
     const prevCount = historyDesc.filter((m) => m.key < currentMonthKey).length;
     if (prevMonthsLeftSubEl) {
       prevMonthsLeftSubEl.textContent = prevCount > 0
         ? `Leftover across ${prevCount} prior month${prevCount !== 1 ? 's' : ''}`
-        : 'No prior month data';
+        : 'Leftover across prior months';
     }
   } else {
+    const isSelectedCurrent = selectedKey === currentMonthKey;
     const monthItem = historyDesc.find((m) => m.key === selectedKey) || historyDesc[0] || {
       key: currentMonthKey,
       label: 'Current Month',
@@ -1173,37 +1323,45 @@ function renderDashboard() {
       balance: 0,
     };
 
-    // Previous months leftover = sum of (income - expenses) for all months BEFORE the selected month
+    // Previous Months Left = sum of (income - expenses) for all months BEFORE the selected month
     const prevMonthsLeftover = historyDesc
       .filter((m) => m.key < selectedKey)
       .reduce((sum, m) => sum + m.savings, 0);
 
-    // Current month left = this month's income - this month's expenses
-    const currentMonthLeftover = monthItem.income - monthItem.expenses;
-
-    // Current Money = this month's income + previous months leftover
+    // Current Money = selected month income + previous months leftover
     const currentMoney = monthItem.income + prevMonthsLeftover;
+
+    // Current Money Left = Current Money - selected month expenses
+    const currentMoneyLeft = currentMoney - monthItem.expenses;
 
     setFormattedCardValue(currentMoneyEl, currentMoney);
     setFormattedCardValue(monthlyExpensesEl, monthItem.expenses);
-    setFormattedCardValue(currentMonthLeftEl, currentMonthLeftover);
+    setFormattedCardValue(currentMonthLeftEl, currentMoneyLeft);
     setFormattedCardValue(prevMonthsLeftEl, prevMonthsLeftover);
 
     if (currentMoneyLabelEl) currentMoneyLabelEl.textContent = 'Current Money';
-    if (currentMoneySubEl) currentMoneySubEl.textContent = `${monthItem.shortLabel} income + prior leftovers`;
+    if (currentMoneySubEl) {
+      currentMoneySubEl.textContent = isSelectedCurrent
+        ? 'Current month income + prior leftovers'
+        : `${monthItem.shortLabel} income + prior leftovers`;
+    }
 
     if (monthlyExpensesLabelEl) monthlyExpensesLabelEl.textContent = 'Monthly Expenses';
-    if (monthlyExpensesSubEl) monthlyExpensesSubEl.textContent = `Spent in ${monthItem.shortLabel}`;
+    if (monthlyExpensesSubEl) {
+      monthlyExpensesSubEl.textContent = isSelectedCurrent
+        ? 'Spent in current month'
+        : `Spent in ${monthItem.shortLabel}`;
+    }
 
-    if (currentMonthLeftLabelEl) currentMonthLeftLabelEl.textContent = 'Current Month Left';
-    if (currentMonthLeftSubEl) currentMonthLeftSubEl.textContent = `${monthItem.shortLabel}: income minus expenses`;
+    if (currentMonthLeftLabelEl) currentMonthLeftLabelEl.textContent = 'Current Money Left';
+    if (currentMonthLeftSubEl) currentMonthLeftSubEl.textContent = 'Updates after every transaction';
 
     if (prevMonthsLeftLabelEl) prevMonthsLeftLabelEl.textContent = 'Previous Months Left';
     const prevMonthCount = historyDesc.filter((m) => m.key < selectedKey).length;
     if (prevMonthsLeftSubEl) {
       prevMonthsLeftSubEl.textContent = prevMonthCount > 0
         ? `Leftover across ${prevMonthCount} prior month${prevMonthCount !== 1 ? 's' : ''}`
-        : 'No prior month data';
+        : 'Leftover across prior months';
     }
   }
 
