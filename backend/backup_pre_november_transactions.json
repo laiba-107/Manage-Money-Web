@@ -1,0 +1,326 @@
+[
+  {
+    "id": "03a73bf4-9279-4477-8f03-73601fc0b3a8",
+    "userId": "ba37d90b-31b1-4d44-8023-d05be861a562",
+    "amount": 9500,
+    "type": "expense",
+    "title": "Return & Refunds",
+    "notes": "Return to Seher Api",
+    "date": "2026-08-10",
+    "paymentMethod": "bank_transfer",
+    "isRecurring": false,
+    "currency": "KGS",
+    "exchangeRate": 1,
+    "tags": [],
+    "categoryId": "49141abc-9067-426e-a774-cc6ed65bc0ec",
+    "category": {
+      "id": "49141abc-9067-426e-a774-cc6ed65bc0ec",
+      "name": "Return & Refunds",
+      "icon": "settings_backup_restore",
+      "color": "#14b8a6"
+    },
+    "createdAt": {
+      "_seconds": 1787048276,
+      "_nanoseconds": 931000000
+    },
+    "updatedAt": {
+      "_seconds": 1787048276,
+      "_nanoseconds": 931000000
+    },
+    "dateFormatted": "2026-08-10"
+  },
+  {
+    "id": "31e48272-25b5-4a2e-91f3-5f36ecf2168e",
+    "userId": "ba37d90b-31b1-4d44-8023-d05be861a562",
+    "amount": 5200,
+    "type": "income",
+    "title": "Other",
+    "notes": "Abu sent",
+    "date": "2026-10-22",
+    "isRecurring": false,
+    "currency": "KGS",
+    "exchangeRate": 1,
+    "tags": [],
+    "categoryId": "39481212-7f5c-4e66-a617-e23000741432",
+    "category": {
+      "id": "39481212-7f5c-4e66-a617-e23000741432",
+      "name": "Other",
+      "icon": "category",
+      "color": "#9E9E9E"
+    },
+    "createdAt": {
+      "_seconds": 1792754750,
+      "_nanoseconds": 37000000
+    },
+    "updatedAt": {
+      "_seconds": 1794464279,
+      "_nanoseconds": 533000000
+    },
+    "dateFormatted": "2026-10-22"
+  },
+  {
+    "id": "5cb90c4e-87b1-4340-84aa-a93a6c756259",
+    "userId": "ba37d90b-31b1-4d44-8023-d05be861a562",
+    "amount": 2500,
+    "type": "expense",
+    "title": "Other",
+    "notes": "Tax",
+    "date": "2026-08-21",
+    "paymentMethod": "credit_card",
+    "isRecurring": false,
+    "currency": "PKR",
+    "exchangeRate": 1,
+    "tags": [],
+    "categoryId": "39481212-7f5c-4e66-a617-e23000741432",
+    "category": {
+      "id": "39481212-7f5c-4e66-a617-e23000741432",
+      "name": "Other",
+      "icon": "category",
+      "color": "#9E9E9E"
+    },
+    "createdAt": {
+      "_seconds": 1787504779,
+      "_nanoseconds": 685000000
+    },
+    "updatedAt": {
+      "_seconds": 1787504779,
+      "_nanoseconds": 685000000
+    },
+    "dateFormatted": "2026-08-21"
+  },
+  {
+    "id": "65720fcd-bee0-42f7-b702-7bd67ed7f882",
+    "userId": "ba37d90b-31b1-4d44-8023-d05be861a562",
+    "amount": 48,
+    "type": "expense",
+    "title": "Other",
+    "notes": "Passport fee",
+    "date": "2026-09-14",
+    "paymentMethod": "cash",
+    "isRecurring": false,
+    "currency": "USD",
+    "exchangeRate": 1,
+    "tags": [],
+    "categoryId": "39481212-7f5c-4e66-a617-e23000741432",
+    "category": {
+      "id": "39481212-7f5c-4e66-a617-e23000741432",
+      "name": "Other",
+      "icon": "category",
+      "color": "#9E9E9E"
+    },
+    "createdAt": {
+      "_seconds": 1789822074,
+      "_nanoseconds": 726000000
+    },
+    "updatedAt": {
+      "_seconds": 1789822074,
+      "_nanoseconds": 726000000
+    },
+    "dateFormatted": "2026-09-14"
+  },
+  {
+    "id": "753b61bc-3df6-4cd9-a1ff-72ed19617f40",
+    "userId": "ba37d90b-31b1-4d44-8023-d05be861a562",
+    "amount": 1136,
+    "type": "expense",
+    "title": "Education",
+    "notes": "Registration",
+    "date": "2026-09-15",
+    "paymentMethod": "credit_card",
+    "isRecurring": false,
+    "currency": "KGS",
+    "exchangeRate": 1,
+    "tags": [],
+    "categoryId": "bd6054b5-52fa-42dc-bd42-98a8d51ac80e",
+    "category": {
+      "id": "bd6054b5-52fa-42dc-bd42-98a8d51ac80e",
+      "name": "Education",
+      "icon": "school",
+      "color": "#3F51B5"
+    },
+    "createdAt": {
+      "_seconds": 1789822571,
+      "_nanoseconds": 757000000
+    },
+    "updatedAt": {
+      "_seconds": 1789822571,
+      "_nanoseconds": 757000000
+    },
+    "dateFormatted": "2026-09-15"
+  },
+  {
+    "id": "cc112699-8b93-41f9-b3a8-50ea27e5f464",
+    "userId": "ba37d90b-31b1-4d44-8023-d05be861a562",
+    "type": "income",
+    "title": "Salary",
+    "date": "2026-08-18",
+    "isRecurring": false,
+    "currency": "PKR",
+    "exchangeRate": 1,
+    "tags": [],
+    "categoryId": "6299da69-c0f4-4558-bfff-6756d0ee6588",
+    "category": {
+      "id": "6299da69-c0f4-4558-bfff-6756d0ee6588",
+      "name": "Salary",
+      "icon": "work",
+      "color": "#4CAF50"
+    },
+    "createdAt": {
+      "_seconds": 1787049267,
+      "_nanoseconds": 728000000
+    },
+    "notes": "SBP Internship",
+    "amount": 25000,
+    "updatedAt": {
+      "_seconds": 1789820801,
+      "_nanoseconds": 806000000
+    },
+    "dateFormatted": "2026-08-18"
+  },
+  {
+    "id": "cd1ddc87-3201-4bd1-9bd9-0d79aa30c78f",
+    "userId": "ba37d90b-31b1-4d44-8023-d05be861a562",
+    "amount": 50,
+    "type": "income",
+    "title": "Other",
+    "notes": "Summer Program",
+    "date": "2026-08-12",
+    "isRecurring": false,
+    "currency": "USD",
+    "exchangeRate": 1,
+    "tags": [],
+    "categoryId": "39481212-7f5c-4e66-a617-e23000741432",
+    "category": {
+      "id": "39481212-7f5c-4e66-a617-e23000741432",
+      "name": "Other",
+      "icon": "category",
+      "color": "#9E9E9E"
+    },
+    "createdAt": {
+      "_seconds": 1787048307,
+      "_nanoseconds": 728000000
+    },
+    "updatedAt": {
+      "_seconds": 1787048307,
+      "_nanoseconds": 728000000
+    },
+    "dateFormatted": "2026-08-12"
+  },
+  {
+    "id": "d64eb784-79cd-49d1-8350-7eeb54cbe619",
+    "userId": "ba37d90b-31b1-4d44-8023-d05be861a562",
+    "amount": 6300,
+    "type": "expense",
+    "title": "Healthcare",
+    "date": "2026-09-07",
+    "paymentMethod": "cash",
+    "isRecurring": false,
+    "currency": "PKR",
+    "exchangeRate": 1,
+    "tags": [],
+    "categoryId": "2b7557a4-0176-4f99-a540-b8c75ea3e0ba",
+    "category": {
+      "id": "2b7557a4-0176-4f99-a540-b8c75ea3e0ba",
+      "name": "Healthcare",
+      "icon": "local_hospital",
+      "color": "#F44336"
+    },
+    "createdAt": {
+      "_seconds": 1789821382,
+      "_nanoseconds": 463000000
+    },
+    "updatedAt": {
+      "_seconds": 1789821382,
+      "_nanoseconds": 463000000
+    },
+    "dateFormatted": "2026-09-07"
+  },
+  {
+    "id": "dded0734-63c3-4ed6-b2fe-1993e9229fb8",
+    "userId": "ba37d90b-31b1-4d44-8023-d05be861a562",
+    "amount": 360,
+    "type": "expense",
+    "title": "Other",
+    "notes": "car fair + fuse tea",
+    "date": "2026-10-01",
+    "paymentMethod": "cash",
+    "isRecurring": false,
+    "currency": "KGS",
+    "exchangeRate": 1,
+    "tags": [],
+    "categoryId": "39481212-7f5c-4e66-a617-e23000741432",
+    "category": {
+      "id": "39481212-7f5c-4e66-a617-e23000741432",
+      "name": "Other",
+      "icon": "category",
+      "color": "#9E9E9E"
+    },
+    "createdAt": {
+      "_seconds": 1790872604,
+      "_nanoseconds": 819000000
+    },
+    "updatedAt": {
+      "_seconds": 1790872604,
+      "_nanoseconds": 819000000
+    },
+    "dateFormatted": "2026-10-01"
+  },
+  {
+    "id": "eba16236-4f99-483e-a22a-e74c5285e5c9",
+    "userId": "ba37d90b-31b1-4d44-8023-d05be861a562",
+    "amount": 18500,
+    "type": "income",
+    "title": "Salary",
+    "notes": "UI Green Metric Internship",
+    "date": "2026-08-07",
+    "isRecurring": false,
+    "currency": "KGS",
+    "exchangeRate": 1,
+    "tags": [],
+    "categoryId": "6299da69-c0f4-4558-bfff-6756d0ee6588",
+    "category": {
+      "id": "6299da69-c0f4-4558-bfff-6756d0ee6588",
+      "name": "Salary",
+      "icon": "work",
+      "color": "#4CAF50"
+    },
+    "createdAt": {
+      "_seconds": 1787048234,
+      "_nanoseconds": 496000000
+    },
+    "updatedAt": {
+      "_seconds": 1787048234,
+      "_nanoseconds": 496000000
+    },
+    "dateFormatted": "2026-08-07"
+  },
+  {
+    "id": "f6d55396-6006-4478-b32a-98d8d23d6969",
+    "userId": "ba37d90b-31b1-4d44-8023-d05be861a562",
+    "amount": 100,
+    "type": "income",
+    "title": "Other",
+    "date": "2026-09-14",
+    "isRecurring": false,
+    "currency": "USD",
+    "exchangeRate": 1,
+    "tags": [],
+    "categoryId": "39481212-7f5c-4e66-a617-e23000741432",
+    "category": {
+      "id": "39481212-7f5c-4e66-a617-e23000741432",
+      "name": "Other",
+      "icon": "category",
+      "color": "#9E9E9E"
+    },
+    "createdAt": {
+      "_seconds": 1789822635,
+      "_nanoseconds": 694000000
+    },
+    "notes": "Abu ",
+    "updatedAt": {
+      "_seconds": 1792857002,
+      "_nanoseconds": 537000000
+    },
+    "dateFormatted": "2026-09-14"
+  }
+]
