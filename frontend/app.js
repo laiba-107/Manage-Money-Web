@@ -449,12 +449,12 @@ function monthLabel(key) {
 }
 
 function formatApiDate(value) {
-  if (!value) return '';
+  if (!value) return new Date().toISOString().slice(0, 10);
   if (typeof value === 'string') return value.slice(0, 10);
   try {
     return new Date(value).toISOString().slice(0, 10);
   } catch (_) {
-    return String(value);
+    return new Date().toISOString().slice(0, 10);
   }
 }
 
@@ -1140,80 +1140,78 @@ function renderDashboard() {
 
   const selectedKey = state.selectedMonthKey;
 
-  if (selectedKey === 'all') {
-    const allPrevMonthsLeft = historyDesc
-      .filter((m) => m.key < currentMonthKey)
-      .reduce((sum, m) => sum + m.savings, 0);
+  // Reference for the current month
+  const currentMonthItem = historyDesc.find((m) => m.key === currentMonthKey) || {
+    key: currentMonthKey,
+    label: 'Current Month',
+    shortLabel: 'Current Month',
+    income: 0,
+    expenses: 0,
+    savings: 0,
+    balance: 0,
+  };
 
-    setFormattedCardValue(currentMoneyEl, allTimeIncome);
-    setFormattedCardValue(monthlyExpensesEl, allTimeExpenses);
-    setFormattedCardValue(currentMonthLeftEl, allTimeBalance);
-    setFormattedCardValue(prevMonthsLeftEl, allPrevMonthsLeft);
+  // 4) Previous Months Left: Leftover across previous months (all months prior to currentMonthKey)
+  const currentMonthPriorLeftovers = historyDesc
+    .filter((m) => m.key < currentMonthKey)
+    .reduce((sum, m) => sum + m.savings, 0);
 
-    if (currentMoneyLabelEl) currentMoneyLabelEl.textContent = 'All-Time Income';
-    if (currentMoneySubEl) currentMoneySubEl.textContent = `Total earned across ${historyDesc.length} month${historyDesc.length !== 1 ? 's' : ''}`;
+  let activeItem;
+  let activePriorLeftovers;
+  let isCurrent = false;
 
-    if (monthlyExpensesLabelEl) monthlyExpensesLabelEl.textContent = 'All-Time Expenses';
-    if (monthlyExpensesSubEl) monthlyExpensesSubEl.textContent = 'Total net spent across all time';
-
-    if (currentMonthLeftLabelEl) currentMonthLeftLabelEl.textContent = 'Net Balance';
-    if (currentMonthLeftSubEl) currentMonthLeftSubEl.textContent = 'All-time income minus expenses';
-
-    if (prevMonthsLeftLabelEl) prevMonthsLeftLabelEl.textContent = 'Previous Months Left';
-    const prevCount = historyDesc.filter((m) => m.key < currentMonthKey).length;
-    if (prevMonthsLeftSubEl) {
-      prevMonthsLeftSubEl.textContent = prevCount > 0
-        ? `Leftover across ${prevCount} prior month${prevCount !== 1 ? 's' : ''}`
-        : 'Leftover across prior months';
-    }
+  if (selectedKey === 'all' || selectedKey === currentMonthKey || !selectedKey) {
+    activeItem = currentMonthItem;
+    activePriorLeftovers = currentMonthPriorLeftovers;
+    isCurrent = true;
   } else {
-    const isSelectedCurrent = selectedKey === currentMonthKey;
-    const monthItem = historyDesc.find((m) => m.key === selectedKey) || historyDesc[0] || {
-      key: currentMonthKey,
-      label: 'Current Month',
-      shortLabel: 'Current Month',
-      income: 0,
-      expenses: 0,
-      savings: 0,
-      balance: 0,
-    };
-
-    const prevMonthsLeftover = historyDesc
+    activeItem = historyDesc.find((m) => m.key === selectedKey) || currentMonthItem;
+    activePriorLeftovers = historyDesc
       .filter((m) => m.key < selectedKey)
       .reduce((sum, m) => sum + m.savings, 0);
+    isCurrent = activeItem.key === currentMonthKey;
+  }
 
-    const currentMoney = monthItem.income + prevMonthsLeftover;
-    const currentMoneyLeft = currentMoney - monthItem.expenses;
+  // 1) Current Money = Current month income + prior leftovers
+  const currentMoney = activeItem.income + activePriorLeftovers;
 
-    setFormattedCardValue(currentMoneyEl, currentMoney);
-    setFormattedCardValue(monthlyExpensesEl, monthItem.expenses);
-    setFormattedCardValue(currentMonthLeftEl, currentMoneyLeft);
-    setFormattedCardValue(prevMonthsLeftEl, prevMonthsLeftover);
+  // 3) Monthly Expenses = spent in current month
+  const monthlyExpenses = activeItem.expenses;
 
-    if (currentMoneyLabelEl) currentMoneyLabelEl.textContent = 'Current Money';
-    if (currentMoneySubEl) {
-      currentMoneySubEl.textContent = isSelectedCurrent
-        ? 'Current month income + prior leftovers'
-        : `${monthItem.shortLabel} income + prior leftovers`;
-    }
+  // 2) Current Money Left = Current Money - Monthly Expenses (updated after every transaction)
+  const currentMoneyLeft = currentMoney - monthlyExpenses;
 
-    if (monthlyExpensesLabelEl) monthlyExpensesLabelEl.textContent = 'Monthly Expenses';
-    if (monthlyExpensesSubEl) {
-      monthlyExpensesSubEl.textContent = isSelectedCurrent
-        ? 'Spent in current month'
-        : `Spent in ${monthItem.shortLabel}`;
-    }
+  // 4) Previous Months Left = Leftover across previous months
+  const prevMonthsLeft = activePriorLeftovers;
 
-    if (currentMonthLeftLabelEl) currentMonthLeftLabelEl.textContent = 'Current Money Left';
-    if (currentMonthLeftSubEl) currentMonthLeftSubEl.textContent = 'Updates after every transaction';
+  setFormattedCardValue(currentMoneyEl, currentMoney);
+  setFormattedCardValue(monthlyExpensesEl, monthlyExpenses);
+  setFormattedCardValue(currentMonthLeftEl, currentMoneyLeft);
+  setFormattedCardValue(prevMonthsLeftEl, prevMonthsLeft);
 
-    if (prevMonthsLeftLabelEl) prevMonthsLeftLabelEl.textContent = 'Previous Months Left';
-    const prevMonthCount = historyDesc.filter((m) => m.key < selectedKey).length;
-    if (prevMonthsLeftSubEl) {
-      prevMonthsLeftSubEl.textContent = prevMonthCount > 0
-        ? `Leftover across ${prevMonthCount} prior month${prevMonthCount !== 1 ? 's' : ''}`
-        : 'Leftover across prior months';
-    }
+  if (currentMoneyLabelEl) currentMoneyLabelEl.textContent = 'Current Money';
+  if (currentMoneySubEl) {
+    currentMoneySubEl.textContent = isCurrent
+      ? 'Current month income + prior leftovers'
+      : `${activeItem.shortLabel} income + prior leftovers`;
+  }
+
+  if (monthlyExpensesLabelEl) monthlyExpensesLabelEl.textContent = 'Monthly Expenses';
+  if (monthlyExpensesSubEl) {
+    monthlyExpensesSubEl.textContent = isCurrent
+      ? 'Spent in current month'
+      : `Spent in ${activeItem.shortLabel}`;
+  }
+
+  if (currentMonthLeftLabelEl) currentMonthLeftLabelEl.textContent = 'Current Money Left';
+  if (currentMonthLeftSubEl) currentMonthLeftSubEl.textContent = 'Updates after every transaction';
+
+  if (prevMonthsLeftLabelEl) prevMonthsLeftLabelEl.textContent = 'Previous Months Left';
+  const priorCount = historyDesc.filter((m) => m.key < (isCurrent ? currentMonthKey : activeItem.key)).length;
+  if (prevMonthsLeftSubEl) {
+    prevMonthsLeftSubEl.textContent = priorCount > 0
+      ? `Leftover across ${priorCount} prior month${priorCount !== 1 ? 's' : ''}`
+      : 'Leftover across prior months';
   }
 
   renderCategoryChart(selectedKey);
