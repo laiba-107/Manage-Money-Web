@@ -922,6 +922,8 @@ async function loadApp() {
     userBaseCurrencySelect.onchange = (e) => {
       currentBaseCurrency = e.target.value;
       localStorage.setItem('user_base_currency', currentBaseCurrency);
+      apiRequest('PATCH', '/users/profile', { currency: currentBaseCurrency }).catch(() => {});
+      apiRequest('PATCH', '/settings', { currency: currentBaseCurrency }).catch(() => {});
       refreshNormalizedTransactions();
       renderDashboard();
       renderIncomeList();
@@ -983,6 +985,24 @@ async function loadApp() {
       avatarMark.textContent = name.charAt(0).toUpperCase();
     }
     userInfo?.classList.remove('hidden');
+
+    // Sync base currency across devices from backend user profile or settings
+    const serverCurrency = user?.currency;
+    if (serverCurrency && CURRENCIES[serverCurrency]) {
+      currentBaseCurrency = serverCurrency;
+      localStorage.setItem('user_base_currency', currentBaseCurrency);
+      const userBaseCurrencySelect = document.getElementById('userBaseCurrency');
+      if (userBaseCurrencySelect) {
+        userBaseCurrencySelect.value = currentBaseCurrency;
+      }
+    } else {
+      const localCurrency = localStorage.getItem('user_base_currency');
+      if (localCurrency && CURRENCIES[localCurrency]) {
+        currentBaseCurrency = localCurrency;
+        apiRequest('PATCH', '/users/profile', { currency: currentBaseCurrency }).catch(() => {});
+        apiRequest('PATCH', '/settings', { currency: currentBaseCurrency }).catch(() => {});
+      }
+    }
 
     await loadAllData();
     renderDashboard();
@@ -1715,9 +1735,11 @@ async function deleteExpense(id) {
 
 async function loadExpenseGroups() {
   try {
-    const res = await apiRequest('GET', '/settings/expense_groups');
-    if (res?.data?.value) {
-      state.expenseGroups = JSON.parse(res.data.value);
+    const res = await apiRequest('GET', '/settings');
+    if (res?.data?.expense_groups !== undefined && res?.data?.expense_groups !== null) {
+      const val = res.data.expense_groups;
+      state.expenseGroups = typeof val === 'string' ? JSON.parse(val) : (Array.isArray(val) ? val : []);
+      localStorage.setItem('user_expense_groups', JSON.stringify(state.expenseGroups));
       return;
     }
   } catch (_) { }
@@ -1728,9 +1750,8 @@ async function loadExpenseGroups() {
 async function saveExpenseGroups() {
   localStorage.setItem('user_expense_groups', JSON.stringify(state.expenseGroups));
   try {
-    await apiRequest('POST', '/settings', {
-      key: 'expense_groups',
-      value: JSON.stringify(state.expenseGroups),
+    await apiRequest('PATCH', '/settings', {
+      expense_groups: JSON.stringify(state.expenseGroups),
     });
   } catch (_) { }
 }
@@ -2073,9 +2094,11 @@ tabGroupExpensesBtn?.addEventListener('click', () => switchExpenseTab('group'));
 
 async function loadPlans() {
   try {
-    const res = await apiRequest('GET', '/settings/future_plans');
-    if (res?.data?.value) {
-      state.plans = JSON.parse(res.data.value);
+    const res = await apiRequest('GET', '/settings');
+    if (res?.data?.future_plans !== undefined && res?.data?.future_plans !== null) {
+      const val = res.data.future_plans;
+      state.plans = typeof val === 'string' ? JSON.parse(val) : (Array.isArray(val) ? val : []);
+      localStorage.setItem('user_future_plans', JSON.stringify(state.plans));
       return;
     }
   } catch (_) { }
@@ -2086,9 +2109,8 @@ async function loadPlans() {
 async function savePlans() {
   localStorage.setItem('user_future_plans', JSON.stringify(state.plans));
   try {
-    await apiRequest('POST', '/settings', {
-      key: 'future_plans',
-      value: JSON.stringify(state.plans),
+    await apiRequest('PATCH', '/settings', {
+      future_plans: JSON.stringify(state.plans),
     });
   } catch (_) { }
 }

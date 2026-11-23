@@ -53,7 +53,20 @@ async function bootstrap() {
   const publicPath = fs.existsSync(publicPathInDist)
     ? publicPathInDist
     : publicPathParent;
-  app.use(express.static(publicPath, { index: 'index.html' }));
+  app.use(
+    express.static(publicPath, {
+      index: 'index.html',
+      setHeaders: (res, filePath) => {
+        if (filePath.endsWith('.js')) {
+          res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+        } else if (filePath.endsWith('.html')) {
+          res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        } else if (filePath.endsWith('.css')) {
+          res.setHeader('Content-Type', 'text/css; charset=utf-8');
+        }
+      },
+    }),
+  );
 
   // Fallback non-API GET requests to index.html for SPA routing
   app.use((req: any, res: any, next: any) => {
