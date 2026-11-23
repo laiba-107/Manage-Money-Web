@@ -47,6 +47,14 @@ async function bootstrap() {
     credentials: true,
   });
 
+  // Disable caching for all API endpoints so cross-device sync is always real-time
+  app.use('/api', (req: any, res: any, next: any) => {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    next();
+  });
+
   // Serve static files from public directory (frontend)
   const publicPathInDist = join(__dirname, 'public');
   const publicPathParent = join(__dirname, '..', 'public');
@@ -59,10 +67,13 @@ async function bootstrap() {
       setHeaders: (res, filePath) => {
         if (filePath.endsWith('.js')) {
           res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+          res.setHeader('Cache-Control', 'no-cache, must-revalidate');
         } else if (filePath.endsWith('.html')) {
           res.setHeader('Content-Type', 'text/html; charset=utf-8');
+          res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
         } else if (filePath.endsWith('.css')) {
           res.setHeader('Content-Type', 'text/css; charset=utf-8');
+          res.setHeader('Cache-Control', 'no-cache, must-revalidate');
         }
       },
     }),

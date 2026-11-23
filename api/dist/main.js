@@ -76,6 +76,12 @@ async function bootstrap() {
         allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
         credentials: true,
     });
+    app.use('/api', (req, res, next) => {
+        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+        next();
+    });
     const publicPathInDist = (0, path_1.join)(__dirname, 'public');
     const publicPathParent = (0, path_1.join)(__dirname, '..', 'public');
     const publicPath = fs.existsSync(publicPathInDist)
@@ -86,12 +92,15 @@ async function bootstrap() {
         setHeaders: (res, filePath) => {
             if (filePath.endsWith('.js')) {
                 res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+                res.setHeader('Cache-Control', 'no-cache, must-revalidate');
             }
             else if (filePath.endsWith('.html')) {
                 res.setHeader('Content-Type', 'text/html; charset=utf-8');
+                res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
             }
             else if (filePath.endsWith('.css')) {
                 res.setHeader('Content-Type', 'text/css; charset=utf-8');
+                res.setHeader('Cache-Control', 'no-cache, must-revalidate');
             }
         },
     }));

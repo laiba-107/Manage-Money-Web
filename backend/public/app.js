@@ -592,6 +592,9 @@ function saveTokens(accessToken, refreshToken) {
 function clearTokens() {
   localStorage.removeItem(ACCESS_TOKEN_KEY);
   localStorage.removeItem(REFRESH_TOKEN_KEY);
+  localStorage.removeItem('user_expense_groups');
+  localStorage.removeItem('user_future_plans');
+  localStorage.removeItem('user_base_currency');
 }
 
 async function apiRequest(method, path, data) {
@@ -611,6 +614,7 @@ async function apiRequest(method, path, data) {
     headers,
     body: data ? JSON.stringify(data) : undefined,
     credentials: 'omit',
+    cache: 'no-store',
   });
 
   if (!response.ok) {
